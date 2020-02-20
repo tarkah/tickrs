@@ -5,6 +5,7 @@ use api::model::HistoricalDay;
 use async_std::task;
 use chrono::Local;
 use crossbeam_channel::{bounded, select, unbounded};
+use std::time::Instant;
 
 /// Returns an array of prices, depending on the TimeFrame chosen
 pub struct Prices {
@@ -37,12 +38,30 @@ impl AsyncTask for Prices {
         let _handle = task::spawn(async move {
             let client = api::Client::new();
 
-            loop {
+            let mut last_updated = Instant::now();
+
+            // Send it initially
+            {
                 let today = Local::today().naive_local();
                 let as_of = time_frame.as_of_date();
 
                 if let Ok(response) = client.get_historical_from_to(&symbol, as_of, today).await {
                     let _ = response_sender.send(response.historical);
+                }
+            }
+
+            loop {
+                // Only send it adter update interval has passed
+                if last_updated.elapsed() >= update_interval {
+                    let today = Local::today().naive_local();
+                    let as_of = time_frame.as_of_date();
+
+                    if let Ok(response) = client.get_historical_from_to(&symbol, as_of, today).await
+                    {
+                        let _ = response_sender.send(response.historical);
+                    }
+
+                    last_updated = Instant::now();
                 }
 
                 // Break this loop to drop if drop msg received
@@ -53,7 +72,7 @@ impl AsyncTask for Prices {
                     default() => (),
                 }
 
-                task::sleep(update_interval).await;
+                task::sleep(Duration::from_secs(1)).await;
             }
         });
 

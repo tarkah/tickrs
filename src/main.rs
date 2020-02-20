@@ -33,7 +33,7 @@ fn main() {
     setup_panic_hook();
     setup_terminal();
 
-    let ticker = tick(Duration::from_secs_f64(1.0));
+    let ticker = tick(Duration::from_millis(1000));
     let ui_events = setup_ui_events();
     let ctrl_c_events = setup_ctrl_c();
 
