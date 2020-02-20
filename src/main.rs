@@ -80,7 +80,7 @@ fn main() {
                 match app.mode {
                     app::Mode::AddStock => {
                         if let Ok(Event::Key(key_event)) = message {
-                            if key_event.modifiers.is_empty() {
+                            if key_event.modifiers.is_empty() || key_event.modifiers == KeyModifiers::SHIFT {
                                 match key_event.code {
                                     KeyCode::Enter => {
                                         let stock = app.add_stock.enter();
@@ -134,6 +134,19 @@ fn main() {
                                         app.mode = app::Mode::AddStock;
                                         draw::draw(&mut terminal, &mut app);
                                     }
+                                    KeyCode::Char('k') => {
+                                        app.stocks.remove(app.current_tab);
+
+                                        if app.current_tab != 0 {
+                                            app.current_tab -= 1;
+                                        }
+
+                                        if app.stocks.is_empty() {
+                                            app.mode = app::Mode::AddStock;
+                                        }
+
+                                        draw::draw(&mut terminal, &mut app);
+                                    }
                                     KeyCode::Tab => {
                                         if app.current_tab == app.stocks.len() - 1 {
                                             app.current_tab = 0;
@@ -143,14 +156,7 @@ fn main() {
                                             draw::draw(&mut terminal, &mut app);
                                         }
                                     }
-                                    _ => {}
-                                }
-                            } else if key_event.modifiers == KeyModifiers::CONTROL {
-                                if let KeyCode::Char('c') = key_event.code {
-                                        break
-                                }
-                            } else if key_event.modifiers == KeyModifiers::SHIFT {
-                                if let KeyCode::Tab = key_event.code {
+                                    KeyCode::BackTab => {
                                         if app.current_tab == 0 {
                                             app.current_tab = app.stocks.len() - 1;
                                             draw::draw(&mut terminal, &mut app);
@@ -158,6 +164,12 @@ fn main() {
                                             app.current_tab -= 1;
                                             draw::draw(&mut terminal, &mut app);
                                         }
+                                    }
+                                    _ => {}
+                                }
+                            } else if key_event.modifiers == KeyModifiers::CONTROL {
+                                if let KeyCode::Char('c') = key_event.code {
+                                        break
                                 }
                             }
                         }
