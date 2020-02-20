@@ -5,7 +5,7 @@ use crate::TimeFrame;
 use api::model::{CompanyProfile, HistoricalDay};
 
 use tui::buffer::Buffer;
-use tui::layout::{Alignment, Rect};
+use tui::layout::{Alignment, Constraint, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{
     Axis, Block, Borders, Chart, Dataset, GraphType, Marker, Paragraph, Tabs, Text, Widget,
@@ -144,130 +144,134 @@ impl StockWidget {
 
 impl Widget for StockWidget {
     fn draw(&mut self, area: Rect, buf: &mut Buffer) {
-        // Draw widget block
-        let company_name = match self.profile.as_ref() {
-            Some(profile) => &profile.company_name,
-            None => "",
-        };
-
-        block::new(&format!(" {} - {} ", self.symbol, company_name)).draw(area, buf);
-        // end
-
-        // Draw company info
-        let (high, low) = self.high_low();
         let pct_change = self.pct_change();
 
-        let company_info_text = [
-            Text::raw("c: "),
-            Text::styled(
-                format!("${:.2}", self.current_price),
-                Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
-            ),
-            Text::styled(
-                format!("  {:.2}%\n\n", pct_change * 100.0),
-                Style::default()
-                    .modifier(Modifier::BOLD)
-                    .fg(if pct_change >= 0.0 {
+        // Draw widget block
+        {
+            let company_name = match self.profile.as_ref() {
+                Some(profile) => &profile.company_name,
+                None => "",
+            };
+
+            block::new(&format!(" {} - {} ", self.symbol, company_name)).draw(area, buf);
+        }
+
+        // chunks[0] - Top Padding
+        // chunks[1] - Company Info
+        // chunks[2] - Graph - fill remaining space
+        // chunks[3] - Time Frame Tabs
+        // chunks[4] - Bottom Padding
+        let mut chunks = Layout::default()
+            .constraints(
+                [
+                    Constraint::Length(2),
+                    Constraint::Length(5),
+                    Constraint::Min(0),
+                    Constraint::Length(2),
+                    Constraint::Length(1),
+                ]
+                .as_ref(),
+            )
+            .split(area);
+
+        chunks[1] = add_left_padding(chunks[1], 2);
+        chunks[2] = add_left_padding(chunks[2], 2);
+        chunks[3] = add_left_padding(chunks[3], 2);
+
+        // Draw company info
+        {
+            let (high, low) = self.high_low();
+
+            let company_info = [
+                Text::raw("c: "),
+                Text::styled(
+                    format!("${:.2}", self.current_price),
+                    Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
+                ),
+                Text::styled(
+                    format!("  {:.2}%\n\n", pct_change * 100.0),
+                    Style::default()
+                        .modifier(Modifier::BOLD)
+                        .fg(if pct_change >= 0.0 {
+                            Color::Green
+                        } else {
+                            Color::Red
+                        }),
+                ),
+                Text::raw("h: "),
+                Text::styled(
+                    format!("${:.2}\n", high),
+                    Style::default().fg(Color::LightCyan),
+                ),
+                Text::raw("l: "),
+                Text::styled(
+                    format!("${:.2}", low),
+                    Style::default().fg(Color::LightCyan),
+                ),
+            ];
+
+            Paragraph::new(company_info.iter())
+                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .alignment(Alignment::Left)
+                .wrap(true)
+                .draw(chunks[1], buf);
+        }
+
+        // Draw graph
+        {
+            let (min, max) = self.min_max();
+
+            let mut prices: Vec<_> = self.prices.iter().map(cast_historical_as_price).collect();
+            prices.push(self.current_price);
+
+            // Need more than one price for GraphType::Line to work
+            let graph_type = if prices.len() <= 2 {
+                GraphType::Scatter
+            } else {
+                GraphType::Line
+            };
+
+            Chart::<String, String>::default()
+                .block(
+                    Block::default()
+                        .borders(Borders::TOP)
+                        .border_style(Style::default()),
+                )
+                .x_axis(Axis::default().bounds(self.x_bounds()))
+                .y_axis(
+                    Axis::default()
+                        .bounds(self.y_bounds(min, max))
+                        .labels(&self.y_labels(min, max))
+                        .style(Style::default().fg(Color::LightBlue)),
+                )
+                .datasets(&[Dataset::default()
+                    .marker(Marker::Braille)
+                    .style(Style::default().fg(if pct_change >= 0.0 {
                         Color::Green
                     } else {
                         Color::Red
-                    }),
-            ),
-            Text::raw("h: "),
-            Text::styled(
-                format!("${:.2}\n", high),
-                Style::default()
-                    //.modifier(Modifier::BOLD)
-                    .fg(Color::LightCyan),
-            ),
-            Text::raw("l: "),
-            Text::styled(
-                format!("${:.2}", low),
-                Style::default()
-                    //.modifier(Modifier::BOLD)
-                    .fg(Color::LightCyan),
-            ),
-        ];
-
-        let company_info_rect = Rect {
-            x: area.x + 2,
-            y: area.y + 2,
-            width: area.width - 4,
-            height: 5,
-        };
-
-        Paragraph::new(company_info_text.iter())
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Left)
-            .wrap(true)
-            .draw(company_info_rect, buf);
-        // end
+                    }))
+                    .graph_type(graph_type)
+                    .data(
+                        &prices
+                            .iter()
+                            .enumerate()
+                            .map(cast_as_dataset)
+                            .collect::<Vec<(f64, f64)>>(),
+                    )])
+                .draw(chunks[2], buf);
+        }
 
         // Draw time frame tabs
-        let time_frame_rect = Rect {
-            x: area.x + 1,
-            y: area.y + area.height - 3,
-            width: area.width - 2,
-            height: 3,
-        };
-
-        Tabs::default()
-            .block(Block::default().borders(Borders::TOP))
-            .titles(&TimeFrame::tab_names())
-            .select(self.time_frame.idx())
-            .style(Style::default().fg(Color::Cyan))
-            .highlight_style(Style::default().fg(Color::Yellow))
-            .draw(time_frame_rect, buf);
-        // end
-
-        let (min, max) = self.min_max();
-        let mut prices: Vec<_> = self.prices.iter().map(cast_historical_as_price).collect();
-        prices.push(self.current_price);
-
-        // Need more than one price for GraphType::Line to work
-        let graph_type = if prices.len() <= 2 {
-            GraphType::Scatter
-        } else {
-            GraphType::Line
-        };
-
-        // Draw prices graph
-        let graph_rect = Rect {
-            x: area.x + 1,
-            y: area.y + 7,
-            width: area.width - 2,
-            height: area.height - 10 - 1,
-        };
-
-        Chart::<String, String>::default()
-            .block(
-                Block::default()
-                    .borders(Borders::TOP)
-                    .border_style(Style::default()),
-            )
-            .x_axis(Axis::default().bounds(self.x_bounds()))
-            .y_axis(
-                Axis::default()
-                    .bounds(self.y_bounds(min, max))
-                    .labels(&self.y_labels(min, max))
-                    .style(Style::default().fg(Color::LightBlue)),
-            )
-            .datasets(&[Dataset::default()
-                .marker(Marker::Braille)
-                .style(Style::default().fg(if pct_change >= 0.0 {
-                    Color::Green
-                } else {
-                    Color::Red
-                }))
-                .graph_type(graph_type)
-                .data(
-                    &prices
-                        .iter()
-                        .enumerate()
-                        .map(cast_as_dataset)
-                        .collect::<Vec<(f64, f64)>>(),
-                )])
-            .draw(graph_rect, buf);
+        {
+            Tabs::default()
+                .block(Block::default().borders(Borders::TOP))
+                .titles(&TimeFrame::tab_names())
+                .select(self.time_frame.idx())
+                .style(Style::default().fg(Color::Cyan))
+                .highlight_style(Style::default().fg(Color::Yellow))
+                .draw(chunks[3], buf);
+        }
     }
 }
 
@@ -277,4 +281,10 @@ fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
 
 fn cast_historical_as_price(input: &HistoricalDay) -> f32 {
     input.close
+}
+
+fn add_left_padding(mut rect: Rect, n: u16) -> Rect {
+    rect.x += n;
+    rect.width -= n * 2;
+    rect
 }
