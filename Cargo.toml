@@ -1,0 +1,27 @@
+[package]
+name = "tbd"
+version = "0.1.0"
+authors = ["tarkah <admin@tarkah.dev>"]
+edition = "2018"
+
+[workspace]
+members = [
+    ".",
+    "api",
+]
+
+[dependencies]
+api = { path = "api/" }
+
+anyhow = "1.0"
+crossbeam-channel = "0.4"
+chrono = "0.4"
+structopt = "0.3"
+
+async-std = "1.5"
+futures = "0.3"
+
+better-panic = "0.2"
+crossterm = "0.14"
+ctrlc = { version = "3.1", features = ["termination"] }
+tui = { git = "https://github.com/fdehau/tui-rs", default-features = false, features = ["crossterm"], rev = "ea434135070dba635c3c4136c3263a8c3622f0c6" }
