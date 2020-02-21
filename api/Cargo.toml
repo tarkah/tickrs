@@ -9,7 +9,6 @@ edition = "2018"
 anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 serde_urlencoded = "0.6"
-mockito = "0.23"
 serde_json = "1.0"
 serde = { version = "1.0", features=["derive"] }
 
