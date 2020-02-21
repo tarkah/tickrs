@@ -1,7 +1,7 @@
 use crossbeam_channel::{select, tick, unbounded, Receiver};
 
 use crossterm::cursor;
-use crossterm::event::{Event, KeyCode, KeyModifiers};
+use crossterm::event::Event;
 use crossterm::execute;
 use crossterm::terminal;
 
@@ -15,6 +15,7 @@ use std::time::Duration;
 mod app;
 mod cli;
 mod draw;
+mod event;
 mod service;
 mod task;
 mod time_frame;
@@ -22,11 +23,10 @@ mod widget;
 
 pub use crate::time_frame::TimeFrame;
 
-#[allow(clippy::cognitive_complexity)]
 fn main() {
-    better_panic::install();
-
     let opts = cli::get_opts();
+
+    better_panic::install();
 
     let backend = CrosstermBackend::new(io::stdout());
     let mut terminal = Terminal::new(backend).unwrap();
@@ -68,7 +68,7 @@ fn main() {
     loop {
         select! {
             recv(ctrl_c_events) -> _ => {
-                break;
+                cleanup_terminal();
             }
             recv(ticker) -> _ => {
                 for stock in app.stocks.iter_mut() {
@@ -82,133 +82,22 @@ fn main() {
                 }
             }
             recv(ui_events) -> message => {
-                match app.mode {
-                    app::Mode::AddStock => {
-                        if let Ok(Event::Key(key_event)) = message {
-                            if key_event.modifiers.is_empty() || key_event.modifiers == KeyModifiers::SHIFT {
-                                match key_event.code {
-                                    KeyCode::Enter => {
-                                        let stock = app.add_stock.enter();
-
-                                        app.stocks.push(stock);
-                                        app.current_tab = app.stocks.len() - 1;
-
-                                        app.add_stock.reset();
-                                        app.mode = app::Mode::DisplayStock;
-
-                                        draw::draw(&mut terminal, &mut app);
-
-                                    }
-                                    KeyCode::Char(c) => {
-                                        app.add_stock.add_char(c);
-                                        draw::draw(&mut terminal, &mut app);
-                                    }
-                                    KeyCode::Backspace => {
-                                        app.add_stock.del_char();
-                                        draw::draw(&mut terminal, &mut app);
-                                    }
-                                    KeyCode::Esc => {
-                                        app.add_stock.reset();
-                                        if !app.stocks.is_empty() {
-                                            app.mode = app::Mode::DisplayStock;
-                                        }
-                                        draw::draw(&mut terminal, &mut app);
-                                    }
-                                    _ => {}
-                                }
-                            } else if key_event.modifiers == KeyModifiers::CONTROL {
-                                if let KeyCode::Char('c') = key_event.code {
-                                        break
-                                }
-                            }
+                if let Ok(Event::Key(key_event)) = message {
+                    match app.mode {
+                        app::Mode::AddStock => {
+                            event::handle_keys_add_stock(key_event, &mut terminal, &mut app);
                         }
-                    }
-                    app::Mode::DisplayStock => {
-                        if let Ok(Event::Key(key_event)) = message {
-                            if key_event.modifiers.is_empty() {
-                                match key_event.code {
-                                    KeyCode::Left => {
-                                        app.stocks[app.current_tab].time_frame_down();
-                                        draw::draw(&mut terminal, &mut app);
-                                    },
-                                    KeyCode::Right => {
-                                        app.stocks[app.current_tab].time_frame_up();
-                                        draw::draw(&mut terminal, &mut app);
-                                    },
-                                    KeyCode::Char('/') => {
-                                        app.mode = app::Mode::AddStock;
-                                        draw::draw(&mut terminal, &mut app);
-                                    }
-                                    KeyCode::Char('k') => {
-                                        app.stocks.remove(app.current_tab);
-
-                                        if app.current_tab != 0 {
-                                            app.current_tab -= 1;
-                                        }
-
-                                        if app.stocks.is_empty() {
-                                            app.mode = app::Mode::AddStock;
-                                        }
-
-                                        draw::draw(&mut terminal, &mut app);
-                                    }
-                                    KeyCode::Char('q') => {
-                                        break;
-                                    }
-                                    KeyCode::Char('?') => {
-                                        app.mode = app::Mode::Help;
-                                        draw::draw_help(&mut terminal, &mut app);
-                                    }
-                                    KeyCode::Tab => {
-                                        if app.current_tab == app.stocks.len() - 1 {
-                                            app.current_tab = 0;
-                                            draw::draw(&mut terminal, &mut app);
-                                        } else {
-                                            app.current_tab += 1;
-                                            draw::draw(&mut terminal, &mut app);
-                                        }
-                                    }
-                                    KeyCode::BackTab => {
-                                        if app.current_tab == 0 {
-                                            app.current_tab = app.stocks.len() - 1;
-                                            draw::draw(&mut terminal, &mut app);
-                                        } else {
-                                            app.current_tab -= 1;
-                                            draw::draw(&mut terminal, &mut app);
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            } else if key_event.modifiers == KeyModifiers::CONTROL {
-                                if let KeyCode::Char('c') = key_event.code {
-                                        break
-                                }
-                            }
+                        app::Mode::DisplayStock => {
+                            event::handle_keys_display_stock(key_event, &mut terminal, &mut app);
                         }
-                    }
-                    app::Mode::Help => {
-                        if let Ok(Event::Key(key_event)) = message {
-                            if key_event.modifiers.is_empty() {
-                                match key_event.code {
-                                    KeyCode::Esc | KeyCode::Char('?') => {
-                                        app.mode = app::Mode::DisplayStock;
-                                        draw::draw(&mut terminal, &mut app);
-                                    },
-                                    _ => {}
-                                }
-                            } else if key_event.modifiers == KeyModifiers::CONTROL {
-                                if let KeyCode::Char('c') = key_event.code {
-                                        break
-                                }
-                            }
+                        app::Mode::Help => {
+                            event::handle_keys_help(key_event, &mut terminal, &mut app);
                         }
                     }
                 }
             }
         }
     }
-
-    cleanup_terminal();
 }
 
 fn setup_terminal() {
