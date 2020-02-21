@@ -30,8 +30,8 @@ impl AsyncTask for Company {
         let _handle = task::spawn(async move {
             let client = api::Client::new();
 
-            if let Ok(response) = client.get_company(&symbol).await {
-                let _ = response_sender.send(Some(response.profile));
+            if let Ok(response) = client.get_company_profile(&symbol).await {
+                let _ = response_sender.send(Some(response));
             } else {
                 let _ = response_sender.send(None);
             }

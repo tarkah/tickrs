@@ -1,4 +1,6 @@
-use crate::model::{Company, Current, Historical, HistoricalMinimal, Response, ResponseType};
+use crate::model::{
+    CompanyProfile, Current, Historical, HistoricalMinimal, Response, ResponseType,
+};
 use anyhow::{bail, Context, Result};
 use futures::AsyncReadExt;
 use http::Uri;
@@ -123,14 +125,14 @@ impl Client {
         bail!("Failed to get historical data for {}", symbol);
     }
 
-    pub async fn get_company(&self, symbol: &str) -> Result<Company> {
+    pub async fn get_company_profile(&self, symbol: &str) -> Result<CompanyProfile> {
         let url = self.get_url(&format!("company/profile/{}", symbol), None);
         let response_type = ResponseType::Company;
 
         let _response = self.get(url, response_type).await?;
 
         if let Response::Company(response) = _response {
-            return Ok(response);
+            return Ok(response.profile);
         }
         bail!("Failed to get company data for {}", symbol);
     }
