@@ -15,5 +15,5 @@ serde = { version = "1.0", features=["derive"] }
 futures = "0.3"
 
 http = "0.1"
-curl = { version = "0.4", default-features=false, features = ["static-curl", "static-ssl", "http2"] }
-http-client = { git="https://github.com/http-rs/http-client", features = ["native_client"], rev="98359bfbe618de4faef18ddb78193c113b8a14fb" }
+curl = { version = "0.4", default-features=false, features = ["static-ssl"] }
+isahc = "0.8"

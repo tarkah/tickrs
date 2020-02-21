@@ -1,15 +1,13 @@
 use crate::model::{Company, Current, Historical, HistoricalMinimal, Response, ResponseType};
 use anyhow::{bail, Context, Result};
 use futures::AsyncReadExt;
-use http::Request;
 use http::Uri;
-use http_client::native::NativeClient;
-use http_client::{Body, HttpClient};
+use isahc::HttpClient;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Client {
-    client: NativeClient,
+    client: HttpClient,
     base: String,
     version: Version,
 }
@@ -37,15 +35,9 @@ impl Client {
     }
 
     async fn get(&self, url: Uri, response_type: ResponseType) -> Result<Response> {
-        let request = Request::builder()
-            .method("GET")
-            .uri(url)
-            .body(Body::empty())
-            .unwrap();
-
         let res = self
             .client
-            .send(request)
+            .get_async(url)
             .await
             .context("Failed to get request")?;
 
@@ -146,13 +138,9 @@ impl Client {
 
 impl Default for Client {
     fn default() -> Client {
-        let client = NativeClient::new();
+        let client = HttpClient::new().unwrap();
 
-        #[cfg(not(test))]
         let base = String::from("https://financialmodelingprep.com/api");
-
-        #[cfg(test)]
-        let base = mockito::server_url();
 
         Client {
             client,
