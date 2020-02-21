@@ -12,6 +12,8 @@ use tui::widgets::{
     Axis, Block, Borders, Chart, Dataset, GraphType, Marker, Paragraph, Tabs, Text, Widget,
 };
 
+const X_SCALE: usize = 100;
+
 pub struct StockWidget {
     symbol: String,
     stock_service: service::stock::StockService,
@@ -117,7 +119,7 @@ impl StockWidget {
     fn x_bounds(&self) -> [f64; 2] {
         match self.time_frame {
             TimeFrame::Day1 => [0.0, 1000.0], // Need to update once intra ready
-            _ => [0.0, (self.prices.len() + 1) as f64],
+            _ => [0.0, ((self.prices.len() * X_SCALE) + 1) as f64],
         }
     }
 
@@ -282,7 +284,7 @@ impl Widget for StockWidget {
 }
 
 fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
-    ((input.0 + 1) as f64, *input.1 as f64)
+    (((input.0 * X_SCALE) + 1) as f64, *input.1 as f64)
 }
 
 fn cast_historical_as_price(input: &HistoricalDay) -> f32 {
