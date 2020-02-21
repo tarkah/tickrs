@@ -22,6 +22,7 @@ mod widget;
 
 pub use crate::time_frame::TimeFrame;
 
+#[allow(clippy::cognitive_complexity)]
 fn main() {
     better_panic::install();
 
@@ -53,7 +54,9 @@ fn main() {
         mode: starting_mode,
         stocks: starting_stocks,
         add_stock: widget::AddStockWidget::new(),
+        help: widget::HelpWidget {},
         current_tab: 0,
+        hide_help: opts.hide_help,
     };
 
     for stock in app.stocks.iter_mut() {
@@ -74,6 +77,8 @@ fn main() {
 
                 if app.mode == app::Mode::DisplayStock {
                     draw::draw(&mut terminal, &mut app);
+                } else if app.mode == app::Mode::Help {
+                    draw::draw_help(&mut terminal, &mut app);
                 }
             }
             recv(ui_events) -> message => {
@@ -147,6 +152,13 @@ fn main() {
 
                                         draw::draw(&mut terminal, &mut app);
                                     }
+                                    KeyCode::Char('q') => {
+                                        break;
+                                    }
+                                    KeyCode::Char('?') => {
+                                        app.mode = app::Mode::Help;
+                                        draw::draw_help(&mut terminal, &mut app);
+                                    }
                                     KeyCode::Tab => {
                                         if app.current_tab == app.stocks.len() - 1 {
                                             app.current_tab = 0;
@@ -165,6 +177,23 @@ fn main() {
                                             draw::draw(&mut terminal, &mut app);
                                         }
                                     }
+                                    _ => {}
+                                }
+                            } else if key_event.modifiers == KeyModifiers::CONTROL {
+                                if let KeyCode::Char('c') = key_event.code {
+                                        break
+                                }
+                            }
+                        }
+                    }
+                    app::Mode::Help => {
+                        if let Ok(Event::Key(key_event)) = message {
+                            if key_event.modifiers.is_empty() {
+                                match key_event.code {
+                                    KeyCode::Esc | KeyCode::Char('?') => {
+                                        app.mode = app::Mode::DisplayStock;
+                                        draw::draw(&mut terminal, &mut app);
+                                    },
                                     _ => {}
                                 }
                             } else if key_event.modifiers == KeyModifiers::CONTROL {

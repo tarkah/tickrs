@@ -1,4 +1,5 @@
 use super::block;
+use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::TimeFrame;
 
@@ -174,9 +175,14 @@ impl Widget for StockWidget {
             )
             .split(area);
 
-        chunks[1] = add_left_padding(chunks[1], 2);
-        chunks[2] = add_left_padding(chunks[2], 2);
-        chunks[3] = add_left_padding(chunks[3], 2);
+        chunks[1] = add_padding(chunks[1], 2, PaddingDirection::Left);
+        chunks[1] = add_padding(chunks[1], 2, PaddingDirection::Right);
+
+        chunks[2] = add_padding(chunks[2], 2, PaddingDirection::Left);
+        chunks[2] = add_padding(chunks[2], 2, PaddingDirection::Right);
+
+        chunks[3] = add_padding(chunks[3], 2, PaddingDirection::Left);
+        chunks[3] = add_padding(chunks[3], 2, PaddingDirection::Right);
 
         // Draw company info
         {
@@ -281,10 +287,4 @@ fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
 
 fn cast_historical_as_price(input: &HistoricalDay) -> f32 {
     input.close
-}
-
-fn add_left_padding(mut rect: Rect, n: u16) -> Rect {
-    rect.x += n;
-    rect.width -= n * 2;
-    rect
 }
