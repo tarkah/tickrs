@@ -39,7 +39,7 @@ fn main() {
     let ctrl_c_events = setup_ctrl_c();
 
     let starting_stocks: Vec<_> = opts
-        .stocks
+        .symbols
         .into_iter()
         .map(widget::StockWidget::new)
         .collect();

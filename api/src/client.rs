@@ -1,5 +1,6 @@
-use crate::model::{
-    CompanyProfile, Current, Historical, HistoricalMinimal, Response, ResponseType,
+use crate::{
+    model::{CompanyProfile, Current, HistoricalDaily, HistoricalInterval, Response, ResponseType},
+    Interval,
 };
 use anyhow::{bail, Context, Result};
 use futures::AsyncReadExt;
@@ -52,18 +53,6 @@ impl Client {
         Ok(response)
     }
 
-    pub async fn get_historical(&self, symbol: &str) -> Result<Historical> {
-        let url = self.get_url(&format!("historical-price-full/{}", symbol), None);
-        let response_type = ResponseType::Historical;
-
-        let _response = self.get(url, response_type).await?;
-
-        if let Response::Historical(response) = _response {
-            return Ok(response);
-        }
-        bail!("Failed to get historical data for {}", symbol);
-    }
-
     pub async fn get_current(&self, symbol: &str) -> Result<Current> {
         let url = self.get_url(&format!("stock/real-time-price/{}", symbol), None);
         let response_type = ResponseType::Current;
@@ -76,50 +65,43 @@ impl Client {
         bail!("Failed to get current price for {}", symbol);
     }
 
-    pub async fn get_historical_minimal_from_to(
+    pub async fn get_historical_daily_from_to(
         &self,
         symbol: &str,
         from: chrono::NaiveDate,
         to: chrono::NaiveDate,
-    ) -> Result<HistoricalMinimal> {
+    ) -> Result<HistoricalDaily> {
         let from = from.format("%Y-%m-%d").to_string();
         let to = to.format("%Y-%m-%d").to_string();
 
         let mut params = HashMap::new();
-        params.insert("serietype", "line".to_owned());
         params.insert("from", from);
         params.insert("to", to);
 
         let url = self.get_url(&format!("historical-price-full/{}", symbol), Some(params));
-        let response_type = ResponseType::HistoricalMinimal;
+
+        let response_type = ResponseType::HistoricalDaily;
 
         let _response = self.get(url, response_type).await?;
 
-        if let Response::HistoricalMinimal(response) = _response {
+        if let Response::HistoricalDaily(response) = _response {
             return Ok(response);
         }
         bail!("Failed to get historical data for {}", symbol);
     }
 
-    pub async fn get_historical_from_to(
+    pub async fn get_historical_interval(
         &self,
         symbol: &str,
-        from: chrono::NaiveDate,
-        to: chrono::NaiveDate,
-    ) -> Result<Historical> {
-        let from = from.format("%Y-%m-%d").to_string();
-        let to = to.format("%Y-%m-%d").to_string();
+        interval: Interval,
+    ) -> Result<HistoricalInterval> {
+        let url = self.get_url(&format!("historical-chart/{}/{}", interval, symbol), None);
 
-        let mut params = HashMap::new();
-        params.insert("from", from);
-        params.insert("to", to);
-
-        let url = self.get_url(&format!("historical-price-full/{}", symbol), Some(params));
-        let response_type = ResponseType::Historical;
+        let response_type = ResponseType::HistoricalInterval;
 
         let _response = self.get(url, response_type).await?;
 
-        if let Response::Historical(response) = _response {
+        if let Response::HistoricalInterval(response) = _response {
             return Ok(response);
         }
         bail!("Failed to get historical data for {}", symbol);

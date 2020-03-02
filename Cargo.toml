@@ -1,5 +1,5 @@
 [package]
-name = "tbd"
+name = "tickrs"
 version = "0.1.0"
 authors = ["tarkah <admin@tarkah.dev>"]
 edition = "2018"

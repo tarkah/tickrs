@@ -2,14 +2,14 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "tbd",
-    about = "Something, something tendies",
+    name = "tickrs",
+    about = "Get realtime ticker data in your console",
     version = "0.1.0"
 )]
 pub struct Opt {
     #[structopt(short, long, use_delimiter = true)]
-    /// Comma separated list of stock symbols to start app with
-    pub stocks: Vec<String>,
+    /// Comma separated list of ticker symbols to start app with
+    pub symbols: Vec<String>,
     #[structopt(long)]
     /// Hide help icon in top right
     pub hide_help: bool,

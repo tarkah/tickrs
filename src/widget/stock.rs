@@ -3,7 +3,7 @@ use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::TimeFrame;
 
-use api::model::{CompanyProfile, HistoricalDay};
+use api::model::{CompanyProfile, Price};
 
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Layout, Rect};
@@ -19,7 +19,7 @@ pub struct StockWidget {
     stock_service: service::stock::StockService,
     profile: Option<CompanyProfile>,
     current_price: f32,
-    prices: Vec<HistoricalDay>,
+    prices: Vec<Price>,
     time_frame: TimeFrame,
 }
 
@@ -118,7 +118,7 @@ impl StockWidget {
 
     fn x_bounds(&self) -> [f64; 2] {
         match self.time_frame {
-            TimeFrame::Day1 => [0.0, 1000.0], // Need to update once intra ready
+            TimeFrame::Day1 => [0.0, (391 * X_SCALE) as f64],
             _ => [0.0, ((self.prices.len() * X_SCALE) + 1) as f64],
         }
     }
@@ -287,6 +287,6 @@ fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
     (((input.0 * X_SCALE) + 1) as f64, *input.1 as f64)
 }
 
-fn cast_historical_as_price(input: &HistoricalDay) -> f32 {
+fn cast_historical_as_price(input: &Price) -> f32 {
     input.close
 }

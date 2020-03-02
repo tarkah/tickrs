@@ -1,7 +1,7 @@
 use super::*;
 use crate::TimeFrame;
 
-use api::model::HistoricalDay;
+use api::{model::Price, Interval};
 use async_std::task;
 use chrono::Local;
 use crossbeam_channel::{bounded, select, unbounded};
@@ -20,7 +20,7 @@ impl Prices {
 }
 
 impl AsyncTask for Prices {
-    type Response = Vec<HistoricalDay>;
+    type Response = Vec<Price>;
 
     fn update_interval(&self) -> Option<Duration> {
         Some(self.time_frame.update_interval())
@@ -40,25 +40,54 @@ impl AsyncTask for Prices {
 
             let mut last_updated = Instant::now();
 
+            let interval = match time_frame {
+                TimeFrame::Day1 => Some(Interval::Minute1),
+                TimeFrame::Week1 => Some(Interval::Minute15),
+                TimeFrame::Month1 => Some(Interval::Minute30),
+                _ => None,
+            };
+
             // Send it initially
-            {
+            if let Some(interval) = interval {
+                if let Ok(response) = client.get_historical_interval(&symbol, interval).await {
+                    let mut prices = response.prices;
+                    prices.reverse();
+
+                    let _ = response_sender.send(prices);
+                }
+            } else {
                 let today = Local::today().naive_local();
                 let as_of = time_frame.as_of_date();
 
-                if let Ok(response) = client.get_historical_from_to(&symbol, as_of, today).await {
-                    let _ = response_sender.send(response.historical);
+                if let Ok(response) = client
+                    .get_historical_daily_from_to(&symbol, as_of, today)
+                    .await
+                {
+                    let _ = response_sender.send(response.prices);
                 }
             }
 
             loop {
                 // Only send it adter update interval has passed
                 if last_updated.elapsed() >= update_interval {
-                    let today = Local::today().naive_local();
-                    let as_of = time_frame.as_of_date();
+                    if let Some(interval) = interval {
+                        if let Ok(response) =
+                            client.get_historical_interval(&symbol, interval).await
+                        {
+                            let mut prices = response.prices;
+                            prices.reverse();
 
-                    if let Ok(response) = client.get_historical_from_to(&symbol, as_of, today).await
-                    {
-                        let _ = response_sender.send(response.historical);
+                            let _ = response_sender.send(prices);
+                        }
+                    } else {
+                        let today = Local::today().naive_local();
+                        let as_of = time_frame.as_of_date();
+                        if let Ok(response) = client
+                            .get_historical_daily_from_to(&symbol, as_of, today)
+                            .await
+                        {
+                            let _ = response_sender.send(response.prices);
+                        }
                     }
 
                     last_updated = Instant::now();
