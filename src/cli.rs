@@ -3,8 +3,8 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 #[structopt(
     name = "tickrs",
-    about = "Get realtime ticker data in your console",
-    version = "0.1.0"
+    about = "Realtime ticker data in your terminal 📈",
+    version = env!("CARGO_PKG_VERSION")
 )]
 pub struct Opt {
     #[structopt(short, long, use_delimiter = true)]
