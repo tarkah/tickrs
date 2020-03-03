@@ -137,11 +137,11 @@ jobs:
         condition: eq( variables['docker'], 'false' )
 
       - script: |
-          docker build -t tbd:$TARGET ./ci/$TARGET/
+          docker build -t tickrs:$TARGET ./ci/$TARGET/
         displayName: Cross Setup Docker
         condition: eq( variables['docker'], 'true' )
       - script: |
-          docker run -v "$(pwd):/source" tbd:$TARGET cargo build --release --manifest-path /source/Cargo.toml --target $TARGET
+          docker run -v "$(pwd):/source" tickrs:$TARGET cargo build --release --manifest-path /source/Cargo.toml --target $TARGET
         displayName: Cross Build
         condition: eq( variables['docker'], 'true' )
       - task: CopyFiles@2
@@ -149,8 +149,8 @@ jobs:
         inputs:
           sourceFolder: "$(Build.SourcesDirectory)"
           contents: |
-            target/**/release/?(tbd|tbd.exe)
-          targetFolder: "$(Build.BinariesDirectory)/tbd"
+            target/**/release/?(tickrs|tickrs.exe)
+          targetFolder: "$(Build.BinariesDirectory)/tickrs"
           flattenFolders: true
       - task: CopyFiles@2
         displayName: Copy Assets
@@ -158,22 +158,22 @@ jobs:
           sourceFolder: "$(Build.SourcesDirectory)"
           contents: |
             README.md
-          targetFolder: "$(Build.BinariesDirectory)/tbd"
+          targetFolder: "$(Build.BinariesDirectory)/tickrs"
 
       - task: ArchiveFiles@2
         displayName: Linux Darwin Archive
         inputs:
-          rootFolderOrFile: "$(Build.BinariesDirectory)/tbd"
+          rootFolderOrFile: "$(Build.BinariesDirectory)/tickrs"
           archiveType: "tar"
           tarCompression: "gz"
-          archiveFile: "$(Build.ArtifactStagingDirectory)/tbd-$(build.my_tag)-$(TARGET).tar.gz"
+          archiveFile: "$(Build.ArtifactStagingDirectory)/tickrs-$(build.my_tag)-$(TARGET).tar.gz"
         condition: ne( variables['Agent.OS'], 'Windows_NT' )
       - task: ArchiveFiles@2
         displayName: Windows Archive
         inputs:
-          rootFolderOrFile: "$(Build.BinariesDirectory)/tbd"
+          rootFolderOrFile: "$(Build.BinariesDirectory)/tickrs"
           archiveType: "zip"
-          archiveFile: "$(Build.ArtifactStagingDirectory)/tbd-$(build.my_tag)-$(TARGET).zip"
+          archiveFile: "$(Build.ArtifactStagingDirectory)/tickrs-$(build.my_tag)-$(TARGET).zip"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
       - task: GithubRelease@0
@@ -181,7 +181,7 @@ jobs:
         condition: succeeded()
         inputs:
           gitHubConnection: "tarkah"
-          repositoryName: "tarkah/tbd"
+          repositoryName: "tarkah/tickrs"
           action: "edit"
           target: "$(build.sourceVersion)"
           tagSource: "manual"
