@@ -3,7 +3,11 @@ use crate::TimeFrame;
 
 use api::{model::Price, Interval};
 use async_std::task;
-use chrono::Local;
+use chrono::{
+    offset::TimeZone,
+    {Local, NaiveDateTime, Utc},
+};
+use chrono_tz::US::Eastern;
 use crossbeam_channel::{bounded, select, unbounded};
 use std::time::Instant;
 
@@ -53,6 +57,23 @@ impl AsyncTask for Prices {
                     let mut prices = response.prices;
                     prices.reverse();
 
+                    if time_frame == TimeFrame::Day1 {
+                        prices = prices
+                            .into_iter()
+                            .filter(|price| {
+                                let today_utc = Utc::today();
+                                let today = today_utc.with_timezone(&Eastern);
+
+                                let datetime =
+                                    NaiveDateTime::parse_from_str(&price.date, "%Y-%m-%d %H:%M:%S")
+                                        .unwrap();
+                                let date = Eastern.from_local_datetime(&datetime).unwrap().date();
+
+                                today == date
+                            })
+                            .collect::<Vec<_>>();
+                    }
+
                     let _ = response_sender.send(prices);
                 }
             } else {
@@ -76,6 +97,25 @@ impl AsyncTask for Prices {
                         {
                             let mut prices = response.prices;
                             prices.reverse();
+
+                            if time_frame == TimeFrame::Day1 {
+                                prices = prices
+                                    .into_iter()
+                                    .filter(|price| {
+                                        let today_utc = Utc::today();
+                                        let today = today_utc.with_timezone(&Eastern);
+
+                                        let datetime = NaiveDateTime::parse_from_str(
+                                            &price.date,
+                                            "%Y-%m-%d %H:%M:%S",
+                                        )
+                                        .unwrap();
+                                        let date =
+                                            Eastern.from_local_datetime(&datetime).unwrap().date();
+                                        today == date
+                                    })
+                                    .collect::<Vec<_>>();
+                            }
 
                             let _ = response_sender.send(prices);
                         }
