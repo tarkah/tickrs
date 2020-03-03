@@ -4,6 +4,7 @@
 Realtime ticker data in your terminal 📈 Built with Rust.
 
   - [Usage](#usage)
+    - [Windows](#windows)
   - [Acknowledgments](#acknowledgments)
 
 *WIP*
@@ -27,6 +28,10 @@ FLAGS:
 OPTIONS:
     -s, --symbols <symbols>...    Comma separated list of ticker symbols to start app with
 ```
+
+### Windows
+
+Use [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701) to properly display this app.
 
 ## Acknowledgments
 - [antoinevulcain](https://github.com/antoinevulcain) / [Financial-Modeling-Prep-API](https://github.com/antoinevulcain/Financial-Modeling-Prep-API) - for the awesome API powering this app, [https://financialmodelingprep.com](https://financialmodelingprep.com)
