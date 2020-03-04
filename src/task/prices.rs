@@ -61,15 +61,16 @@ impl AsyncTask for Prices {
                         prices = prices
                             .into_iter()
                             .filter(|price| {
-                                let today_utc = Utc::today();
+                                let today_utc = Utc::now();
                                 let today = today_utc.with_timezone(&Eastern);
 
                                 let datetime =
                                     NaiveDateTime::parse_from_str(&price.date, "%Y-%m-%d %H:%M:%S")
                                         .unwrap();
-                                let date = Eastern.from_local_datetime(&datetime).unwrap().date();
+                                let date = Eastern.from_local_datetime(&datetime).unwrap();
 
-                                today == date
+                                today.format("%Y-%m-%d").to_string()
+                                    == date.format("%Y-%m-%d").to_string()
                             })
                             .collect::<Vec<_>>();
                     }
@@ -102,7 +103,7 @@ impl AsyncTask for Prices {
                                 prices = prices
                                     .into_iter()
                                     .filter(|price| {
-                                        let today_utc = Utc::today();
+                                        let today_utc = Utc::now();
                                         let today = today_utc.with_timezone(&Eastern);
 
                                         let datetime = NaiveDateTime::parse_from_str(
@@ -110,9 +111,10 @@ impl AsyncTask for Prices {
                                             "%Y-%m-%d %H:%M:%S",
                                         )
                                         .unwrap();
-                                        let date =
-                                            Eastern.from_local_datetime(&datetime).unwrap().date();
-                                        today == date
+                                        let date = Eastern.from_local_datetime(&datetime).unwrap();
+
+                                        today.format("%Y-%m-%d").to_string()
+                                            == date.format("%Y-%m-%d").to_string()
                                     })
                                     .collect::<Vec<_>>();
                             }
