@@ -9,12 +9,13 @@ use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{
-    Axis, Block, Borders, Chart, Dataset, GraphType, Marker, Paragraph, Tabs, Text, Widget,
+    Axis, Block, Borders, Chart, Dataset, GraphType, Marker, Paragraph, StatefulWidget, Tabs, Text,
+    Widget,
 };
 
-const X_SCALE: usize = 100;
+const X_SCALE: usize = 1;
 
-pub struct StockWidget {
+pub struct StockState {
     symbol: String,
     stock_service: service::stock::StockService,
     profile: Option<CompanyProfile>,
@@ -23,13 +24,13 @@ pub struct StockWidget {
     time_frame: TimeFrame,
 }
 
-impl StockWidget {
-    pub fn new(symbol: String) -> StockWidget {
+impl StockState {
+    pub fn new(symbol: String) -> StockState {
         let time_frame = TimeFrame::Day1;
 
         let stock_service = service::stock::StockService::new(symbol.clone(), time_frame);
 
-        StockWidget {
+        StockState {
             symbol,
             stock_service,
             profile: None,
@@ -145,18 +146,22 @@ impl StockWidget {
     }
 }
 
-impl Widget for StockWidget {
-    fn draw(&mut self, area: Rect, buf: &mut Buffer) {
-        let pct_change = self.pct_change();
+pub struct StockWidget {}
+
+impl StatefulWidget for StockWidget {
+    type State = StockState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let pct_change = state.pct_change();
 
         // Draw widget block
         {
-            let company_name = match self.profile.as_ref() {
+            let company_name = match state.profile.as_ref() {
                 Some(profile) => &profile.company_name,
                 None => "",
             };
 
-            block::new(&format!(" {} - {} ", self.symbol, company_name)).draw(area, buf);
+            block::new(&format!(" {} - {} ", state.symbol, company_name)).render(area, buf);
         }
 
         // chunks[0] - Top Padding
@@ -188,12 +193,12 @@ impl Widget for StockWidget {
 
         // Draw company info
         {
-            let (high, low) = self.high_low();
+            let (high, low) = state.high_low();
 
             let company_info = [
                 Text::raw("c: "),
                 Text::styled(
-                    format!("${:.2}", self.current_price),
+                    format!("${:.2}", state.current_price),
                     Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
                 ),
                 Text::styled(
@@ -222,15 +227,15 @@ impl Widget for StockWidget {
                 .style(Style::default().fg(Color::White).bg(Color::Black))
                 .alignment(Alignment::Left)
                 .wrap(true)
-                .draw(chunks[1], buf);
+                .render(chunks[1], buf);
         }
 
         // Draw graph
         {
-            let (min, max) = self.min_max();
+            let (min, max) = state.min_max();
 
-            let mut prices: Vec<_> = self.prices.iter().map(cast_historical_as_price).collect();
-            prices.push(self.current_price);
+            let mut prices: Vec<_> = state.prices.iter().map(cast_historical_as_price).collect();
+            prices.push(state.current_price);
 
             // Need more than one price for GraphType::Line to work
             let graph_type = if prices.len() <= 2 {
@@ -245,11 +250,11 @@ impl Widget for StockWidget {
                         .borders(Borders::TOP)
                         .border_style(Style::default()),
                 )
-                .x_axis(Axis::default().bounds(self.x_bounds()))
+                .x_axis(Axis::default().bounds(state.x_bounds()))
                 .y_axis(
                     Axis::default()
-                        .bounds(self.y_bounds(min, max))
-                        .labels(&self.y_labels(min, max))
+                        .bounds(state.y_bounds(min, max))
+                        .labels(&state.y_labels(min, max))
                         .style(Style::default().fg(Color::LightBlue)),
                 )
                 .datasets(&[Dataset::default()
@@ -267,7 +272,7 @@ impl Widget for StockWidget {
                             .map(cast_as_dataset)
                             .collect::<Vec<(f64, f64)>>(),
                     )])
-                .draw(chunks[2], buf);
+                .render(chunks[2], buf);
         }
 
         // Draw time frame tabs
@@ -275,10 +280,10 @@ impl Widget for StockWidget {
             Tabs::default()
                 .block(Block::default().borders(Borders::TOP))
                 .titles(&TimeFrame::tab_names())
-                .select(self.time_frame.idx())
+                .select(state.time_frame.idx())
                 .style(Style::default().fg(Color::Cyan))
                 .highlight_style(Style::default().fg(Color::Yellow))
-                .draw(chunks[3], buf);
+                .render(chunks[3], buf);
         }
     }
 }

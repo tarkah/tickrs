@@ -1,10 +1,10 @@
 use crate::app::{App, Mode};
-use crate::widget::{HELP_HEIGHT, HELP_WIDTH};
+use crate::widget::{AddStockWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH};
 
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
-use tui::widgets::{Paragraph, Tabs, Text, Widget};
+use tui::widgets::{Paragraph, Tabs, Text};
 use tui::Terminal;
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
@@ -31,7 +31,7 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
             };
 
             if !app.stocks.is_empty() {
-                crate::widget::block::new(" Tabs ").render(&mut frame, chunks[0]);
+                frame.render_widget(crate::widget::block::new(" Tabs "), chunks[0]);
 
                 // header[0] - Stock symbol tabs
                 // header[1] - (Optional) help icon
@@ -51,34 +51,39 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
 
                     let tabs: Vec<_> = app.stocks.iter().map(|w| w.symbol()).collect();
 
-                    Tabs::default()
-                        .titles(&tabs)
-                        .select(app.current_tab)
-                        .style(Style::default().fg(Color::Cyan))
-                        .highlight_style(Style::default().fg(Color::Yellow))
-                        .render(&mut frame, header[0]);
+                    frame.render_widget(
+                        Tabs::default()
+                            .titles(&tabs)
+                            .select(app.current_tab)
+                            .style(Style::default().fg(Color::Cyan))
+                            .highlight_style(Style::default().fg(Color::Yellow)),
+                        header[0],
+                    );
                 }
 
                 // Draw help icon
                 if !app.hide_help {
                     header[1] = add_padding(header[1], 1, PaddingDirection::Top);
                     header[1] = add_padding(header[1], 2, PaddingDirection::Right);
-                    Paragraph::new([Text::raw("Help '?'")].iter())
-                        .style(Style::default().fg(Color::White).bg(Color::Black))
-                        .alignment(Alignment::Center)
-                        .wrap(false)
-                        .render(&mut frame, header[1]);
+
+                    frame.render_widget(
+                        Paragraph::new([Text::raw("Help '?'")].iter())
+                            .style(Style::default().fg(Color::White).bg(Color::Black))
+                            .alignment(Alignment::Center)
+                            .wrap(false),
+                        header[1],
+                    );
                 }
             }
 
             // Draw stock widget
             if let Some(stock) = app.stocks.get_mut(app.current_tab) {
-                stock.render(&mut frame, chunks[1]);
+                frame.render_stateful_widget(StockWidget {}, chunks[1], stock);
             }
 
             // Draw add stock widget
             if app.mode == Mode::AddStock {
-                app.add_stock.render(&mut frame, chunks[2])
+                frame.render_stateful_widget(AddStockWidget {}, chunks[2], &mut app.add_stock);
             }
         })
         .unwrap();
@@ -90,11 +95,14 @@ pub fn draw_help<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
             let mut rect = frame.size();
 
             if rect.width < HELP_WIDTH || rect.height < HELP_HEIGHT {
-                Paragraph::new([Text::raw("Increase screen size to display help")].iter())
-                    .render(&mut frame, rect);
+                frame.render_widget(
+                    Paragraph::new([Text::raw("Increase screen size to display help")].iter()),
+                    rect,
+                );
             } else {
                 rect = app.help.get_rect(frame.size());
-                app.help.render(&mut frame, rect);
+
+                frame.render_widget(app.help, rect);
             }
         })
         .unwrap();

@@ -41,7 +41,7 @@ fn main() {
     let starting_stocks: Vec<_> = opts
         .symbols
         .into_iter()
-        .map(widget::StockWidget::new)
+        .map(widget::StockState::new)
         .collect();
 
     let starting_mode = if starting_stocks.is_empty() {
@@ -53,7 +53,7 @@ fn main() {
     let mut app = app::App {
         mode: starting_mode,
         stocks: starting_stocks,
-        add_stock: widget::AddStockWidget::new(),
+        add_stock: widget::AddStockState::new(),
         help: widget::HelpWidget {},
         current_tab: 0,
         hide_help: opts.hide_help,

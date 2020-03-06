@@ -9,8 +9,8 @@ pub enum Mode {
 
 pub struct App {
     pub mode: Mode,
-    pub stocks: Vec<widget::StockWidget>,
-    pub add_stock: widget::AddStockWidget,
+    pub stocks: Vec<widget::StockState>,
+    pub add_stock: widget::AddStockState,
     pub help: widget::HelpWidget,
     pub current_tab: usize,
     pub hide_help: bool,

@@ -3,17 +3,17 @@ use super::block;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Paragraph, Text, Widget};
+use tui::widgets::{Paragraph, StatefulWidget, Text, Widget};
 
-pub struct AddStockWidget {
+pub struct AddStockState {
     search_string: String,
     has_user_input: bool,
     error_msg: Option<String>,
 }
 
-impl AddStockWidget {
-    pub fn new() -> AddStockWidget {
-        AddStockWidget {
+impl AddStockState {
+    pub fn new() -> AddStockState {
+        AddStockState {
             search_string: String::new(),
             has_user_input: false,
             error_msg: Some(String::new()),
@@ -35,18 +35,22 @@ impl AddStockWidget {
         self.error_msg = None;
     }
 
-    pub fn enter(&mut self) -> super::StockWidget {
-        super::StockWidget::new(self.search_string.clone())
+    pub fn enter(&mut self) -> super::StockState {
+        super::StockState::new(self.search_string.clone())
     }
 }
 
-impl Widget for AddStockWidget {
-    fn draw(&mut self, area: Rect, buf: &mut Buffer) {
-        let text = if !self.has_user_input && self.error_msg.is_some() {
+pub struct AddStockWidget {}
+
+impl StatefulWidget for AddStockWidget {
+    type State = AddStockState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let text = if !state.has_user_input && state.error_msg.is_some() {
             [
                 Text::raw("> "),
                 Text::styled(
-                    self.error_msg.as_ref().unwrap(),
+                    state.error_msg.as_ref().unwrap(),
                     Style::default().modifier(Modifier::BOLD).fg(Color::Red),
                 ),
             ]
@@ -54,7 +58,7 @@ impl Widget for AddStockWidget {
             [
                 Text::raw("> "),
                 Text::styled(
-                    &self.search_string,
+                    &state.search_string,
                     Style::default().modifier(Modifier::BOLD).fg(Color::Cyan),
                 ),
             ]
@@ -65,6 +69,6 @@ impl Widget for AddStockWidget {
             .style(Style::default())
             .alignment(Alignment::Left)
             .wrap(true)
-            .draw(area, buf);
+            .render(area, buf);
     }
 }

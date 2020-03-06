@@ -25,4 +25,4 @@ futures = "0.3"
 better-panic = "0.2"
 crossterm = "0.14"
 ctrlc = { version = "3.1", features = ["termination"] }
-tui = { git = "https://github.com/fdehau/tui-rs", default-features = false, features = ["crossterm"], rev = "ea434135070dba635c3c4136c3263a8c3622f0c6" }
+tui = { git = "https://github.com/fdehau/tui-rs", default-features = false, features = ["crossterm"], branch = "canvas" }

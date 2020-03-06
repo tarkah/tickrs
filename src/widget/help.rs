@@ -25,32 +25,33 @@ Change Time Frame:
 pub const HELP_WIDTH: u16 = 35;
 pub const HELP_HEIGHT: u16 = 17;
 
+#[derive(Copy, Clone)]
 pub struct HelpWidget {}
 
 impl HelpWidget {
-    pub fn get_rect(&self, area: Rect) -> Rect {
-        Rect {
-            x: (area.width - HELP_WIDTH) / 2,
-            y: (area.height - HELP_HEIGHT) / 2,
-            width: HELP_WIDTH,
-            height: HELP_HEIGHT,
-        }
+  pub fn get_rect(self, area: Rect) -> Rect {
+    Rect {
+      x: (area.width - HELP_WIDTH) / 2,
+      y: (area.height - HELP_HEIGHT) / 2,
+      width: HELP_WIDTH,
+      height: HELP_HEIGHT,
     }
+  }
 }
 
 impl Widget for HelpWidget {
-    fn draw(&mut self, area: Rect, buf: &mut Buffer) {
-        block::new(" Help - <ESC> to go back ").draw(area, buf);
+  fn render(self, area: Rect, buf: &mut Buffer) {
+    block::new(" Help - <ESC> to go back ").render(area, buf);
 
-        let text: Vec<_> = TEXT
-            .lines()
-            .map(|line| Text::raw(format!("{}\n", line)))
-            .collect();
+    let text: Vec<_> = TEXT
+      .lines()
+      .map(|line| Text::raw(format!("{}\n", line)))
+      .collect();
 
-        let mut help_area = area;
-        help_area = add_padding(help_area, 2, PaddingDirection::Left);
-        help_area = add_padding(help_area, 1, PaddingDirection::Top);
+    let mut help_area = area;
+    help_area = add_padding(help_area, 2, PaddingDirection::Left);
+    help_area = add_padding(help_area, 1, PaddingDirection::Top);
 
-        Paragraph::new(text.iter()).draw(help_area, buf);
-    }
+    Paragraph::new(text.iter()).render(help_area, buf);
+  }
 }
