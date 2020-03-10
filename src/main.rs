@@ -1,7 +1,7 @@
 use crossbeam_channel::{select, tick, unbounded, Receiver};
 
 use crossterm::cursor;
-use crossterm::event::Event;
+use crossterm::event::{Event, MouseEvent};
 use crossterm::execute;
 use crossterm::terminal;
 
@@ -21,6 +21,7 @@ mod task;
 mod time_frame;
 mod widget;
 
+use crate::app::DebugInfo;
 pub use crate::time_frame::TimeFrame;
 
 fn main() {
@@ -57,6 +58,15 @@ fn main() {
         help: widget::HelpWidget {},
         current_tab: 0,
         hide_help: opts.hide_help,
+        debug: DebugInfo {
+            enabled: std::env::var("SHOW_DEBUG")
+                .ok()
+                .unwrap_or_else(|| String::from("0"))
+                == "1",
+            dimensions: (0, 0),
+            cursor_location: None,
+            last_event: None,
+        },
     };
 
     for stock in app.stocks.iter_mut() {
@@ -80,8 +90,20 @@ fn main() {
                 } else if app.mode == app::Mode::Help {
                     draw::draw_help(&mut terminal, &mut app);
                 }
+
+                if app.debug.enabled {
+                    app.debug.dimensions = crossterm::terminal::size().unwrap_or((0,0));
+                    draw::draw(&mut terminal, &mut app);
+                }
             }
             recv(ui_events) -> message => {
+                if app.debug.enabled {
+                    if let Ok(event) = message {
+                        app.debug.last_event = Some(event);
+                        draw::draw(&mut terminal, &mut app);
+                    }
+                }
+
                 if let Ok(Event::Key(key_event)) = message {
                     match app.mode {
                         app::Mode::AddStock => {
@@ -93,6 +115,16 @@ fn main() {
                         app::Mode::Help => {
                             event::handle_keys_help(key_event, &mut terminal, &mut app);
                         }
+                    }
+                } else if let Ok(Event::Mouse(event)) = message {
+                    if app.debug.enabled {
+                        match event {
+                            MouseEvent::Down(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
+                            MouseEvent::Up(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
+                            MouseEvent::Drag(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
+                            _ => {}
+                        }
+                        draw::draw(&mut terminal, &mut app);
                     }
                 }
             }
@@ -107,6 +139,8 @@ fn setup_terminal() {
     execute!(stdout, cursor::Hide).unwrap();
 
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
+
+    execute!(stdout, crossterm::event::EnableMouseCapture).unwrap();
 
     terminal::enable_raw_mode().unwrap();
 }

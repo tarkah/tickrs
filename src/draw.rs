@@ -5,11 +5,21 @@ use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Paragraph, Tabs, Text};
-use tui::Terminal;
+use tui::{Frame, Terminal};
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     terminal
         .draw(|mut frame| {
+            // main[0] - Main program
+            // main[1] - Debug window
+            let main = if app.debug.enabled {
+                Layout::default()
+                    .constraints([Constraint::Min(0), Constraint::Length(5)].as_ref())
+                    .split(frame.size())
+            } else {
+                vec![frame.size()]
+            };
+
             // chunks[0] - Header
             // chunks[1] - Stock widget
             // chunks[2] - (Optional) Add Stock widget
@@ -23,10 +33,10 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                         ]
                         .as_ref(),
                     )
-                    .split(frame.size()),
+                    .split(main[0]),
                 Mode::DisplayStock => Layout::default()
                     .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
-                    .split(frame.size()),
+                    .split(main[0]),
                 _ => vec![],
             };
 
@@ -85,6 +95,11 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
             if app.mode == Mode::AddStock {
                 frame.render_stateful_widget(AddStockWidget {}, chunks[2], &mut app.add_stock);
             }
+
+            // Draw debug info
+            if app.debug.enabled {
+                draw_debug(&mut frame, app, main[1]);
+            }
         })
         .unwrap();
 }
@@ -92,20 +107,38 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
 pub fn draw_help<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     terminal
         .draw(|mut frame| {
-            let mut rect = frame.size();
+            let mut rect = if app.debug.enabled {
+                Layout::default()
+                    .constraints([Constraint::Min(0), Constraint::Length(5)].as_ref())
+                    .split(frame.size())
+            } else {
+                vec![frame.size()]
+            };
 
-            if rect.width < HELP_WIDTH || rect.height < HELP_HEIGHT {
+            if rect[0].width < HELP_WIDTH || rect[0].height < HELP_HEIGHT {
                 frame.render_widget(
                     Paragraph::new([Text::raw("Increase screen size to display help")].iter()),
-                    rect,
+                    rect[0],
                 );
             } else {
-                rect = app.help.get_rect(frame.size());
+                rect[0] = app.help.get_rect(frame.size());
 
-                frame.render_widget(app.help, rect);
+                frame.render_widget(app.help, rect[0]);
+            }
+
+            // Draw debug info
+            if app.debug.enabled {
+                draw_debug(&mut frame, app, rect[1]);
             }
         })
         .unwrap();
+}
+
+fn draw_debug<B: Backend>(frame: &mut Frame<B>, app: &mut App, rect: Rect) {
+    let debug_text = [Text::raw(format!("{:?}", app.debug))];
+    let debug_paragraph = Paragraph::new(debug_text.iter()).wrap(true);
+
+    frame.render_widget(debug_paragraph, rect);
 }
 
 pub fn add_padding(mut rect: Rect, n: u16, direction: PaddingDirection) -> Rect {
