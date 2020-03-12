@@ -3,6 +3,7 @@
 
 Realtime ticker data in your terminal 📈 Built with Rust.
 
+  - [Installation](#installation)
   - [Usage](#usage)
     - [Windows](#windows)
   - [Acknowledgments](#acknowledgments)
@@ -10,6 +11,13 @@ Realtime ticker data in your terminal 📈 Built with Rust.
 *WIP*
 
 ![screenshot](assets/screenshot.png)
+
+
+## Installation
+
+### Binary
+
+Download the latest [release](https://github.com/tarkah/tickrs/releases/latest) for your platform
 
 ## Usage
 
