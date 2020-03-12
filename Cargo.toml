@@ -3,6 +3,12 @@ name = "tickrs"
 version = "0.1.0"
 authors = ["tarkah <admin@tarkah.dev>"]
 edition = "2018"
+license = "MIT"
+repository = "https://github.com/tarkah/tickrs"
+readme = "README.md"
+description = "Realtime ticker data in your terminal 📈"
+keywords = ["tui","terminal","stocks"]
+categories = ["command-line-utilities"]
 
 [workspace]
 members = [
