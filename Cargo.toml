@@ -17,7 +17,7 @@ members = [
 ]
 
 [dependencies]
-api = { path = "api/" }
+api = { path = "api/", version = "0.1.0" }
 
 anyhow = "1.0"
 crossbeam-channel = "0.4"
