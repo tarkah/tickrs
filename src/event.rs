@@ -72,6 +72,11 @@ pub fn handle_keys_display_stock<B: Backend>(
             cleanup_terminal();
             std::process::exit(0);
         }
+    } else if key_event.modifiers == KeyModifiers::SHIFT {
+        if let KeyCode::Char('?') = key_event.code {
+            app.mode = app::Mode::Help;
+            draw::draw_help(&mut terminal, &mut app);
+        }
     }
 }
 
