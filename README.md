@@ -8,8 +8,6 @@ Realtime ticker data in your terminal 📈 Built with Rust.
     - [Windows](#windows)
   - [Acknowledgments](#acknowledgments)
 
-*WIP*
-
 ![screenshot](assets/screenshot.png)
 
 
