@@ -19,6 +19,12 @@ Realtime ticker data in your terminal 📈 Built with Rust.
 
 Download the latest [release](https://github.com/tarkah/tickrs/releases/latest) for your platform
 
+### Cargo
+
+```
+cargo install tickrs
+```
+
 ## Usage
 
 ```
