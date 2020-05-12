@@ -1,3 +1,5 @@
+extern crate tickrs_api as api;
+
 use crossbeam_channel::{select, tick, unbounded, Receiver};
 
 use crossterm::cursor;

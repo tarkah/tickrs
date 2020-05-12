@@ -1,8 +1,11 @@
 [package]
-name = "api"
+name = "tickrs-api"
 version = "0.1.0"
 authors = ["tarkah <admin@tarkah.dev>"]
 edition = "2018"
+license = "MIT"
+description = "API for tickrs"
+repository = "https://github.com/tarkah/tickrs"
 
 
 [dependencies]

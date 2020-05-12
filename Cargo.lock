@@ -22,21 +22,6 @@ version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "api"
-version = "0.1.0"
-dependencies = [
- "anyhow 1.0.28 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "curl 0.4.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "http 0.1.21 (registry+https://github.com/rust-lang/crates.io-index)",
- "isahc 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_urlencoded 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "arc-swap"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1050,7 +1035,6 @@ name = "tickrs"
 version = "0.1.0"
 dependencies = [
  "anyhow 1.0.28 (registry+https://github.com/rust-lang/crates.io-index)",
- "api 0.1.0",
  "async-std 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "better-panic 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1060,7 +1044,23 @@ dependencies = [
  "ctrlc 3.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tickrs-api 0.1.0",
  "tui 0.9.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "tickrs-api"
+version = "0.1.0"
+dependencies = [
+ "anyhow 1.0.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "curl 0.4.29 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "http 0.1.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "isahc 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.110 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.53 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_urlencoded 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
