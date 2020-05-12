@@ -29,9 +29,6 @@ async-std = "1.5"
 futures = "0.3"
 
 better-panic = "0.2"
-crossterm = { git = "https://github.com/crossterm-rs/crossterm", rev = "007063896e8b310a6711d7ab780962a9f8ed7283" }
+crossterm = "0.17"
 ctrlc = { version = "3.1", features = ["termination"] }
-tui = { git = "https://github.com/fdehau/tui-rs", default-features = false, features = ["crossterm"], rev = "140db9b2e251e1567656dc2bb29be1de81269077" }
-
-[patch.crates-io]
-crossterm = { git = "https://github.com/crossterm-rs/crossterm", rev = "007063896e8b310a6711d7ab780962a9f8ed7283" }
+tui = { version = "0.9", default-features = false, features = ["crossterm"] }

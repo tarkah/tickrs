@@ -8,9 +8,9 @@ use api::model::{CompanyProfile, Price};
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
+use tui::symbols::Marker;
 use tui::widgets::{
-    Axis, Block, Borders, Chart, Dataset, GraphType, Marker, Paragraph, StatefulWidget, Tabs, Text,
-    Widget,
+    Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs, Text, Widget,
 };
 
 const X_SCALE: usize = 1;
