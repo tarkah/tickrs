@@ -47,7 +47,7 @@ impl AsyncTask for Prices {
             let interval = match time_frame {
                 TimeFrame::Day1 => Some(Interval::Minute1),
                 TimeFrame::Week1 => Some(Interval::Minute15),
-                TimeFrame::Month1 => Some(Interval::Minute30),
+                TimeFrame::Month1 => Some(Interval::Hourly),
                 _ => None,
             };
 
