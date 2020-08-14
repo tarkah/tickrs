@@ -1,6 +1,6 @@
 [package]
 name = "tickrs"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["tarkah <admin@tarkah.dev>"]
 edition = "2018"
 license = "MIT"
@@ -17,7 +17,7 @@ members = [
 ]
 
 [dependencies]
-tickrs-api = { path = "api/", version = "0.1.0" }
+tickrs-api = { path = "api/", version = "0.2.0" }
 
 anyhow = "1.0"
 crossbeam-channel = "0.4"
