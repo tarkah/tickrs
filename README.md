@@ -46,6 +46,5 @@ OPTIONS:
 Use [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701) to properly display this app.
 
 ## Acknowledgments
-- [antoinevulcain](https://github.com/antoinevulcain) / [Financial-Modeling-Prep-API](https://github.com/antoinevulcain/Financial-Modeling-Prep-API) - for the awesome API powering this app, [https://financialmodelingprep.com](https://financialmodelingprep.com)
 - [fdehau](https://github.com/fdehau) / [tui-rs](https://github.com/fdehau/tui-rs) - great TUI library for Rust
 - [cjbassi](https://github.com/cjbassi) / [ytop](https://github.com/cjbassi/ytop) - thanks for the inspiration!
