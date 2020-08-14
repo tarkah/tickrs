@@ -1,9 +1,9 @@
 use super::block;
+use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
-use crate::TimeFrame;
 
-use api::model::{CompanyProfile, Price};
+use api::model::CompanyData;
 
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Layout, Rect};
@@ -18,7 +18,7 @@ const X_SCALE: usize = 1;
 pub struct StockState {
     symbol: String,
     stock_service: service::stock::StockService,
-    profile: Option<CompanyProfile>,
+    profile: Option<CompanyData>,
     current_price: f32,
     prices: Vec<Price>,
     time_frame: TimeFrame,
@@ -70,8 +70,8 @@ impl StockState {
                 service::stock::Update::Prices(prices) => {
                     self.prices = prices;
                 }
-                service::stock::Update::CompanyProfile(profile) => {
-                    self.profile = profile;
+                service::stock::Update::CompanyData(data) => {
+                    self.profile = data;
                 }
             }
         }
@@ -79,7 +79,9 @@ impl StockState {
 
     fn min_max(&self) -> (f32, f32) {
         let mut data: Vec<_> = self.prices.iter().map(cast_historical_as_price).collect();
+        data.pop();
         data.push(self.current_price);
+        data = remove_zeros(data);
 
         data.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
@@ -103,6 +105,7 @@ impl StockState {
         data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
         let mut max = data.last().map(|d| d.high).unwrap_or(0.0);
 
+        data = remove_zeros_lows(data);
         data.sort_by(|a, b| a.low.partial_cmp(&b.low).unwrap());
         let mut min = data.first().map(|d| d.low).unwrap_or(0.0);
 
@@ -119,7 +122,7 @@ impl StockState {
 
     fn x_bounds(&self) -> [f64; 2] {
         match self.time_frame {
-            TimeFrame::Day1 => [0.0, (391 * X_SCALE) as f64],
+            TimeFrame::Day1 => [0.0, (390 * X_SCALE) as f64],
             _ => [0.0, ((self.prices.len() * X_SCALE) + 1) as f64],
         }
     }
@@ -141,8 +144,17 @@ impl StockState {
             return 0.0;
         }
 
-        let open = self.prices.first().map(|d| d.open).unwrap();
-        self.current_price / open - 1.0
+        let baseline = if self.time_frame == TimeFrame::Day1 {
+            if let Some(profile) = &self.profile {
+                profile.price.regular_market_previous_close.price
+            } else {
+                self.prices.first().map(|d| d.close).unwrap()
+            }
+        } else {
+            self.prices.first().map(|d| d.close).unwrap()
+        };
+
+        self.current_price / baseline - 1.0
     }
 }
 
@@ -157,7 +169,7 @@ impl StatefulWidget for StockWidget {
         // Draw widget block
         {
             let company_name = match state.profile.as_ref() {
-                Some(profile) => &profile.company_name,
+                Some(profile) => &profile.price.short_name,
                 None => "",
             };
 
@@ -235,7 +247,9 @@ impl StatefulWidget for StockWidget {
             let (min, max) = state.min_max();
 
             let mut prices: Vec<_> = state.prices.iter().map(cast_historical_as_price).collect();
+            prices.pop();
             prices.push(state.current_price);
+            zeros_as_pre(&mut prices);
 
             // Need more than one price for GraphType::Line to work
             let graph_type = if prices.len() <= 2 {
@@ -294,4 +308,32 @@ fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
 
 fn cast_historical_as_price(input: &Price) -> f32 {
     input.close
+}
+
+fn zeros_as_pre(prices: &mut [f32]) {
+    if prices.len() <= 1 {
+        return;
+    }
+
+    let zero_indexes = prices
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, price)| if *price == 0.0 { Some(idx) } else { None })
+        .collect::<Vec<usize>>();
+
+    for idx in zero_indexes {
+        if idx == 0 {
+            prices[0] = prices[1];
+        } else {
+            prices[idx] = prices[idx - 1];
+        }
+    }
+}
+
+fn remove_zeros(prices: Vec<f32>) -> Vec<f32> {
+    prices.into_iter().filter(|x| x.ne(&0.0)).collect()
+}
+
+fn remove_zeros_lows(prices: Vec<Price>) -> Vec<Price> {
+    prices.into_iter().filter(|x| x.low.ne(&0.0)).collect()
 }

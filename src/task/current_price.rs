@@ -35,8 +35,8 @@ impl AsyncTask for CurrentPrice {
             let mut last_price = 0.0;
 
             loop {
-                if let Ok(response) = client.get_current(&symbol).await {
-                    let current_price = response.price;
+                if let Ok(response) = client.get_company_data(&symbol).await {
+                    let current_price = response.price.regular_market_price.price;
 
                     if last_price.ne(&current_price) {
                         let _ = response_sender.send(current_price);

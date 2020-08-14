@@ -1,4 +1,5 @@
-use chrono::{Local, NaiveDate};
+use api::{model::ChartData, Range};
+use itertools::izip;
 use std::time::Duration;
 
 #[derive(PartialEq, Clone, Copy, PartialOrd)]
@@ -13,20 +14,6 @@ pub enum TimeFrame {
 }
 
 impl TimeFrame {
-    pub fn as_of_date(self) -> NaiveDate {
-        let today = Local::today().naive_local();
-
-        match self {
-            TimeFrame::Day1 => today,
-            TimeFrame::Week1 => today - chrono::Duration::days(6),
-            TimeFrame::Month1 => today - chrono::Duration::days(30),
-            TimeFrame::Month3 => today - chrono::Duration::days(30 * 3),
-            TimeFrame::Month6 => today - chrono::Duration::days(30 * 6),
-            TimeFrame::Year1 => today - chrono::Duration::days(365),
-            TimeFrame::Year5 => today - chrono::Duration::days(365 * 5),
-        }
-    }
-
     pub fn idx(self) -> usize {
         match self {
             TimeFrame::Day1 => 0,
@@ -46,10 +33,10 @@ impl TimeFrame {
     pub fn update_interval(self) -> Duration {
         match self {
             TimeFrame::Day1 => Duration::from_secs(60),
-            TimeFrame::Week1 => Duration::from_secs(60 * 60),
-            TimeFrame::Month1 => Duration::from_secs(60 * 60 * 24),
-            TimeFrame::Month3 => Duration::from_secs(60 * 60 * 24),
-            TimeFrame::Month6 => Duration::from_secs(60 * 60 * 24),
+            TimeFrame::Week1 => Duration::from_secs(60 * 5),
+            TimeFrame::Month1 => Duration::from_secs(60 * 30),
+            TimeFrame::Month3 => Duration::from_secs(60 * 60),
+            TimeFrame::Month6 => Duration::from_secs(60 * 60),
             TimeFrame::Year1 => Duration::from_secs(60 * 60 * 24),
             TimeFrame::Year5 => Duration::from_secs(60 * 60 * 24),
         }
@@ -78,4 +65,53 @@ impl TimeFrame {
             TimeFrame::Year5 => TimeFrame::Year1,
         }
     }
+
+    pub fn as_range(self) -> Range {
+        match self {
+            TimeFrame::Day1 => Range::Day1,
+            TimeFrame::Week1 => Range::Day5,
+            TimeFrame::Month1 => Range::Month1,
+            TimeFrame::Month3 => Range::Month3,
+            TimeFrame::Month6 => Range::Month6,
+            TimeFrame::Year1 => Range::Year1,
+            TimeFrame::Year5 => Range::Year5,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Price {
+    pub close: f32,
+    pub volume: u32,
+    pub high: f32,
+    pub low: f32,
+    pub open: f32,
+    pub date: i64,
+}
+
+pub fn chart_data_to_prices(mut chart_data: ChartData) -> Vec<Price> {
+    if chart_data.indicators.quote.len() != 1 {
+        return vec![];
+    }
+
+    let quote = chart_data.indicators.quote.remove(0);
+    let timestamps = chart_data.timestamp;
+
+    izip!(
+        &quote.close,
+        &quote.volume,
+        &quote.high,
+        &quote.low,
+        &quote.open,
+        &timestamps,
+    )
+    .map(|(c, v, h, l, o, t)| Price {
+        close: *c,
+        volume: *v,
+        high: *h,
+        low: *l,
+        open: *o,
+        date: *t,
+    })
+    .collect()
 }
