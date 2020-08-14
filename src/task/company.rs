@@ -1,6 +1,6 @@
 use super::*;
 
-use api::model::CompanyProfile;
+use api::model::CompanyData;
 use async_std::task;
 use crossbeam_channel::bounded;
 
@@ -16,7 +16,7 @@ impl Company {
 }
 
 impl AsyncTask for Company {
-    type Response = Option<CompanyProfile>;
+    type Response = Option<CompanyData>;
 
     fn update_interval(&self) -> Option<Duration> {
         None
@@ -30,7 +30,7 @@ impl AsyncTask for Company {
         let _handle = task::spawn(async move {
             let client = api::Client::new();
 
-            if let Ok(response) = client.get_company_profile(&symbol).await {
+            if let Ok(response) = client.get_company_data(&symbol).await {
                 let _ = response_sender.send(Some(response));
             } else {
                 let _ = response_sender.send(None);

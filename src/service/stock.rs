@@ -1,14 +1,14 @@
 use super::*;
+use crate::common::*;
 use crate::task::*;
-use crate::TimeFrame;
 
-use api::model::{CompanyProfile, Price};
+use api::model::CompanyData;
 
 pub struct StockService {
     symbol: String,
     current_price_handle: AsyncTaskHandle<f32>,
     prices_handle: AsyncTaskHandle<Vec<Price>>,
-    company_handle: AsyncTaskHandle<Option<CompanyProfile>>,
+    company_handle: AsyncTaskHandle<Option<CompanyData>>,
 }
 
 impl StockService {
@@ -42,7 +42,7 @@ impl StockService {
 pub enum Update {
     NewPrice(f32),
     Prices(Vec<Price>),
-    CompanyProfile(Option<CompanyProfile>),
+    CompanyData(Option<CompanyData>),
 }
 
 impl Service for StockService {
@@ -65,7 +65,7 @@ impl Service for StockService {
             .company_handle
             .response
             .try_iter()
-            .map(Update::CompanyProfile);
+            .map(Update::CompanyData);
         updates.extend(company_updates);
 
         updates

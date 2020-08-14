@@ -1,13 +1,8 @@
 use super::*;
-use crate::TimeFrame;
+use crate::common::{chart_data_to_prices, Price, TimeFrame};
 
-use api::{model::Price, Interval};
+use api::Interval;
 use async_std::task;
-use chrono::{
-    offset::TimeZone,
-    {Local, NaiveDateTime, Utc},
-};
-use chrono_tz::US::Eastern;
 use crossbeam_channel::{bounded, select, unbounded};
 use std::time::Instant;
 
@@ -45,91 +40,34 @@ impl AsyncTask for Prices {
             let mut last_updated = Instant::now();
 
             let interval = match time_frame {
-                TimeFrame::Day1 => Some(Interval::Minute1),
-                TimeFrame::Week1 => Some(Interval::Minute15),
-                TimeFrame::Month1 => Some(Interval::Hourly),
-                _ => None,
+                TimeFrame::Day1 => Interval::Minute1,
+                TimeFrame::Week1 => Interval::Minute5,
+                TimeFrame::Month1 => Interval::Minute30,
+                TimeFrame::Month3 => Interval::Minute60,
+                TimeFrame::Month6 => Interval::Minute60,
+                _ => Interval::Day1,
             };
 
             // Send it initially
-            if let Some(interval) = interval {
-                if let Ok(response) = client.get_historical_interval(&symbol, interval).await {
-                    let mut prices = response.prices;
-                    prices.reverse();
+            if let Ok(response) = client
+                .get_chart_data(&symbol, interval, time_frame.as_range())
+                .await
+            {
+                let prices = chart_data_to_prices(response);
 
-                    if time_frame == TimeFrame::Day1 {
-                        prices = prices
-                            .into_iter()
-                            .filter(|price| {
-                                let today_utc = Utc::now();
-                                let today = today_utc.with_timezone(&Eastern);
-
-                                let datetime =
-                                    NaiveDateTime::parse_from_str(&price.date, "%Y-%m-%d %H:%M:%S")
-                                        .unwrap();
-                                let date = Eastern.from_local_datetime(&datetime).unwrap();
-
-                                today.format("%Y-%m-%d").to_string()
-                                    == date.format("%Y-%m-%d").to_string()
-                            })
-                            .collect::<Vec<_>>();
-                    }
-
-                    let _ = response_sender.send(prices);
-                }
-            } else {
-                let today = Local::today().naive_local();
-                let as_of = time_frame.as_of_date();
-
-                if let Ok(response) = client
-                    .get_historical_daily_from_to(&symbol, as_of, today)
-                    .await
-                {
-                    let _ = response_sender.send(response.prices);
-                }
+                let _ = response_sender.send(prices);
             }
 
             loop {
                 // Only send it adter update interval has passed
                 if last_updated.elapsed() >= update_interval {
-                    if let Some(interval) = interval {
-                        if let Ok(response) =
-                            client.get_historical_interval(&symbol, interval).await
-                        {
-                            let mut prices = response.prices;
-                            prices.reverse();
+                    if let Ok(response) = client
+                        .get_chart_data(&symbol, interval, time_frame.as_range())
+                        .await
+                    {
+                        let prices = chart_data_to_prices(response);
 
-                            if time_frame == TimeFrame::Day1 {
-                                prices = prices
-                                    .into_iter()
-                                    .filter(|price| {
-                                        let today_utc = Utc::now();
-                                        let today = today_utc.with_timezone(&Eastern);
-
-                                        let datetime = NaiveDateTime::parse_from_str(
-                                            &price.date,
-                                            "%Y-%m-%d %H:%M:%S",
-                                        )
-                                        .unwrap();
-                                        let date = Eastern.from_local_datetime(&datetime).unwrap();
-
-                                        today.format("%Y-%m-%d").to_string()
-                                            == date.format("%Y-%m-%d").to_string()
-                                    })
-                                    .collect::<Vec<_>>();
-                            }
-
-                            let _ = response_sender.send(prices);
-                        }
-                    } else {
-                        let today = Local::today().naive_local();
-                        let as_of = time_frame.as_of_date();
-                        if let Ok(response) = client
-                            .get_historical_daily_from_to(&symbol, as_of, today)
-                            .await
-                        {
-                            let _ = response_sender.send(response.prices);
-                        }
+                        let _ = response_sender.send(prices);
                     }
 
                     last_updated = Instant::now();

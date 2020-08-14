@@ -23,6 +23,7 @@ anyhow = "1.0"
 crossbeam-channel = "0.4"
 chrono = "0.4"
 chrono-tz = "0.5"
+itertools = "0.9"
 structopt = "0.3"
 
 async-std = "1.5"
