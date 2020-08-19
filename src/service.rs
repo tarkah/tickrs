@@ -1,3 +1,4 @@
+pub mod options;
 pub mod stock;
 
 /// Container of one or more tasks, that manages capturing all queued task responses

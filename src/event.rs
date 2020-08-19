@@ -1,6 +1,7 @@
 use crate::app;
 use crate::cleanup_terminal;
 use crate::draw;
+use crate::widget::options;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -44,8 +45,14 @@ pub fn handle_keys_display_stock<B: Backend>(
                 std::process::exit(0);
             }
             KeyCode::Char('?') => {
+                app.pre_help_mode = app::Mode::DisplayStock;
                 app.mode = app::Mode::Help;
                 draw::draw_help(&mut terminal, &mut app);
+            }
+            KeyCode::Char('o') => {
+                app.stocks[app.current_tab].toggle_options();
+                app.mode = app::Mode::DisplayOptions;
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Tab => {
                 if app.current_tab == app.stocks.len() - 1 {
@@ -131,8 +138,124 @@ pub fn handle_keys_help<B: Backend>(
     if key_event.modifiers.is_empty() {
         match key_event.code {
             KeyCode::Esc | KeyCode::Char('?') => {
+                app.mode = app.pre_help_mode;
+                draw::draw(&mut terminal, &mut app);
+            }
+            _ => {}
+        }
+    } else if key_event.modifiers == KeyModifiers::CONTROL {
+        if let KeyCode::Char('c') = key_event.code {
+            cleanup_terminal();
+            std::process::exit(0);
+        }
+    }
+}
+
+pub fn handle_keys_display_options<B: Backend>(
+    key_event: KeyEvent,
+    mut terminal: &mut Terminal<B>,
+    mut app: &mut app::App,
+) {
+    if key_event.modifiers.is_empty() {
+        match key_event.code {
+            KeyCode::Esc | KeyCode::Char('o') => {
+                app.stocks[app.current_tab].toggle_options();
                 app.mode = app::Mode::DisplayStock;
                 draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Char('q') => {
+                cleanup_terminal();
+                std::process::exit(0);
+            }
+            KeyCode::Tab => {
+                app.stocks[app.current_tab]
+                    .options
+                    .as_mut()
+                    .unwrap()
+                    .toggle_option_type();
+
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Up => {
+                match app.stocks[app.current_tab]
+                    .options
+                    .as_mut()
+                    .unwrap()
+                    .selection_mode
+                {
+                    options::SelectionMode::Dates => {
+                        app.stocks[app.current_tab]
+                            .options
+                            .as_mut()
+                            .unwrap()
+                            .previous_date();
+                    }
+                    options::SelectionMode::Options => {
+                        app.stocks[app.current_tab]
+                            .options
+                            .as_mut()
+                            .unwrap()
+                            .previous_option();
+                    }
+                }
+
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Down => {
+                match app.stocks[app.current_tab]
+                    .options
+                    .as_mut()
+                    .unwrap()
+                    .selection_mode
+                {
+                    options::SelectionMode::Dates => {
+                        app.stocks[app.current_tab]
+                            .options
+                            .as_mut()
+                            .unwrap()
+                            .next_date();
+                    }
+                    options::SelectionMode::Options => {
+                        app.stocks[app.current_tab]
+                            .options
+                            .as_mut()
+                            .unwrap()
+                            .next_option();
+                    }
+                }
+
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Left => {
+                app.stocks[app.current_tab]
+                    .options
+                    .as_mut()
+                    .unwrap()
+                    .selection_mode_left();
+
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Right => {
+                if app.stocks[app.current_tab]
+                    .options
+                    .as_mut()
+                    .unwrap()
+                    .data
+                    .is_some()
+                {
+                    app.stocks[app.current_tab]
+                        .options
+                        .as_mut()
+                        .unwrap()
+                        .selection_mode_right();
+
+                    draw::draw(&mut terminal, &mut app);
+                }
+            }
+            KeyCode::Char('?') => {
+                app.pre_help_mode = app::Mode::DisplayOptions;
+                app.mode = app::Mode::Help;
+                draw::draw_help(&mut terminal, &mut app);
             }
             _ => {}
         }

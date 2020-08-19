@@ -9,11 +9,13 @@ use std::marker::PhantomData;
 pub(crate) enum ResponseType {
     Chart,
     Company,
+    Options,
 }
 
 pub(crate) enum Response {
     Chart(Chart),
     Company(Company),
+    Options(Options),
 }
 
 impl ResponseType {
@@ -25,6 +27,10 @@ impl ResponseType {
             },
             ResponseType::Company => match serde_json::from_slice(body) {
                 Ok(deser) => Ok(Response::Company(deser)),
+                Err(e) => bail!(e),
+            },
+            ResponseType::Options => match serde_json::from_slice(body) {
+                Ok(deser) => Ok(Response::Options(deser)),
                 Err(e) => bail!(e),
             },
         }
@@ -150,6 +156,56 @@ pub struct CompanyRegularMarketPrice {
 pub struct CompanyRegularMarketPreviousClose {
     #[serde(rename = "raw")]
     pub price: f32,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct Options {
+    pub option_chain: OptionsStatus,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct OptionsStatus {
+    pub result: Option<Vec<OptionsHeader>>,
+    pub error: Option<Error>,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct OptionsHeader {
+    pub quote: OptionsQuote,
+    pub expiration_dates: Vec<i64>,
+    pub options: Vec<OptionsData>,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct OptionsQuote {
+    pub regular_market_price: f32,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct OptionsData {
+    pub expiration_date: i64,
+    pub calls: Vec<OptionsContract>,
+    pub puts: Vec<OptionsContract>,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct OptionsContract {
+    pub strike: f32,
+    pub last_price: f32,
+    pub change: f32,
+    pub percent_change: f32,
+    pub volume: Option<u32>,
+    pub open_interest: Option<u32>,
+    pub bid: Option<f32>,
+    pub ask: Option<f32>,
+    pub implied_volatility: Option<f32>,
+    pub in_the_money: Option<bool>,
 }
 
 fn deserialize_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
