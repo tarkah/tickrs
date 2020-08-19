@@ -325,10 +325,10 @@ impl StatefulWidget for OptionsWidget {
                         vec![
                             format!("${: <7.2}", d.strike),
                             format!("${: <7.2}", d.last_price),
-                            format!("{: >7.2}%", d.change),
+                            format!("{: >7.2}%", d.percent_change),
                         ]
                         .into_iter(),
-                        Style::default().fg(if d.change >= 0.0 {
+                        Style::default().fg(if d.percent_change >= 0.0 {
                             Color::Green
                         } else {
                             Color::Red
