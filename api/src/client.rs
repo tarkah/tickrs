@@ -1,5 +1,5 @@
 use crate::{
-    model::{ChartData, CompanyData, Response, ResponseType},
+    model::{ChartData, CompanyData, OptionsHeader, Response, ResponseType},
     Interval, Range,
 };
 use anyhow::{bail, Context, Result};
@@ -119,6 +119,68 @@ impl Client {
         }
         bail!("Failed to get company data for {}", symbol);
     }
+
+    pub async fn get_options_expiration_dates(&self, symbol: &str) -> Result<Vec<i64>> {
+        let url = self.get_url(Version::V7, &format!("finance/options/{}", symbol), None);
+        let response_type = ResponseType::Options;
+
+        let mut _response = self.get(url, response_type).await?;
+
+        if let Response::Options(response) = _response {
+            if let Some(err) = response.option_chain.error {
+                bail!(
+                    "Error getting options data for {}: {}",
+                    symbol,
+                    err.description
+                );
+            }
+
+            if let Some(mut result) = response.option_chain.result {
+                if result.len() == 1 {
+                    let options_header = result.remove(0);
+                    return Ok(options_header.expiration_dates);
+                }
+            }
+        }
+        bail!("Failed to get options data for {}", symbol);
+    }
+
+    pub async fn get_options_for_expiration_date(
+        &self,
+        symbol: &str,
+        expiration_date: i64,
+    ) -> Result<OptionsHeader> {
+        let mut params = HashMap::new();
+        params.insert("date", format!("{}", expiration_date));
+
+        let url = self.get_url(
+            Version::V7,
+            &format!("finance/options/{}", symbol),
+            Some(params),
+        );
+        let response_type = ResponseType::Options;
+
+        let mut _response = self.get(url, response_type).await?;
+
+        if let Response::Options(response) = _response {
+            if let Some(err) = response.option_chain.error {
+                bail!(
+                    "Error getting options data for {}: {}",
+                    symbol,
+                    err.description
+                );
+            }
+
+            if let Some(mut result) = response.option_chain.result {
+                if result.len() == 1 {
+                    let options_header = result.remove(0);
+
+                    return Ok(options_header);
+                }
+            }
+        }
+        bail!("Failed to get options data for {}", symbol);
+    }
 }
 
 impl Default for Client {
@@ -133,6 +195,7 @@ impl Default for Client {
 
 #[derive(Debug, Clone)]
 pub enum Version {
+    V7,
     V8,
     V10,
 }
@@ -140,6 +203,7 @@ pub enum Version {
 impl Version {
     fn as_str(&self) -> &'static str {
         match self {
+            Version::V7 => "v7",
             Version::V8 => "v8",
             Version::V10 => "v10",
         }
@@ -168,6 +232,34 @@ mod tests {
     }
 
     #[async_std::test]
+    async fn test_options_data() {
+        let client = Client::new();
+
+        let symbol = "SPY";
+
+        let exp_dates = client.get_options_expiration_dates(symbol).await;
+
+        match exp_dates {
+            Err(e) => {
+                println!("{}", e);
+
+                panic!();
+            }
+            Ok(dates) => {
+                for date in dates {
+                    let options = client.get_options_for_expiration_date(symbol, date).await;
+
+                    if let Err(e) = options {
+                        println!("{}", e);
+
+                        panic!();
+                    }
+                }
+            }
+        }
+    }
+
+    #[async_std::test]
     async fn test_chart_data() {
         let client = Client::new();
 
@@ -182,7 +274,7 @@ mod tests {
             (Range::Year5, Interval::Day1),
         ];
 
-        let ticker = "ATVI";
+        let ticker = "SPY";
 
         for (idx, (range, interval)) in combinations.iter().enumerate() {
             let data = client.get_chart_data(ticker, *interval, *range).await;

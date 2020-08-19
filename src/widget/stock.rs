@@ -1,4 +1,4 @@
-use super::block;
+use super::{block, OptionsState};
 use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
@@ -6,7 +6,7 @@ use crate::service::{self, Service};
 use api::model::CompanyData;
 
 use tui::buffer::Buffer;
-use tui::layout::{Alignment, Constraint, Layout, Rect};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::symbols::Marker;
 use tui::widgets::{
@@ -22,6 +22,8 @@ pub struct StockState {
     current_price: f32,
     prices: Vec<Price>,
     time_frame: TimeFrame,
+    show_options: bool,
+    pub options: Option<OptionsState>,
 }
 
 impl StockState {
@@ -37,6 +39,8 @@ impl StockState {
             current_price: 0.0,
             prices: vec![],
             time_frame,
+            show_options: false,
+            options: None,
         }
     }
 
@@ -74,6 +78,16 @@ impl StockState {
                     self.profile = data;
                 }
             }
+        }
+    }
+
+    pub fn toggle_options(&mut self) {
+        self.show_options = !self.show_options;
+
+        if self.options.is_some() {
+            self.options.take();
+        } else {
+            self.options = Some(OptionsState::new(self.symbol.clone()));
         }
     }
 
@@ -173,7 +187,7 @@ impl StatefulWidget for StockWidget {
                 None => "",
             };
 
-            block::new(&format!(" {} - {} ", state.symbol, company_name)).render(area, buf);
+            block::new(&format!(" {} - {} ", state.symbol, company_name), None).render(area, buf);
         }
 
         // chunks[0] - Top Padding
@@ -205,6 +219,13 @@ impl StatefulWidget for StockWidget {
 
         // Draw company info
         {
+            let mut info_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Min(0), Constraint::Length(15)].as_ref())
+                .split(chunks[1]);
+            info_chunks[1].y -= 1;
+            info_chunks[1].height += 1;
+
             let (high, low) = state.high_low();
 
             let company_info = [
@@ -235,11 +256,34 @@ impl StatefulWidget for StockWidget {
                 ),
             ];
 
+            let expand_info = [
+                Text::raw("\n\n"),
+                Text::styled(
+                    "Options 'o'",
+                    Style::default().bg(if state.show_options {
+                        Color::DarkGray
+                    } else {
+                        Color::Black
+                    }),
+                ),
+            ];
+
             Paragraph::new(company_info.iter())
                 .style(Style::default().fg(Color::White).bg(Color::Black))
                 .alignment(Alignment::Left)
                 .wrap(true)
-                .render(chunks[1], buf);
+                .render(info_chunks[0], buf);
+
+            let toggle_block = block::new(" Toggle ", None);
+            toggle_block.render(info_chunks[1], buf);
+            info_chunks[1].x += 2;
+            info_chunks[1].width -= 2;
+
+            Paragraph::new(expand_info.iter())
+                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .alignment(Alignment::Left)
+                .wrap(false)
+                .render(info_chunks[1], buf);
         }
 
         // Draw graph

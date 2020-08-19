@@ -1,5 +1,5 @@
 use crate::app::{App, Mode};
-use crate::widget::{AddStockWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH};
+use crate::widget::{AddStockWidget, OptionsWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH};
 
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
@@ -21,7 +21,7 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
             };
 
             // chunks[0] - Header
-            // chunks[1] - Stock widget
+            // chunks[1] - Main widget
             // chunks[2] - (Optional) Add Stock widget
             let chunks = match app.mode {
                 Mode::AddStock => Layout::default()
@@ -34,14 +34,14 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                         .as_ref(),
                     )
                     .split(main[0]),
-                Mode::DisplayStock => Layout::default()
+                Mode::DisplayStock | Mode::DisplayOptions => Layout::default()
                     .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
                     .split(main[0]),
                 _ => vec![],
             };
 
             if !app.stocks.is_empty() {
-                frame.render_widget(crate::widget::block::new(" Tabs "), chunks[0]);
+                frame.render_widget(crate::widget::block::new(" Tabs ", None), chunks[0]);
 
                 // header[0] - Stock symbol tabs
                 // header[1] - (Optional) help icon
@@ -86,9 +86,22 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                 }
             }
 
-            // Draw stock widget
+            // Draw main widget
             if let Some(stock) = app.stocks.get_mut(app.current_tab) {
-                frame.render_stateful_widget(StockWidget {}, chunks[1], stock);
+                let main_chunks = if app.mode == Mode::DisplayOptions {
+                    Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints([Constraint::Min(0), Constraint::Length(44)].as_ref())
+                        .split(chunks[1])
+                } else {
+                    vec![chunks[1]]
+                };
+
+                frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
+
+                if let Some(options) = stock.options.as_mut() {
+                    frame.render_stateful_widget(OptionsWidget {}, main_chunks[1], options);
+                }
             }
 
             // Draw add stock widget

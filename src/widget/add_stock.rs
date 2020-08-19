@@ -65,7 +65,7 @@ impl StatefulWidget for AddStockWidget {
         };
 
         Paragraph::new(text.iter())
-            .block(block::new(" Add Ticker "))
+            .block(block::new(" Add Ticker ", None))
             .style(Style::default())
             .alignment(Alignment::Left)
             .wrap(true)

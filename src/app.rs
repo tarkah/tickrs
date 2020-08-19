@@ -2,10 +2,11 @@ use crate::widget;
 
 use crossterm::event::Event;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum Mode {
     AddStock,
     DisplayStock,
+    DisplayOptions,
     Help,
 }
 
@@ -17,6 +18,7 @@ pub struct App {
     pub current_tab: usize,
     pub hide_help: bool,
     pub debug: DebugInfo,
+    pub pre_help_mode: Mode,
 }
 
 #[derive(Debug)]

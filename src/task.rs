@@ -4,10 +4,14 @@ use std::time::Duration;
 
 mod company;
 mod current_price;
+mod options_data;
+mod options_dates;
 mod prices;
 
 pub use company::Company;
 pub use current_price::CurrentPrice;
+pub use options_data::OptionsData;
+pub use options_dates::OptionsDates;
 pub use prices::Prices;
 
 /// Trait to define a type that spawns an Async Task to complete background

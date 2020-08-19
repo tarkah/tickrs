@@ -38,7 +38,6 @@ fn main() {
 
     let ticker = tick(Duration::from_millis(1000));
     let ui_events = setup_ui_events();
-    let ctrl_c_events = setup_ctrl_c();
 
     let starting_stocks: Vec<_> = opts
         .symbols
@@ -68,6 +67,7 @@ fn main() {
             cursor_location: None,
             last_event: None,
         },
+        pre_help_mode: app::Mode::DisplayStock,
     };
 
     for stock in app.stocks.iter_mut() {
@@ -78,15 +78,16 @@ fn main() {
 
     loop {
         select! {
-            recv(ctrl_c_events) -> _ => {
-                cleanup_terminal();
-            }
             recv(ticker) -> _ => {
                 for stock in app.stocks.iter_mut() {
                     stock.update();
+
+                    if let Some(options) = stock.options.as_mut() {
+                        options.update();
+                    }
                 }
 
-                if app.mode == app::Mode::DisplayStock {
+                if app.mode == app::Mode::DisplayStock || app.mode == app::Mode::DisplayOptions {
                     draw::draw(&mut terminal, &mut app);
                 } else if app.mode == app::Mode::Help {
                     draw::draw_help(&mut terminal, &mut app);
@@ -115,6 +116,9 @@ fn main() {
                         }
                         app::Mode::Help => {
                             event::handle_keys_help(key_event, &mut terminal, &mut app);
+                        }
+                        app::Mode::DisplayOptions => {
+                            event::handle_keys_display_options(key_event, &mut terminal, &mut app);
                         }
                     }
                 } else if let Ok(Event::Mouse(event)) = message {
@@ -163,16 +167,6 @@ fn setup_ui_events() -> Receiver<Event> {
     std::thread::spawn(move || loop {
         sender.send(crossterm::event::read().unwrap()).unwrap();
     });
-
-    receiver
-}
-
-fn setup_ctrl_c() -> Receiver<()> {
-    let (sender, receiver) = unbounded();
-    ctrlc::set_handler(move || {
-        sender.send(()).unwrap();
-    })
-    .unwrap();
 
     receiver
 }
