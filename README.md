@@ -27,7 +27,7 @@ cargo install tickrs
 ## Usage
 
 ```
-tickrs 0.3.0
+tickrs 0.3.1
 Realtime ticker data in your terminal 📈
 
 USAGE:
