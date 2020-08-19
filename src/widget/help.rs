@@ -23,11 +23,12 @@ Change Time Frame:
 Toggle Options Pane:
   - o: toggle pane
   - <Escape>: close pane
+  - <Tab>: toggle calls / puts
   - Navigate with arrow keys
 "#;
 
 pub const HELP_WIDTH: u16 = 35;
-pub const HELP_HEIGHT: u16 = 21;
+pub const HELP_HEIGHT: u16 = 22;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
