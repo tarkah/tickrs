@@ -2,6 +2,7 @@ use super::*;
 
 use api::model;
 use async_std::sync::Arc;
+use futures::future::BoxFuture;
 
 use std::time::Duration;
 
@@ -29,9 +30,7 @@ impl AsyncTask for OptionsData {
         (self.symbol.clone(), self.date, api::Client::new())
     }
 
-    fn task(
-        input: Arc<Self::Input>,
-    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>> {
+    fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
             let symbol = &input.0;
             let date = input.1;

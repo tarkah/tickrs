@@ -1,6 +1,7 @@
 use super::*;
 
 use async_std::sync::Arc;
+use futures::future::BoxFuture;
 
 /// Returns the current price, only if it has changed
 pub struct CurrentPrice {
@@ -25,9 +26,7 @@ impl AsyncTask for CurrentPrice {
         (self.symbol.clone(), api::Client::new())
     }
 
-    fn task(
-        input: Arc<Self::Input>,
-    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>> {
+    fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
             let symbol = &input.0;
             let client = &input.1;

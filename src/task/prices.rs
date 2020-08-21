@@ -3,6 +3,7 @@ use crate::common::{chart_data_to_prices, Price, TimeFrame};
 
 use api::Interval;
 use async_std::sync::Arc;
+use futures::future::BoxFuture;
 
 /// Returns an array of prices, depending on the TimeFrame chosen
 pub struct Prices {
@@ -28,9 +29,7 @@ impl AsyncTask for Prices {
         (self.symbol.clone(), self.time_frame, api::Client::new())
     }
 
-    fn task(
-        input: Arc<Self::Input>,
-    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>> {
+    fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
             let symbol = &input.0;
             let time_frame = input.1;

@@ -2,8 +2,7 @@ use super::*;
 
 use api::model::CompanyData;
 use async_std::sync::Arc;
-use futures::Future;
-use std::pin::Pin;
+use futures::future::BoxFuture;
 
 /// Returns a companies profile information. Only needs to be returned once.
 pub struct Company {
@@ -28,9 +27,7 @@ impl AsyncTask for Company {
         (self.symbol.clone(), api::Client::new())
     }
 
-    fn task(
-        input: Arc<Self::Input>,
-    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>> {
+    fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
             let symbol = &input.0;
             let client = &input.1;

@@ -1,9 +1,8 @@
 use async_std::sync::Arc;
 use async_std::task;
 use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
-use futures::Future;
+use futures::future::BoxFuture;
 
-use std::pin::Pin;
 use std::time::{Duration, Instant};
 
 mod company;
@@ -33,9 +32,7 @@ pub trait AsyncTask: 'static {
     fn input(&self) -> Self::Input;
 
     /// Defines the async task that will get executed and return` Response`
-    fn task(
-        input: Arc<Self::Input>,
-    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>>;
+    fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>>;
 
     /// Runs the task on the async runtime and returns a handle to query updates from
     fn connect(&self) -> AsyncTaskHandle<Self::Response> {
