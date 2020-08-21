@@ -24,14 +24,14 @@ impl Client {
         version: Version,
         path: &str,
         params: Option<HashMap<&str, String>>,
-    ) -> http::Uri {
+    ) -> Result<http::Uri> {
         if let Some(params) = params {
             let params = serde_urlencoded::to_string(params).unwrap_or_else(|_| String::from(""));
             let uri = format!("{}/{}/{}?{}", self.base, version.as_str(), path, params);
-            uri.parse::<Uri>().unwrap()
+            Ok(uri.parse::<Uri>()?)
         } else {
             let uri = format!("{}/{}/{}", self.base, version.as_str(), path);
-            uri.parse::<Uri>().unwrap()
+            Ok(uri.parse::<Uri>()?)
         }
     }
 
@@ -65,7 +65,7 @@ impl Client {
             Version::V8,
             &format!("finance/chart/{}", symbol),
             Some(params),
-        );
+        )?;
 
         let response_type = ResponseType::Chart;
 
@@ -97,7 +97,7 @@ impl Client {
             Version::V10,
             &format!("finance/quoteSummary/{}", symbol),
             Some(params),
-        );
+        )?;
         let response_type = ResponseType::Company;
 
         let mut _response = self.get(url, response_type).await?;
@@ -121,7 +121,7 @@ impl Client {
     }
 
     pub async fn get_options_expiration_dates(&self, symbol: &str) -> Result<Vec<i64>> {
-        let url = self.get_url(Version::V7, &format!("finance/options/{}", symbol), None);
+        let url = self.get_url(Version::V7, &format!("finance/options/{}", symbol), None)?;
         let response_type = ResponseType::Options;
 
         let mut _response = self.get(url, response_type).await?;
@@ -157,7 +157,7 @@ impl Client {
             Version::V7,
             &format!("finance/options/{}", symbol),
             Some(params),
-        );
+        )?;
         let response_type = ResponseType::Options;
 
         let mut _response = self.get(url, response_type).await?;
