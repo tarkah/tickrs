@@ -25,8 +25,9 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            ~/.cargo/bin/cross
             target
-          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}-v3
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}-v4
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
