@@ -43,7 +43,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-v3
+          key: ${{ runner.os }}-check-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -56,4 +56,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --all
+          args: --all --all-targets

@@ -37,7 +37,7 @@ jobs:
             ~/.cargo/git
             ~/.cargo/bin/cross
             target
-          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}-v4
+          key: ${{ matrix.target }}-cross-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
