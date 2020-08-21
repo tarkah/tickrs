@@ -180,13 +180,13 @@ impl StatefulWidget for StockWidget {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let pct_change = state.pct_change();
 
+        let (company_name, currency) = match state.profile.as_ref() {
+            Some(profile) => (profile.price.short_name.as_str(), profile.price.currency.as_str()),
+            None => ("", ""),
+        };
+        
         // Draw widget block
         {
-            let company_name = match state.profile.as_ref() {
-                Some(profile) => &profile.price.short_name,
-                None => "",
-            };
-
             block::new(&format!(" {} - {} ", state.symbol, company_name), None).render(area, buf);
         }
 
@@ -231,7 +231,7 @@ impl StatefulWidget for StockWidget {
             let company_info = [
                 Text::raw("c: "),
                 Text::styled(
-                    format!("${:.2}", state.current_price),
+                    format!("{:.2} {}", state.current_price, currency),
                     Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
                 ),
                 Text::styled(
@@ -246,12 +246,12 @@ impl StatefulWidget for StockWidget {
                 ),
                 Text::raw("h: "),
                 Text::styled(
-                    format!("${:.2}\n", high),
+                    format!("{:.2} {}\n", high, currency),
                     Style::default().fg(Color::LightCyan),
                 ),
                 Text::raw("l: "),
                 Text::styled(
-                    format!("${:.2}", low),
+                    format!("{:.2} {}", low, currency),
                     Style::default().fg(Color::LightCyan),
                 ),
             ];

@@ -142,6 +142,7 @@ pub struct CompanyPrice {
     pub long_name: String,
     pub regular_market_price: CompanyRegularMarketPrice,
     pub regular_market_previous_close: CompanyRegularMarketPreviousClose,
+    pub currency: String
 }
 
 #[serde(rename_all = "camelCase")]
@@ -206,6 +207,7 @@ pub struct OptionsContract {
     pub ask: Option<f32>,
     pub implied_volatility: Option<f32>,
     pub in_the_money: Option<bool>,
+    pub currency: String
 }
 
 fn deserialize_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
