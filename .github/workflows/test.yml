@@ -1,0 +1,31 @@
+on: [push, pull_request]
+
+name: Test
+
+jobs:
+  test:
+    name: "Test"
+    strategy:
+      matrix:
+        os:
+          - "windows-latest"
+          - "ubuntu-latest"
+          - "macos-latest"
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Run cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all
