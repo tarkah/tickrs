@@ -1,8 +1,18 @@
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - ".gitignore"
+      - "LICENSE"
+      - "README.md"
+      - "assets/**"
   pull_request:
     branches: [master]
+    paths-ignore:
+      - ".gitignore"
+      - "LICENSE"
+      - "README.md"
+      - "assets/**"
 
 name: Lints
 
