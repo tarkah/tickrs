@@ -8,7 +8,7 @@ pub struct StockService {
     symbol: String,
     current_price_handle: AsyncTaskHandle<f32>,
     prices_handle: AsyncTaskHandle<Vec<Price>>,
-    company_handle: AsyncTaskHandle<Option<CompanyData>>,
+    company_handle: AsyncTaskHandle<CompanyData>,
 }
 
 impl StockService {
@@ -42,7 +42,7 @@ impl StockService {
 pub enum Update {
     NewPrice(f32),
     Prices(Vec<Price>),
-    CompanyData(Option<CompanyData>),
+    CompanyData(CompanyData),
 }
 
 impl Service for StockService {
@@ -53,17 +53,17 @@ impl Service for StockService {
 
         let current_price_updates = self
             .current_price_handle
-            .response
+            .response()
             .try_iter()
             .map(Update::NewPrice);
         updates.extend(current_price_updates);
 
-        let prices_updates = self.prices_handle.response.try_iter().map(Update::Prices);
+        let prices_updates = self.prices_handle.response().try_iter().map(Update::Prices);
         updates.extend(prices_updates);
 
         let company_updates = self
             .company_handle
-            .response
+            .response()
             .try_iter()
             .map(Update::CompanyData);
         updates.extend(company_updates);

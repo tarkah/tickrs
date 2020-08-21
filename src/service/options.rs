@@ -43,14 +43,14 @@ impl Service for OptionsService {
 
         let expiration_dates_updates = self
             .expiration_dates_handle
-            .response
+            .response()
             .try_iter()
             .map(Update::ExpirationDates);
         updates.extend(expiration_dates_updates);
 
         if let Some(ref options_data_handle) = self.options_data_handle {
             let options_data_updates = options_data_handle
-                .response
+                .response()
                 .try_iter()
                 .map(Update::OptionsData);
             updates.extend(options_data_updates);

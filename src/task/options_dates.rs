@@ -1,9 +1,8 @@
 use super::*;
 
-use async_std::task;
-use crossbeam_channel::{bounded, select, unbounded};
+use async_std::sync::Arc;
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// Returns options expiration dates for a company
 pub struct OptionsDates {
@@ -17,55 +16,25 @@ impl OptionsDates {
 }
 
 impl AsyncTask for OptionsDates {
+    type Input = (String, api::Client);
     type Response = Vec<i64>;
 
     fn update_interval(&self) -> Option<Duration> {
         Some(Duration::from_secs(60 * 60))
     }
 
-    fn connect(&self) -> AsyncTaskHandle<Self::Response> {
-        let (drop_sender, drop_receiver) = bounded::<()>(1);
-        let (response_sender, response_receiver) = unbounded::<Self::Response>();
+    fn input(&self) -> Self::Input {
+        (self.symbol.clone(), api::Client::new())
+    }
 
-        let update_interval = self.update_interval().unwrap();
+    fn task(
+        input: Arc<Self::Input>,
+    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>> {
+        Box::pin(async move {
+            let symbol = &input.0;
+            let client = &input.1;
 
-        let symbol = self.symbol.to_owned();
-
-        let _handle = task::spawn(async move {
-            let client = api::Client::new();
-
-            let mut last_updated = Instant::now();
-
-            //Send it initially
-            if let Ok(response) = client.get_options_expiration_dates(&symbol).await {
-                let _ = response_sender.send(response);
-            }
-
-            loop {
-                if last_updated.elapsed() >= update_interval {
-                    if let Ok(response) = client.get_options_expiration_dates(&symbol).await {
-                        let _ = response_sender.send(response);
-                    }
-
-                    last_updated = Instant::now();
-                }
-
-                // Break this loop to drop if drop msg received
-                select! {
-                    recv(drop_receiver) -> drop => if let Ok(()) = drop {
-                        break;
-                    },
-                    default() => (),
-                }
-
-                task::sleep(Duration::from_secs(1)).await;
-            }
-        });
-
-        AsyncTaskHandle {
-            _handle: Some(_handle),
-            drop_sender: Some(drop_sender),
-            response: response_receiver,
-        }
+            client.get_options_expiration_dates(symbol).await.ok()
+        })
     }
 }

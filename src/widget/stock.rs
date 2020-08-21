@@ -75,7 +75,7 @@ impl StockState {
                     self.prices = prices;
                 }
                 service::stock::Update::CompanyData(data) => {
-                    self.profile = data;
+                    self.profile = Some(data);
                 }
             }
         }

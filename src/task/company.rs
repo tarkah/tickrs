@@ -1,8 +1,9 @@
 use super::*;
 
 use api::model::CompanyData;
-use async_std::task;
-use crossbeam_channel::bounded;
+use async_std::sync::Arc;
+use futures::Future;
+use std::pin::Pin;
 
 /// Returns a companies profile information. Only needs to be returned once.
 pub struct Company {
@@ -16,31 +17,25 @@ impl Company {
 }
 
 impl AsyncTask for Company {
-    type Response = Option<CompanyData>;
+    type Input = (String, api::Client);
+    type Response = CompanyData;
 
     fn update_interval(&self) -> Option<Duration> {
         None
     }
 
-    fn connect(&self) -> AsyncTaskHandle<Self::Response> {
-        let (response_sender, response_receiver) = bounded::<Self::Response>(1);
+    fn input(&self) -> Self::Input {
+        (self.symbol.clone(), api::Client::new())
+    }
 
-        let symbol = self.symbol.to_owned();
+    fn task(
+        input: Arc<Self::Input>,
+    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>> {
+        Box::pin(async move {
+            let symbol = &input.0;
+            let client = &input.1;
 
-        let _handle = task::spawn(async move {
-            let client = api::Client::new();
-
-            if let Ok(response) = client.get_company_data(&symbol).await {
-                let _ = response_sender.send(Some(response));
-            } else {
-                let _ = response_sender.send(None);
-            }
-        });
-
-        AsyncTaskHandle {
-            _handle: None,
-            drop_sender: None,
-            response: response_receiver,
-        }
+            client.get_company_data(symbol).await.ok()
+        })
     }
 }

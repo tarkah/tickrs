@@ -1,7 +1,6 @@
 use super::*;
 
-use async_std::task;
-use crossbeam_channel::{bounded, select, unbounded};
+use async_std::sync::Arc;
 
 /// Returns the current price, only if it has changed
 pub struct CurrentPrice {
@@ -15,52 +14,29 @@ impl CurrentPrice {
 }
 
 impl AsyncTask for CurrentPrice {
+    type Input = (String, api::Client);
     type Response = f32;
 
     fn update_interval(&self) -> Option<Duration> {
         Some(Duration::from_secs(1))
     }
 
-    fn connect(&self) -> AsyncTaskHandle<Self::Response> {
-        let (drop_sender, drop_receiver) = bounded::<()>(1);
-        let (response_sender, response_receiver) = unbounded::<Self::Response>();
+    fn input(&self) -> Self::Input {
+        (self.symbol.clone(), api::Client::new())
+    }
 
-        let update_interval = self.update_interval().unwrap();
+    fn task(
+        input: Arc<Self::Input>,
+    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>> {
+        Box::pin(async move {
+            let symbol = &input.0;
+            let client = &input.1;
 
-        let symbol = self.symbol.to_owned();
-
-        let _handle = task::spawn(async move {
-            let client = api::Client::new();
-
-            let mut last_price = 0.0;
-
-            loop {
-                if let Ok(response) = client.get_company_data(&symbol).await {
-                    let current_price = response.price.regular_market_price.price;
-
-                    if last_price.ne(&current_price) {
-                        let _ = response_sender.send(current_price);
-
-                        last_price = current_price;
-                    }
-                }
-
-                // Break this loop to drop if drop msg received
-                select! {
-                    recv(drop_receiver) -> drop => if let Ok(()) = drop {
-                        break;
-                    },
-                    default() => (),
-                }
-
-                task::sleep(update_interval).await;
+            if let Ok(response) = client.get_company_data(symbol).await {
+                Some(response.price.regular_market_price.price)
+            } else {
+                None
             }
-        });
-
-        AsyncTaskHandle {
-            _handle: Some(_handle),
-            drop_sender: Some(drop_sender),
-            response: response_receiver,
-        }
+        })
     }
 }

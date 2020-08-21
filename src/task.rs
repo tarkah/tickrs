@@ -1,6 +1,10 @@
-use async_std::task::JoinHandle;
-use crossbeam_channel::{Receiver, Sender};
-use std::time::Duration;
+use async_std::sync::Arc;
+use async_std::task;
+use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
+use futures::Future;
+
+use std::pin::Pin;
+use std::time::{Duration, Instant};
 
 mod company;
 mod current_price;
@@ -16,17 +20,84 @@ pub use prices::Prices;
 
 /// Trait to define a type that spawns an Async Task to complete background
 /// work.
-pub trait AsyncTask {
-    type Response;
+pub trait AsyncTask: 'static {
+    type Input: Send + Sync;
+    type Response: Send;
 
+    /// Interval that `task` should be executed at
+    ///
+    /// If `None` is returned, the task will only get executed once then exit
     fn update_interval(&self) -> Option<Duration>;
-    fn connect(&self) -> AsyncTaskHandle<Self::Response>;
+
+    /// Input data needed for the `task`
+    fn input(&self) -> Self::Input;
+
+    /// Defines the async task that will get executed and return` Response`
+    fn task(
+        input: Arc<Self::Input>,
+    ) -> Pin<Box<dyn Future<Output = Option<Self::Response>> + Send>>;
+
+    /// Runs the task on the async runtime and returns a handle to query updates from
+    fn connect(&self) -> AsyncTaskHandle<Self::Response> {
+        let (drop_sender, drop_receiver) = bounded::<()>(1);
+        let (response_sender, response_receiver) = unbounded::<Self::Response>();
+
+        let update_interval = self.update_interval();
+        let input = Arc::new(self.input());
+
+        task::spawn(async move {
+            let mut last_updated = Instant::now();
+
+            // Execute the task initially
+            if let Some(response) = <Self as AsyncTask>::task(input.clone()).await {
+                let _ = response_sender.send(response);
+            }
+
+            // If no update interval is defined, exit task
+            let update_interval = if let Some(interval) = update_interval {
+                interval
+            } else {
+                return;
+            };
+
+            // Execute task every update interval and exit if drop signal is received
+            loop {
+                if last_updated.elapsed() >= update_interval {
+                    if let Some(response) = <Self as AsyncTask>::task(input.clone()).await {
+                        let _ = response_sender.send(response);
+                    }
+
+                    last_updated = Instant::now();
+                }
+
+                select! {
+                    recv(drop_receiver) -> drop => if let Ok(()) = drop {
+                        break;
+                    },
+                    default() => (),
+                }
+
+                // Free up some cycles
+                task::sleep(Duration::from_secs(1)).await;
+            }
+        });
+
+        AsyncTaskHandle {
+            drop_sender: Some(drop_sender),
+            response: response_receiver,
+        }
+    }
 }
 
 pub struct AsyncTaskHandle<R> {
-    _handle: Option<JoinHandle<()>>,
     drop_sender: Option<Sender<()>>,
-    pub response: Receiver<R>,
+    response: Receiver<R>,
+}
+
+impl<R> AsyncTaskHandle<R> {
+    pub fn response(&self) -> &Receiver<R> {
+        &self.response
+    }
 }
 
 impl<R> Drop for AsyncTaskHandle<R> {
