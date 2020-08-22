@@ -395,11 +395,9 @@ impl StatefulWidget for OptionsWidget {
                 let currency = option.currency.as_deref().unwrap_or("USD");
 
                 let gap_strike = 19 - (format!("{:.2} {}", option.strike, currency).len() + 7);
-                let gap_last = 19 - (format!("{:.2} {}", option.last_price, currency).len() + 6);
-                let gap_ask =
-                    19 - (format!("{:.2} {}", option.ask.unwrap_or_default(), currency).len() + 4);
-                let gap_bid =
-                    19 - (format!("{:.2} {}", option.bid.unwrap_or_default(), currency).len() + 4);
+                let gap_last = 15 - (format!("{:.2}", option.last_price).len() + 6);
+                let gap_ask = 15 - (format!("{:.2}", option.ask.unwrap_or_default()).len() + 4);
+                let gap_bid = 15 - (format!("{:.2}", option.bid.unwrap_or_default()).len() + 4);
                 let gap_volume = 18 - (format!("{}", option.volume.unwrap_or_default()).len() + 7);
                 let gap_open_int =
                     18 - (format!("{}", option.open_interest.unwrap_or_default()).len() + 9);
@@ -419,22 +417,19 @@ impl StatefulWidget for OptionsWidget {
                         currency
                     )),
                     Text::raw(format!(
-                        "price:{}{:.2} {}\n\n",
+                        "price:{}{:.2}\n\n",
                         " ".repeat(gap_last),
                         option.last_price,
-                        currency
                     )),
                     Text::raw(format!(
-                        "bid:{}{:.2} {}\n\n",
+                        "bid:{}{:.2}\n\n",
                         " ".repeat(gap_ask),
                         option.bid.unwrap_or_default(),
-                        currency
                     )),
                     Text::raw(format!(
-                        "ask:{}{:.2} {}",
+                        "ask:{}{:.2}",
                         " ".repeat(gap_bid),
                         option.ask.unwrap_or_default(),
-                        currency
                     )),
                 ];
 
