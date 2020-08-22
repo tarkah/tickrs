@@ -1,0 +1,115 @@
+on:
+  push:
+    tags:
+      - "*"
+
+name: Release
+
+jobs:
+  create-release:
+    name: "Create Release"
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  release:
+    name: "Release"
+    needs: create-release
+    strategy:
+      matrix:
+        target:
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            cross: false
+            binary_path: target/x86_64-pc-windows-msvc/release/tickrs.exe
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: false
+            binary_path: target/x86_64-unknown-linux-gnu/release/tickrs
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            cross: false
+            binary_path: target/x86_64-apple-darwin/release/tickrs
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+            binary_path: target/armv7-unknown-linux-gnueabihf/release/tickrs
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: true
+            binary_path: target/aarch64-unknown-linux-gnu/release/tickrs
+
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Get the version
+        id: get_version
+        shell: bash
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target.target }}
+          override: true
+
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.target.cross }}
+          command: build
+          args: --release --target=${{ matrix.target.target }}
+
+      - name: Copy release files
+        shell: bash
+        run: |
+          mkdir package
+          cp -R assets LICENSE README.md package/
+          cp ${{ matrix.target.binary_path }} package/
+
+      - name: Create Archive
+        shell: bash
+        if: matrix.target.os != 'windows-latest'
+        run: |
+          tar czvf tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.tar.gz -C package/ .
+
+      - name: Create Archive (Windows)
+        if: matrix.target.os == 'windows-latest'
+        run: |
+          cd package; 7z.exe a ../tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.zip .
+
+      - name: Upload Release Asset
+        if: matrix.target.os != 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.tar.gz
+          asset_name: tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.tar.gz
+          asset_content_type: application/x-gzip
+
+      - name: Upload Release Asset (Windows)
+        if: matrix.target.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.zip
+          asset_name: tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.zip
+          asset_content_type: application/zip
