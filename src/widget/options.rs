@@ -175,7 +175,7 @@ impl OptionsState {
 
                     self.exp_dates = dates;
 
-                    if prev_len == 0 {
+                    if prev_len == 0 && !self.exp_dates.is_empty() {
                         self.set_exp_date(self.exp_dates[0]);
                     }
                 }
