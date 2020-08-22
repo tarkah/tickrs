@@ -39,11 +39,13 @@ fn main() {
     let ticker = tick(Duration::from_millis(1000));
     let ui_events = setup_ui_events();
 
-    let starting_stocks: Vec<_> = opts
-        .symbols
-        .into_iter()
-        .map(widget::StockState::new)
-        .collect();
+    let mut stocks = opts.symbols;
+
+    if stocks.is_empty() {
+        stocks = vec!["spy".into()];
+    }
+
+    let starting_stocks: Vec<_> = stocks.into_iter().map(widget::StockState::new).collect();
 
     let starting_mode = if starting_stocks.is_empty() {
         app::Mode::AddStock
