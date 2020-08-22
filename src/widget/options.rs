@@ -323,8 +323,8 @@ impl StatefulWidget for OptionsWidget {
                 let rows = selected_data.iter().map(|d| {
                     Row::StyledData(
                         vec![
-                            format!("{: <7.2} {}", d.strike, d.currency),
-                            format!("{: <7.2} {}", d.last_price, d.currency),
+                            format!("{: <7.2}", d.strike),
+                            format!("{: <7.2}", d.last_price),
                             format!("{: >7.2}%", d.percent_change),
                         ]
                         .into_iter(),

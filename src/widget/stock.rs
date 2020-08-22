@@ -249,14 +249,11 @@ impl StatefulWidget for StockWidget {
                 ),
                 Text::raw("h: "),
                 Text::styled(
-                    format!("{:.2} {}\n", high, currency),
+                    format!("{:.2}\n", high),
                     Style::default().fg(Color::LightCyan),
                 ),
                 Text::raw("l: "),
-                Text::styled(
-                    format!("{:.2} {}", low, currency),
-                    Style::default().fg(Color::LightCyan),
-                ),
+                Text::styled(format!("{:.2}", low), Style::default().fg(Color::LightCyan)),
             ];
 
             let expand_info = [
