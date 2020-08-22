@@ -181,10 +181,13 @@ impl StatefulWidget for StockWidget {
         let pct_change = state.pct_change();
 
         let (company_name, currency) = match state.profile.as_ref() {
-            Some(profile) => (profile.price.short_name.as_str(), profile.price.currency.as_str()),
+            Some(profile) => (
+                profile.price.short_name.as_str(),
+                profile.price.currency.as_deref().unwrap_or("USD"),
+            ),
             None => ("", ""),
         };
-        
+
         // Draw widget block
         {
             block::new(&format!(" {} - {} ", state.symbol, company_name), None).render(area, buf);

@@ -392,10 +392,14 @@ impl StatefulWidget for OptionsWidget {
 
                 columns[1] = add_padding(columns[1], 2, PaddingDirection::Left);
 
-                let gap_strike = 18 - (format!("{:.2} {}", option.strike, option.currency).len() + 7);
-                let gap_last = 18 - (format!("{:.2} {}", option.last_price, option.currency).len() + 6);
-                let gap_ask = 18 - (format!("{:.2} {}", option.ask.unwrap_or_default(), option.currency).len() + 4);
-                let gap_bid = 18 - (format!("{:.2} {}", option.bid.unwrap_or_default(), option.currency).len() + 4);
+                let currency = option.currency.as_deref().unwrap_or("USD");
+
+                let gap_strike = 19 - (format!("{:.2} {}", option.strike, currency).len() + 7);
+                let gap_last = 19 - (format!("{:.2} {}", option.last_price, currency).len() + 6);
+                let gap_ask =
+                    19 - (format!("{:.2} {}", option.ask.unwrap_or_default(), currency).len() + 4);
+                let gap_bid =
+                    19 - (format!("{:.2} {}", option.bid.unwrap_or_default(), currency).len() + 4);
                 let gap_volume = 18 - (format!("{}", option.volume.unwrap_or_default()).len() + 7);
                 let gap_open_int =
                     18 - (format!("{}", option.open_interest.unwrap_or_default()).len() + 9);
@@ -412,25 +416,25 @@ impl StatefulWidget for OptionsWidget {
                         "strike:{}{:.2} {}\n\n",
                         " ".repeat(gap_strike),
                         option.strike,
-                        option.currency
+                        currency
                     )),
                     Text::raw(format!(
                         "price:{}{:.2} {}\n\n",
                         " ".repeat(gap_last),
                         option.last_price,
-                        option.currency
+                        currency
                     )),
                     Text::raw(format!(
                         "bid:{}{:.2} {}\n\n",
                         " ".repeat(gap_ask),
                         option.bid.unwrap_or_default(),
-                        option.currency
+                        currency
                     )),
                     Text::raw(format!(
                         "ask:{}{:.2} {}",
                         " ".repeat(gap_bid),
                         option.ask.unwrap_or_default(),
-                        option.currency
+                        currency
                     )),
                 ];
 
