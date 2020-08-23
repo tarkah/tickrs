@@ -153,6 +153,8 @@ fn setup_terminal() {
 fn cleanup_terminal() {
     let mut stdout = io::stdout();
 
+    execute!(stdout, crossterm::event::DisableMouseCapture).unwrap();
+
     execute!(stdout, cursor::MoveTo(0, 0)).unwrap();
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
 
