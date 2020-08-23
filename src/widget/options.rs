@@ -175,7 +175,7 @@ impl OptionsState {
 
                     self.exp_dates = dates;
 
-                    if prev_len == 0 {
+                    if prev_len == 0 && !self.exp_dates.is_empty() {
                         self.set_exp_date(self.exp_dates[0]);
                     }
                 }
@@ -323,8 +323,8 @@ impl StatefulWidget for OptionsWidget {
                 let rows = selected_data.iter().map(|d| {
                     Row::StyledData(
                         vec![
-                            format!("${: <7.2}", d.strike),
-                            format!("${: <7.2}", d.last_price),
+                            format!("{: <7.2}", d.strike),
+                            format!("{: <7.2}", d.last_price),
                             format!("{: >7.2}%", d.percent_change),
                         ]
                         .into_iter(),
@@ -392,10 +392,12 @@ impl StatefulWidget for OptionsWidget {
 
                 columns[1] = add_padding(columns[1], 2, PaddingDirection::Left);
 
-                let gap_strike = 18 - (format!("${:.2}", option.strike).len() + 7);
-                let gap_last = 18 - (format!("${:.2}", option.last_price).len() + 6);
-                let gap_ask = 18 - (format!("${:.2}", option.ask.unwrap_or_default()).len() + 4);
-                let gap_bid = 18 - (format!("${:.2}", option.bid.unwrap_or_default()).len() + 4);
+                let currency = option.currency.as_deref().unwrap_or("USD");
+
+                let gap_strike = 19 - (format!("{:.2} {}", option.strike, currency).len() + 7);
+                let gap_last = 15 - (format!("{:.2}", option.last_price).len() + 6);
+                let gap_ask = 15 - (format!("{:.2}", option.ask.unwrap_or_default()).len() + 4);
+                let gap_bid = 15 - (format!("{:.2}", option.bid.unwrap_or_default()).len() + 4);
                 let gap_volume = 18 - (format!("{}", option.volume.unwrap_or_default()).len() + 7);
                 let gap_open_int =
                     18 - (format!("{}", option.open_interest.unwrap_or_default()).len() + 9);
@@ -409,24 +411,25 @@ impl StatefulWidget for OptionsWidget {
 
                 let column_0 = [
                     Text::raw(format!(
-                        "strike:{}${:.2}\n\n",
+                        "strike:{}{:.2} {}\n\n",
                         " ".repeat(gap_strike),
-                        option.strike
+                        option.strike,
+                        currency
                     )),
                     Text::raw(format!(
-                        "price:{}${:.2}\n\n",
+                        "price:{}{:.2}\n\n",
                         " ".repeat(gap_last),
-                        option.last_price
+                        option.last_price,
                     )),
                     Text::raw(format!(
-                        "bid:{}${:.2}\n\n",
+                        "bid:{}{:.2}\n\n",
                         " ".repeat(gap_ask),
-                        option.bid.unwrap_or_default()
+                        option.bid.unwrap_or_default(),
                     )),
                     Text::raw(format!(
-                        "ask:{}${:.2}",
+                        "ask:{}{:.2}",
                         " ".repeat(gap_bid),
-                        option.ask.unwrap_or_default()
+                        option.ask.unwrap_or_default(),
                     )),
                 ];
 
