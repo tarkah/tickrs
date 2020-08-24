@@ -257,13 +257,14 @@ impl StatefulWidget for StockWidget {
             let expand_info = [
                 Text::raw("\n\n"),
                 Text::styled(
-                    "Options 'o'",
+                    "Options 'o'\n",
                     Style::default().bg(if state.show_options {
                         Color::DarkGray
                     } else {
                         Color::Black
                     }),
                 ),
+                Text::raw("Summary 's'"),
             ];
 
             Paragraph::new(company_info.iter())
