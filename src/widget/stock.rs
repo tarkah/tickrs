@@ -1,5 +1,5 @@
 use super::{block, OptionsState};
-use crate::common::{Price, TimeFrame};
+use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 
@@ -13,16 +13,14 @@ use tui::widgets::{
     Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs, Text, Widget,
 };
 
-const X_SCALE: usize = 1;
-
 pub struct StockState {
-    symbol: String,
-    stock_service: service::stock::StockService,
-    profile: Option<CompanyData>,
-    current_price: f32,
-    prices: Vec<Price>,
-    time_frame: TimeFrame,
-    show_options: bool,
+    pub symbol: String,
+    pub stock_service: service::stock::StockService,
+    pub profile: Option<CompanyData>,
+    pub current_price: f32,
+    pub prices: Vec<Price>,
+    pub time_frame: TimeFrame,
+    pub show_options: bool,
     pub options: Option<OptionsState>,
 }
 
@@ -91,7 +89,7 @@ impl StockState {
         }
     }
 
-    fn min_max(&self) -> (f32, f32) {
+    pub fn min_max(&self) -> (f32, f32) {
         let mut data: Vec<_> = self.prices.iter().map(cast_historical_as_price).collect();
         data.pop();
         data.push(self.current_price);
@@ -113,7 +111,7 @@ impl StockState {
         (*min, *max)
     }
 
-    fn high_low(&self) -> (f32, f32) {
+    pub fn high_low(&self) -> (f32, f32) {
         let mut data = self.prices.clone();
 
         data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
@@ -134,26 +132,26 @@ impl StockState {
         (max, min)
     }
 
-    fn x_bounds(&self) -> [f64; 2] {
+    pub fn x_bounds(&self) -> [f64; 2] {
         match self.time_frame {
-            TimeFrame::Day1 => [0.0, (390 * X_SCALE) as f64],
-            _ => [0.0, ((self.prices.len() * X_SCALE) + 1) as f64],
+            TimeFrame::Day1 => [0.0, 390 as f64],
+            _ => [0.0, (self.prices.len() + 1) as f64],
         }
     }
 
-    fn y_bounds(&self, min: f32, max: f32) -> [f64; 2] {
+    pub fn y_bounds(&self, min: f32, max: f32) -> [f64; 2] {
         [(min - 0.05) as f64, (max + 0.05) as f64]
     }
 
-    fn y_labels(&self, min: f32, max: f32) -> Vec<String> {
+    pub fn y_labels(&self, min: f32, max: f32) -> Vec<String> {
         vec![
-            format!("{:.2}", (min - 0.05)),
-            format!("{:.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
-            format!("{:.2}", max + 0.05),
+            format!("{:>7.2}", (min - 0.05)),
+            format!("{:>7.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
+            format!("{:>7.2}", max + 0.05),
         ]
     }
 
-    fn pct_change(&self) -> f32 {
+    pub fn pct_change(&self) -> f32 {
         if self.prices.is_empty() {
             return 0.0;
         }
@@ -344,40 +342,4 @@ impl StatefulWidget for StockWidget {
                 .render(chunks[3], buf);
         }
     }
-}
-
-fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
-    (((input.0 * X_SCALE) + 1) as f64, *input.1 as f64)
-}
-
-fn cast_historical_as_price(input: &Price) -> f32 {
-    input.close
-}
-
-fn zeros_as_pre(prices: &mut [f32]) {
-    if prices.len() <= 1 {
-        return;
-    }
-
-    let zero_indexes = prices
-        .iter()
-        .enumerate()
-        .filter_map(|(idx, price)| if *price == 0.0 { Some(idx) } else { None })
-        .collect::<Vec<usize>>();
-
-    for idx in zero_indexes {
-        if idx == 0 {
-            prices[0] = prices[1];
-        } else {
-            prices[idx] = prices[idx - 1];
-        }
-    }
-}
-
-fn remove_zeros(prices: Vec<f32>) -> Vec<f32> {
-    prices.into_iter().filter(|x| x.ne(&0.0)).collect()
-}
-
-fn remove_zeros_lows(prices: Vec<Price>) -> Vec<Price> {
-    prices.into_iter().filter(|x| x.low.ne(&0.0)).collect()
 }

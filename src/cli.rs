@@ -13,6 +13,9 @@ pub struct Opt {
     #[structopt(long)]
     /// Hide help icon in top right
     pub hide_help: bool,
+    #[structopt(long)]
+    /// Start in summary mode
+    pub summary: bool,
 }
 
 pub fn get_opts() -> Opt {

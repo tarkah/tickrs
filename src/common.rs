@@ -115,3 +115,39 @@ pub fn chart_data_to_prices(mut chart_data: ChartData) -> Vec<Price> {
     })
     .collect()
 }
+
+pub fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
+    ((input.0 + 1) as f64, *input.1 as f64)
+}
+
+pub fn cast_historical_as_price(input: &Price) -> f32 {
+    input.close
+}
+
+pub fn zeros_as_pre(prices: &mut [f32]) {
+    if prices.len() <= 1 {
+        return;
+    }
+
+    let zero_indexes = prices
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, price)| if *price == 0.0 { Some(idx) } else { None })
+        .collect::<Vec<usize>>();
+
+    for idx in zero_indexes {
+        if idx == 0 {
+            prices[0] = prices[1];
+        } else {
+            prices[idx] = prices[idx - 1];
+        }
+    }
+}
+
+pub fn remove_zeros(prices: Vec<f32>) -> Vec<f32> {
+    prices.into_iter().filter(|x| x.ne(&0.0)).collect()
+}
+
+pub fn remove_zeros_lows(prices: Vec<Price>) -> Vec<Price> {
+    prices.into_iter().filter(|x| x.low.ne(&0.0)).collect()
+}

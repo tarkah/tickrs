@@ -7,6 +7,7 @@ pub enum Mode {
     AddStock,
     DisplayStock,
     DisplayOptions,
+    DisplaySummary,
     Help,
 }
 

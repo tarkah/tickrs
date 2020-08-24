@@ -5,7 +5,7 @@ use crossbeam_channel::{select, tick, unbounded, Receiver};
 use crossterm::cursor;
 use crossterm::event::{Event, MouseEvent};
 use crossterm::execute;
-use crossterm::terminal;
+use crossterm::terminal::{self, ScrollUp};
 
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
@@ -47,6 +47,8 @@ fn main() {
 
     let starting_mode = if starting_stocks.is_empty() {
         app::Mode::AddStock
+    } else if opts.summary {
+        app::Mode::DisplaySummary
     } else {
         app::Mode::DisplayStock
     };
@@ -74,7 +76,11 @@ fn main() {
         stock.update();
     }
 
-    draw::draw(&mut terminal, &mut app);
+    match app.mode {
+        app::Mode::Help => draw::draw_help(&mut terminal, &mut app),
+        app::Mode::DisplaySummary => draw::draw_summary(&mut terminal, &mut app),
+        _ => draw::draw_main(&mut terminal, &mut app),
+    }
 
     loop {
         select! {
@@ -87,22 +93,24 @@ fn main() {
                     }
                 }
 
-                if app.mode == app::Mode::DisplayStock || app.mode == app::Mode::DisplayOptions {
-                    draw::draw(&mut terminal, &mut app);
-                } else if app.mode == app::Mode::Help {
-                    draw::draw_help(&mut terminal, &mut app);
-                }
+                match app.mode {
+                    app::Mode::DisplayStock | app::Mode::DisplayOptions => draw::draw_main(&mut terminal, &mut app),
+                    app::Mode::DisplaySummary => draw::draw_summary(&mut terminal, &mut app),
+                    app::Mode::Help => draw::draw_help(&mut terminal, &mut app),
+                    _ => {}
+                };
+
 
                 if app.debug.enabled {
                     app.debug.dimensions = crossterm::terminal::size().unwrap_or((0,0));
-                    draw::draw(&mut terminal, &mut app);
+                    draw::draw_main(&mut terminal, &mut app);
                 }
             }
             recv(ui_events) -> message => {
                 if app.debug.enabled {
                     if let Ok(event) = message {
                         app.debug.last_event = Some(event);
-                        draw::draw(&mut terminal, &mut app);
+                        draw::draw_main(&mut terminal, &mut app);
                     }
                 }
 
@@ -113,6 +121,9 @@ fn main() {
                         }
                         app::Mode::DisplayStock => {
                             event::handle_keys_display_stock(key_event, &mut terminal, &mut app);
+                        }
+                        app::Mode::DisplaySummary => {
+                            event::handle_keys_display_summary(key_event, &mut terminal, &mut app);
                         }
                         app::Mode::Help => {
                             event::handle_keys_help(key_event, &mut terminal, &mut app);
@@ -129,7 +140,7 @@ fn main() {
                             MouseEvent::Drag(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
                             _ => {}
                         }
-                        draw::draw(&mut terminal, &mut app);
+                        draw::draw_main(&mut terminal, &mut app);
                     }
                 }
             }

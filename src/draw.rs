@@ -1,13 +1,15 @@
 use crate::app::{App, Mode};
-use crate::widget::{AddStockWidget, OptionsWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH};
+use crate::widget::{
+    block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
+};
 
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
-use tui::widgets::{Paragraph, Tabs, Text};
+use tui::widgets::{Block, Borders, Paragraph, Tabs, Text};
 use tui::{Frame, Terminal};
 
-pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
+pub fn draw_main<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     terminal
         .draw(|mut frame| {
             // main[0] - Main program
@@ -112,6 +114,54 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
             // Draw debug info
             if app.debug.enabled {
                 draw_debug(&mut frame, app, main[1]);
+            }
+        })
+        .unwrap();
+}
+
+pub fn draw_summary<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
+    terminal
+        .draw(|mut frame| {
+            let border = block::new(" Summary ", None);
+            frame.render_widget(border, frame.size());
+
+            let height = frame.size().height;
+            let num_to_render = (((height - 3) / 6) as usize).min(app.stocks.len());
+
+            let mut layout = Layout::default()
+                .constraints(
+                    [
+                        Constraint::Length(1),
+                        Constraint::Length((num_to_render * 6 + 2) as u16),
+                        Constraint::Min(0),
+                    ]
+                    .as_ref(),
+                )
+                .split(frame.size());
+
+            layout[1] = add_padding(layout[1], 1, PaddingDirection::Top);
+            layout[1] = add_padding(layout[1], 1, PaddingDirection::Bottom);
+            layout[1] = add_padding(layout[1], 1, PaddingDirection::Left);
+            layout[1] = add_padding(layout[1], 2, PaddingDirection::Right);
+
+            let contraints = app.stocks[..num_to_render]
+                .iter()
+                .map(|_| Constraint::Length(6))
+                .collect::<Vec<_>>();
+
+            let stock_layout = Layout::default().constraints(contraints).split(layout[1]);
+
+            for (idx, stock) in app.stocks[..num_to_render].iter_mut().enumerate() {
+                frame.render_stateful_widget(StockSummaryWidget {}, stock_layout[idx], stock);
+            }
+
+            layout[2].y -= 1;
+            layout[2].height += 1;
+            layout[2] = add_padding(layout[2], 2, PaddingDirection::Left);
+            layout[2] = add_padding(layout[2], 2, PaddingDirection::Right);
+
+            if num_to_render == app.stocks.len() {
+                frame.render_widget(Block::default().borders(Borders::TOP), layout[2]);
             }
         })
         .unwrap();
