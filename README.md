@@ -11,6 +11,8 @@ Realtime ticker data in your terminal 📈 Built with Rust. Data sourced from Ya
 [![Demo](assets/screenshot.png)](https://i.imgur.com/4Izc2dz.mp4)
 *Click for full video*
 
+![Summary](assets/screenshot2.png)
+
 
 ## Installation
 
