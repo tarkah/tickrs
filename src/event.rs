@@ -36,6 +36,7 @@ pub fn handle_keys_display_stock<B: Backend>(
                 }
 
                 if app.stocks.is_empty() {
+                    app.previous_mode = app.mode;
                     app.mode = app::Mode::AddStock;
                 }
 
