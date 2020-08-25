@@ -24,6 +24,7 @@ mod task;
 mod widget;
 
 use crate::app::DebugInfo;
+use crate::common::TimeFrame;
 
 fn main() {
     let opts = cli::get_opts();
@@ -75,6 +76,7 @@ fn main() {
         } else {
             app::Mode::DisplayStock
         },
+        summary_time_frame: TimeFrame::Day1,
     };
 
     for stock in app.stocks.iter_mut() {

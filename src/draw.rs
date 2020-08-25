@@ -1,4 +1,5 @@
 use crate::app::{App, Mode};
+use crate::common::TimeFrame;
 use crate::widget::{
     block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
 };
@@ -162,7 +163,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     frame.render_widget(border, area);
 
     let height = area.height;
-    let num_to_render = (((height - 2) / 6) as usize).min(app.stocks.len());
+    let num_to_render = (((height - 5) / 6) as usize).min(app.stocks.len());
 
     // layouy[0] - Header
     // layouy[1] - Summary window
@@ -171,7 +172,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         .constraints(
             [
                 Constraint::Length(2),
-                Constraint::Length((num_to_render * 6 + 1) as u16),
+                Constraint::Length((num_to_render * 6) as u16),
                 Constraint::Min(0),
             ]
             .as_ref(),
@@ -181,7 +182,10 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     // header[0]
     // header[1] - (Optional) help icon
     let mut header = if app.hide_help {
-        vec![layout[0]]
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(0)].as_ref())
+            .split(layout[0])
     } else {
         Layout::default()
             .direction(Direction::Horizontal)
@@ -202,7 +206,6 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         );
     }
 
-    layout[1] = add_padding(layout[1], 1, PaddingDirection::Bottom);
     layout[1] = add_padding(layout[1], 1, PaddingDirection::Left);
     layout[1] = add_padding(layout[1], 2, PaddingDirection::Right);
 
@@ -217,13 +220,28 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         frame.render_stateful_widget(StockSummaryWidget {}, stock_layout[idx], stock);
     }
 
-    if num_to_render == app.stocks.len() {
-        layout[2].y -= 1;
-        layout[2].height += 1;
+    // Draw time frame
+    {
+        let offset = layout[2].height - 3;
+
+        layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
         layout[2] = add_padding(layout[2], 2, PaddingDirection::Left);
         layout[2] = add_padding(layout[2], 2, PaddingDirection::Right);
 
         frame.render_widget(Block::default().borders(Borders::TOP), layout[2]);
+
+        layout[2] = add_padding(layout[2], 1, PaddingDirection::Top);
+
+        let time_frames = TimeFrame::tab_names();
+
+        let tabs = Tabs::default()
+            //.block(Block::default().borders(Borders::NONE))
+            .titles(&time_frames)
+            .select(app.summary_time_frame.idx())
+            .style(Style::default().fg(Color::Cyan))
+            .highlight_style(Style::default().fg(Color::Yellow));
+
+        frame.render_widget(tabs, layout[2]);
     }
 }
 

@@ -54,7 +54,7 @@ impl StockState {
         self.set_time_frame(self.time_frame.down());
     }
 
-    fn set_time_frame(&mut self, time_frame: TimeFrame) {
+    pub fn set_time_frame(&mut self, time_frame: TimeFrame) {
         self.time_frame = time_frame;
         self.prices.drain(..);
 

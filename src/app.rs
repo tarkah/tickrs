@@ -1,3 +1,4 @@
+use crate::common::TimeFrame;
 use crate::widget;
 
 use crossterm::event::Event;
@@ -20,6 +21,7 @@ pub struct App {
     pub hide_help: bool,
     pub debug: DebugInfo,
     pub previous_mode: Mode,
+    pub summary_time_frame: TimeFrame,
 }
 
 #[derive(Debug)]
