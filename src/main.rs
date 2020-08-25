@@ -68,19 +68,20 @@ fn main() {
             dimensions: (0, 0),
             cursor_location: None,
             last_event: None,
+            mode: starting_mode,
         },
-        pre_help_mode: app::Mode::DisplayStock,
+        previous_mode: if opts.summary {
+            app::Mode::DisplaySummary
+        } else {
+            app::Mode::DisplayStock
+        },
     };
 
     for stock in app.stocks.iter_mut() {
         stock.update();
     }
 
-    match app.mode {
-        app::Mode::Help => draw::draw_help(&mut terminal, &mut app),
-        app::Mode::DisplaySummary => draw::draw_summary(&mut terminal, &mut app),
-        _ => draw::draw_main(&mut terminal, &mut app),
-    }
+    draw::draw(&mut terminal, &mut app);
 
     loop {
         select! {
@@ -93,24 +94,17 @@ fn main() {
                     }
                 }
 
-                match app.mode {
-                    app::Mode::DisplayStock | app::Mode::DisplayOptions => draw::draw_main(&mut terminal, &mut app),
-                    app::Mode::DisplaySummary => draw::draw_summary(&mut terminal, &mut app),
-                    app::Mode::Help => draw::draw_help(&mut terminal, &mut app),
-                    _ => {}
-                };
-
-
                 if app.debug.enabled {
                     app.debug.dimensions = crossterm::terminal::size().unwrap_or((0,0));
-                    draw::draw_main(&mut terminal, &mut app);
                 }
+
+                draw::draw(&mut terminal, &mut app);
             }
             recv(ui_events) -> message => {
                 if app.debug.enabled {
                     if let Ok(event) = message {
                         app.debug.last_event = Some(event);
-                        draw::draw_main(&mut terminal, &mut app);
+                        draw::draw(&mut terminal, &mut app);
                     }
                 }
 
@@ -140,7 +134,7 @@ fn main() {
                             MouseEvent::Drag(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
                             _ => {}
                         }
-                        draw::draw_main(&mut terminal, &mut app);
+                        draw::draw(&mut terminal, &mut app);
                     }
                 }
             }

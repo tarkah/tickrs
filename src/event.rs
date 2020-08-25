@@ -17,15 +17,16 @@ pub fn handle_keys_display_stock<B: Backend>(
         match key_event.code {
             KeyCode::Left => {
                 app.stocks[app.current_tab].time_frame_down();
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Right => {
                 app.stocks[app.current_tab].time_frame_up();
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('/') => {
+                app.previous_mode = app.mode;
                 app.mode = app::Mode::AddStock;
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('k') => {
                 app.stocks.remove(app.current_tab);
@@ -38,7 +39,7 @@ pub fn handle_keys_display_stock<B: Backend>(
                     app.mode = app::Mode::AddStock;
                 }
 
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('q') => {
                 cleanup_terminal();
@@ -46,34 +47,34 @@ pub fn handle_keys_display_stock<B: Backend>(
             }
             KeyCode::Char('s') => {
                 app.mode = app::Mode::DisplaySummary;
-                draw::draw_summary(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('?') => {
-                app.pre_help_mode = app::Mode::DisplayStock;
+                app.previous_mode = app.mode;
                 app.mode = app::Mode::Help;
-                draw::draw_help(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('o') => {
                 app.stocks[app.current_tab].toggle_options();
                 app.mode = app::Mode::DisplayOptions;
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Tab => {
                 if app.current_tab == app.stocks.len() - 1 {
                     app.current_tab = 0;
-                    draw::draw_main(&mut terminal, &mut app);
+                    draw::draw(&mut terminal, &mut app);
                 } else {
                     app.current_tab += 1;
-                    draw::draw_main(&mut terminal, &mut app);
+                    draw::draw(&mut terminal, &mut app);
                 }
             }
             KeyCode::BackTab => {
                 if app.current_tab == 0 {
                     app.current_tab = app.stocks.len() - 1;
-                    draw::draw_main(&mut terminal, &mut app);
+                    draw::draw(&mut terminal, &mut app);
                 } else {
                     app.current_tab -= 1;
-                    draw::draw_main(&mut terminal, &mut app);
+                    draw::draw(&mut terminal, &mut app);
                 }
             }
             _ => {}
@@ -85,9 +86,9 @@ pub fn handle_keys_display_stock<B: Backend>(
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
         if let KeyCode::Char('?') = key_event.code {
-            app.pre_help_mode = app::Mode::DisplayStock;
+            app.previous_mode = app.mode;
             app.mode = app::Mode::Help;
-            draw::draw_help(&mut terminal, &mut app);
+            draw::draw(&mut terminal, &mut app);
         }
     }
 }
@@ -106,24 +107,24 @@ pub fn handle_keys_add_stock<B: Backend>(
                 app.current_tab = app.stocks.len() - 1;
 
                 app.add_stock.reset();
-                app.mode = app::Mode::DisplayStock;
+                app.mode = app.previous_mode;
 
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char(c) => {
                 app.add_stock.add_char(c);
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Backspace => {
                 app.add_stock.del_char();
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Esc => {
                 app.add_stock.reset();
                 if !app.stocks.is_empty() {
-                    app.mode = app::Mode::DisplayStock;
+                    app.mode = app.previous_mode;
                 }
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             _ => {}
         }
@@ -148,12 +149,17 @@ pub fn handle_keys_display_summary<B: Backend>(
             }
             KeyCode::Char('s') => {
                 app.mode = app::Mode::DisplayStock;
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('?') => {
-                app.pre_help_mode = app::Mode::DisplaySummary;
+                app.previous_mode = app.mode;
                 app.mode = app::Mode::Help;
-                draw::draw_help(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Char('/') => {
+                app.previous_mode = app.mode;
+                app.mode = app::Mode::AddStock;
+                draw::draw(&mut terminal, &mut app);
             }
             _ => {}
         }
@@ -164,9 +170,9 @@ pub fn handle_keys_display_summary<B: Backend>(
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
         if let KeyCode::Char('?') = key_event.code {
-            app.pre_help_mode = app::Mode::DisplaySummary;
+            app.previous_mode = app.mode;
             app.mode = app::Mode::Help;
-            draw::draw_help(&mut terminal, &mut app);
+            draw::draw(&mut terminal, &mut app);
         }
     }
 }
@@ -179,12 +185,9 @@ pub fn handle_keys_help<B: Backend>(
     if key_event.modifiers.is_empty() {
         match key_event.code {
             KeyCode::Esc | KeyCode::Char('?') => {
-                app.mode = app.pre_help_mode;
+                app.mode = app.previous_mode;
 
-                match app.mode {
-                    app::Mode::DisplaySummary => draw::draw_summary(&mut terminal, &mut app),
-                    _ => draw::draw_main(&mut terminal, &mut app),
-                };
+                draw::draw(&mut terminal, &mut app);
             }
             _ => {}
         }
@@ -206,7 +209,7 @@ pub fn handle_keys_display_options<B: Backend>(
             KeyCode::Esc | KeyCode::Char('o') => {
                 app.stocks[app.current_tab].toggle_options();
                 app.mode = app::Mode::DisplayStock;
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('q') => {
                 cleanup_terminal();
@@ -219,7 +222,7 @@ pub fn handle_keys_display_options<B: Backend>(
                     .unwrap()
                     .toggle_option_type();
 
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Up => {
                 match app.stocks[app.current_tab]
@@ -244,7 +247,7 @@ pub fn handle_keys_display_options<B: Backend>(
                     }
                 }
 
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Down => {
                 match app.stocks[app.current_tab]
@@ -269,7 +272,7 @@ pub fn handle_keys_display_options<B: Backend>(
                     }
                 }
 
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Left => {
                 app.stocks[app.current_tab]
@@ -278,7 +281,7 @@ pub fn handle_keys_display_options<B: Backend>(
                     .unwrap()
                     .selection_mode_left();
 
-                draw::draw_main(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Right => {
                 if app.stocks[app.current_tab]
@@ -294,13 +297,13 @@ pub fn handle_keys_display_options<B: Backend>(
                         .unwrap()
                         .selection_mode_right();
 
-                    draw::draw_main(&mut terminal, &mut app);
+                    draw::draw(&mut terminal, &mut app);
                 }
             }
             KeyCode::Char('?') => {
-                app.pre_help_mode = app::Mode::DisplayOptions;
+                app.previous_mode = app.mode;
                 app.mode = app::Mode::Help;
-                draw::draw_help(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             _ => {}
         }
@@ -311,9 +314,9 @@ pub fn handle_keys_display_options<B: Backend>(
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
         if let KeyCode::Char('?') = key_event.code {
-            app.pre_help_mode = app::Mode::DisplayOptions;
+            app.previous_mode = app.mode;
             app.mode = app::Mode::Help;
-            draw::draw_help(&mut terminal, &mut app);
+            draw::draw(&mut terminal, &mut app);
         }
     }
 }

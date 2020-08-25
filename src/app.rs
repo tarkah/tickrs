@@ -2,7 +2,7 @@ use crate::widget;
 
 use crossterm::event::Event;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Mode {
     AddStock,
     DisplayStock,
@@ -19,7 +19,7 @@ pub struct App {
     pub current_tab: usize,
     pub hide_help: bool,
     pub debug: DebugInfo,
-    pub pre_help_mode: Mode,
+    pub previous_mode: Mode,
 }
 
 #[derive(Debug)]
@@ -28,4 +28,5 @@ pub struct DebugInfo {
     pub dimensions: (u16, u16),
     pub cursor_location: Option<(u16, u16)>,
     pub last_event: Option<Event>,
+    pub mode: Mode,
 }
