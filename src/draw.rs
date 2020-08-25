@@ -131,7 +131,7 @@ pub fn draw_summary<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
             let mut layout = Layout::default()
                 .constraints(
                     [
-                        Constraint::Length(1),
+                        Constraint::Length(2),
                         Constraint::Length((num_to_render * 6 + 2) as u16),
                         Constraint::Min(0),
                     ]
@@ -139,7 +139,30 @@ pub fn draw_summary<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                 )
                 .split(frame.size());
 
-            layout[1] = add_padding(layout[1], 1, PaddingDirection::Top);
+            // header[0]
+            // header[1] - (Optional) help icon
+            let mut header = if app.hide_help {
+                vec![layout[0]]
+            } else {
+                Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([Constraint::Min(0), Constraint::Length(10)].as_ref())
+                    .split(layout[0])
+            };
+
+            // Draw help icon
+            if !app.hide_help {
+                header[1] = add_padding(header[1], 1, PaddingDirection::Top);
+                header[1] = add_padding(header[1], 2, PaddingDirection::Right);
+
+                frame.render_widget(
+                    Paragraph::new([Text::raw("Help '?'")].iter())
+                        .style(Style::default().fg(Color::White).bg(Color::Black))
+                        .alignment(Alignment::Center),
+                    header[1],
+                );
+            }
+
             layout[1] = add_padding(layout[1], 1, PaddingDirection::Bottom);
             layout[1] = add_padding(layout[1], 1, PaddingDirection::Left);
             layout[1] = add_padding(layout[1], 2, PaddingDirection::Right);
@@ -155,12 +178,12 @@ pub fn draw_summary<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                 frame.render_stateful_widget(StockSummaryWidget {}, stock_layout[idx], stock);
             }
 
-            layout[2].y -= 1;
-            layout[2].height += 1;
-            layout[2] = add_padding(layout[2], 2, PaddingDirection::Left);
-            layout[2] = add_padding(layout[2], 2, PaddingDirection::Right);
-
             if num_to_render == app.stocks.len() {
+                layout[2].y -= 1;
+                layout[2].height += 1;
+                layout[2] = add_padding(layout[2], 2, PaddingDirection::Left);
+                layout[2] = add_padding(layout[2], 2, PaddingDirection::Right);
+
                 frame.render_widget(Block::default().borders(Borders::TOP), layout[2]);
             }
         })
