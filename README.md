@@ -29,7 +29,7 @@ cargo install tickrs
 ## Usage
 
 ```
-tickrs 0.3.5
+tickrs 0.4.0
 Realtime ticker data in your terminal 📈
 
 USAGE:
@@ -38,6 +38,7 @@ USAGE:
 FLAGS:
     -h, --help         Prints help information
         --hide-help    Hide help icon in top right
+        --summary      Start in summary mode
     -V, --version      Prints version information
 
 OPTIONS:
