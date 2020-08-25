@@ -134,7 +134,7 @@ impl StockState {
 
     pub fn x_bounds(&self) -> [f64; 2] {
         match self.time_frame {
-            TimeFrame::Day1 => [0.0, 390 as f64],
+            TimeFrame::Day1 => [0.0, 390.0],
             _ => [0.0, (self.prices.len() + 1) as f64],
         }
     }

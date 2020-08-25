@@ -5,7 +5,7 @@ use crossbeam_channel::{select, tick, unbounded, Receiver};
 use crossterm::cursor;
 use crossterm::event::{Event, MouseEvent};
 use crossterm::execute;
-use crossterm::terminal::{self, ScrollUp};
+use crossterm::terminal;
 
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
