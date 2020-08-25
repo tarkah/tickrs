@@ -24,6 +24,7 @@ pub fn handle_keys_display_stock<B: Backend>(
                 draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('/') => {
+                app.previous_mode = app.mode;
                 app.mode = app::Mode::AddStock;
                 draw::draw(&mut terminal, &mut app);
             }
@@ -35,6 +36,7 @@ pub fn handle_keys_display_stock<B: Backend>(
                 }
 
                 if app.stocks.is_empty() {
+                    app.previous_mode = app.mode;
                     app.mode = app::Mode::AddStock;
                 }
 
@@ -44,10 +46,21 @@ pub fn handle_keys_display_stock<B: Backend>(
                 cleanup_terminal();
                 std::process::exit(0);
             }
+            KeyCode::Char('s') => {
+                app.mode = app::Mode::DisplaySummary;
+
+                for stock in app.stocks.iter_mut() {
+                    if stock.time_frame != app.summary_time_frame {
+                        stock.set_time_frame(app.summary_time_frame);
+                    }
+                }
+
+                draw::draw(&mut terminal, &mut app);
+            }
             KeyCode::Char('?') => {
-                app.pre_help_mode = app::Mode::DisplayStock;
+                app.previous_mode = app.mode;
                 app.mode = app::Mode::Help;
-                draw::draw_help(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Char('o') => {
                 app.stocks[app.current_tab].toggle_options();
@@ -81,8 +94,9 @@ pub fn handle_keys_display_stock<B: Backend>(
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
         if let KeyCode::Char('?') = key_event.code {
+            app.previous_mode = app.mode;
             app.mode = app::Mode::Help;
-            draw::draw_help(&mut terminal, &mut app);
+            draw::draw(&mut terminal, &mut app);
         }
     }
 }
@@ -101,7 +115,7 @@ pub fn handle_keys_add_stock<B: Backend>(
                 app.current_tab = app.stocks.len() - 1;
 
                 app.add_stock.reset();
-                app.mode = app::Mode::DisplayStock;
+                app.mode = app.previous_mode;
 
                 draw::draw(&mut terminal, &mut app);
             }
@@ -116,7 +130,7 @@ pub fn handle_keys_add_stock<B: Backend>(
             KeyCode::Esc => {
                 app.add_stock.reset();
                 if !app.stocks.is_empty() {
-                    app.mode = app::Mode::DisplayStock;
+                    app.mode = app.previous_mode;
                 }
                 draw::draw(&mut terminal, &mut app);
             }
@@ -130,6 +144,65 @@ pub fn handle_keys_add_stock<B: Backend>(
     }
 }
 
+pub fn handle_keys_display_summary<B: Backend>(
+    key_event: KeyEvent,
+    mut terminal: &mut Terminal<B>,
+    mut app: &mut app::App,
+) {
+    if key_event.modifiers.is_empty() {
+        match key_event.code {
+            KeyCode::Left => {
+                app.summary_time_frame = app.summary_time_frame.down();
+
+                for stock in app.stocks.iter_mut() {
+                    stock.set_time_frame(app.summary_time_frame);
+                }
+
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Right => {
+                app.summary_time_frame = app.summary_time_frame.up();
+
+                for stock in app.stocks.iter_mut() {
+                    stock.set_time_frame(app.summary_time_frame);
+                }
+
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Char('q') => {
+                cleanup_terminal();
+                std::process::exit(0);
+            }
+            KeyCode::Char('s') => {
+                app.mode = app::Mode::DisplayStock;
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Char('?') => {
+                app.previous_mode = app.mode;
+                app.mode = app::Mode::Help;
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Char('/') => {
+                app.previous_mode = app.mode;
+                app.mode = app::Mode::AddStock;
+                draw::draw(&mut terminal, &mut app);
+            }
+            _ => {}
+        }
+    } else if key_event.modifiers == KeyModifiers::CONTROL {
+        if let KeyCode::Char('c') = key_event.code {
+            cleanup_terminal();
+            std::process::exit(0);
+        }
+    } else if key_event.modifiers == KeyModifiers::SHIFT {
+        if let KeyCode::Char('?') = key_event.code {
+            app.previous_mode = app.mode;
+            app.mode = app::Mode::Help;
+            draw::draw(&mut terminal, &mut app);
+        }
+    }
+}
+
 pub fn handle_keys_help<B: Backend>(
     key_event: KeyEvent,
     mut terminal: &mut Terminal<B>,
@@ -138,7 +211,8 @@ pub fn handle_keys_help<B: Backend>(
     if key_event.modifiers.is_empty() {
         match key_event.code {
             KeyCode::Esc | KeyCode::Char('?') => {
-                app.mode = app.pre_help_mode;
+                app.mode = app.previous_mode;
+
                 draw::draw(&mut terminal, &mut app);
             }
             _ => {}
@@ -253,9 +327,9 @@ pub fn handle_keys_display_options<B: Backend>(
                 }
             }
             KeyCode::Char('?') => {
-                app.pre_help_mode = app::Mode::DisplayOptions;
+                app.previous_mode = app.mode;
                 app.mode = app::Mode::Help;
-                draw::draw_help(&mut terminal, &mut app);
+                draw::draw(&mut terminal, &mut app);
             }
             _ => {}
         }
@@ -263,6 +337,12 @@ pub fn handle_keys_display_options<B: Backend>(
         if let KeyCode::Char('c') = key_event.code {
             cleanup_terminal();
             std::process::exit(0);
+        }
+    } else if key_event.modifiers == KeyModifiers::SHIFT {
+        if let KeyCode::Char('?') = key_event.code {
+            app.previous_mode = app.mode;
+            app.mode = app::Mode::Help;
+            draw::draw(&mut terminal, &mut app);
         }
     }
 }

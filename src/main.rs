@@ -24,6 +24,7 @@ mod task;
 mod widget;
 
 use crate::app::DebugInfo;
+use crate::common::TimeFrame;
 
 fn main() {
     let opts = cli::get_opts();
@@ -47,6 +48,8 @@ fn main() {
 
     let starting_mode = if starting_stocks.is_empty() {
         app::Mode::AddStock
+    } else if opts.summary {
+        app::Mode::DisplaySummary
     } else {
         app::Mode::DisplayStock
     };
@@ -66,8 +69,14 @@ fn main() {
             dimensions: (0, 0),
             cursor_location: None,
             last_event: None,
+            mode: starting_mode,
         },
-        pre_help_mode: app::Mode::DisplayStock,
+        previous_mode: if opts.summary {
+            app::Mode::DisplaySummary
+        } else {
+            app::Mode::DisplayStock
+        },
+        summary_time_frame: TimeFrame::Day1,
     };
 
     for stock in app.stocks.iter_mut() {
@@ -87,16 +96,11 @@ fn main() {
                     }
                 }
 
-                if app.mode == app::Mode::DisplayStock || app.mode == app::Mode::DisplayOptions {
-                    draw::draw(&mut terminal, &mut app);
-                } else if app.mode == app::Mode::Help {
-                    draw::draw_help(&mut terminal, &mut app);
-                }
-
                 if app.debug.enabled {
                     app.debug.dimensions = crossterm::terminal::size().unwrap_or((0,0));
-                    draw::draw(&mut terminal, &mut app);
                 }
+
+                draw::draw(&mut terminal, &mut app);
             }
             recv(ui_events) -> message => {
                 if app.debug.enabled {
@@ -113,6 +117,9 @@ fn main() {
                         }
                         app::Mode::DisplayStock => {
                             event::handle_keys_display_stock(key_event, &mut terminal, &mut app);
+                        }
+                        app::Mode::DisplaySummary => {
+                            event::handle_keys_display_summary(key_event, &mut terminal, &mut app);
                         }
                         app::Mode::Help => {
                             event::handle_keys_help(key_event, &mut terminal, &mut app);
