@@ -383,76 +383,77 @@ impl StatefulWidget for OptionsWidget {
                     &state.data.as_ref().unwrap().puts[..]
                 };
 
-                let option = &option_range[idx];
+                if let Some(option) = option_range.get(idx) {
+                    let mut columns = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints([Constraint::Length(20), Constraint::Length(20)].as_ref())
+                        .split(chunks[1]);
 
-                let mut columns = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .constraints([Constraint::Length(20), Constraint::Length(20)].as_ref())
-                    .split(chunks[1]);
+                    columns[1] = add_padding(columns[1], 2, PaddingDirection::Left);
 
-                columns[1] = add_padding(columns[1], 2, PaddingDirection::Left);
+                    let currency = option.currency.as_deref().unwrap_or("USD");
 
-                let currency = option.currency.as_deref().unwrap_or("USD");
+                    let gap_strike = 19 - (format!("{:.2} {}", option.strike, currency).len() + 7);
+                    let gap_last = 15 - (format!("{:.2}", option.last_price).len() + 6);
+                    let gap_ask = 15 - (format!("{:.2}", option.ask.unwrap_or_default()).len() + 4);
+                    let gap_bid = 15 - (format!("{:.2}", option.bid.unwrap_or_default()).len() + 4);
+                    let gap_volume =
+                        18 - (format!("{}", option.volume.unwrap_or_default()).len() + 7);
+                    let gap_open_int =
+                        18 - (format!("{}", option.open_interest.unwrap_or_default()).len() + 9);
+                    let gap_impl_vol = 18
+                        - (format!(
+                            "{:.0}%",
+                            option.implied_volatility.unwrap_or_default() * 100.0
+                        )
+                        .len()
+                            + 11);
 
-                let gap_strike = 19 - (format!("{:.2} {}", option.strike, currency).len() + 7);
-                let gap_last = 15 - (format!("{:.2}", option.last_price).len() + 6);
-                let gap_ask = 15 - (format!("{:.2}", option.ask.unwrap_or_default()).len() + 4);
-                let gap_bid = 15 - (format!("{:.2}", option.bid.unwrap_or_default()).len() + 4);
-                let gap_volume = 18 - (format!("{}", option.volume.unwrap_or_default()).len() + 7);
-                let gap_open_int =
-                    18 - (format!("{}", option.open_interest.unwrap_or_default()).len() + 9);
-                let gap_impl_vol = 18
-                    - (format!(
-                        "{:.0}%",
-                        option.implied_volatility.unwrap_or_default() * 100.0
-                    )
-                    .len()
-                        + 11);
+                    let column_0 = [
+                        Text::raw(format!(
+                            "strike:{}{:.2} {}\n\n",
+                            " ".repeat(gap_strike),
+                            option.strike,
+                            currency
+                        )),
+                        Text::raw(format!(
+                            "price:{}{:.2}\n\n",
+                            " ".repeat(gap_last),
+                            option.last_price,
+                        )),
+                        Text::raw(format!(
+                            "bid:{}{:.2}\n\n",
+                            " ".repeat(gap_ask),
+                            option.bid.unwrap_or_default(),
+                        )),
+                        Text::raw(format!(
+                            "ask:{}{:.2}",
+                            " ".repeat(gap_bid),
+                            option.ask.unwrap_or_default(),
+                        )),
+                    ];
 
-                let column_0 = [
-                    Text::raw(format!(
-                        "strike:{}{:.2} {}\n\n",
-                        " ".repeat(gap_strike),
-                        option.strike,
-                        currency
-                    )),
-                    Text::raw(format!(
-                        "price:{}{:.2}\n\n",
-                        " ".repeat(gap_last),
-                        option.last_price,
-                    )),
-                    Text::raw(format!(
-                        "bid:{}{:.2}\n\n",
-                        " ".repeat(gap_ask),
-                        option.bid.unwrap_or_default(),
-                    )),
-                    Text::raw(format!(
-                        "ask:{}{:.2}",
-                        " ".repeat(gap_bid),
-                        option.ask.unwrap_or_default(),
-                    )),
-                ];
+                    let column_1 = [
+                        Text::raw(format!(
+                            "volume:{}{}\n\n",
+                            " ".repeat(gap_volume),
+                            option.volume.unwrap_or_default(),
+                        )),
+                        Text::raw(format!(
+                            "interest:{}{}\n\n",
+                            " ".repeat(gap_open_int),
+                            option.open_interest.unwrap_or_default()
+                        )),
+                        Text::raw(format!(
+                            "volatility:{}{:.0}%",
+                            " ".repeat(gap_impl_vol),
+                            option.implied_volatility.unwrap_or_default() * 100.0
+                        )),
+                    ];
 
-                let column_1 = [
-                    Text::raw(format!(
-                        "volume:{}{}\n\n",
-                        " ".repeat(gap_volume),
-                        option.volume.unwrap_or_default(),
-                    )),
-                    Text::raw(format!(
-                        "interest:{}{}\n\n",
-                        " ".repeat(gap_open_int),
-                        option.open_interest.unwrap_or_default()
-                    )),
-                    Text::raw(format!(
-                        "volatility:{}{:.0}%",
-                        " ".repeat(gap_impl_vol),
-                        option.implied_volatility.unwrap_or_default() * 100.0
-                    )),
-                ];
-
-                Paragraph::new(column_0.iter()).render(columns[0], buf);
-                Paragraph::new(column_1.iter()).render(columns[1], buf);
+                    Paragraph::new(column_0.iter()).render(columns[0], buf);
+                    Paragraph::new(column_1.iter()).render(columns[1], buf);
+                }
             }
         }
     }
