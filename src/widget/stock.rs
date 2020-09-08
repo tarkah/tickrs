@@ -19,7 +19,7 @@ pub struct StockState {
     pub stock_service: service::stock::StockService,
     pub profile: Option<CompanyData>,
     pub current_price: f32,
-    pub prices: Vec<Price>,
+    pub prices: [Vec<Price>; 7],
     pub time_frame: TimeFrame,
     pub show_options: bool,
     pub options: Option<OptionsState>,
@@ -36,7 +36,7 @@ impl StockState {
             stock_service,
             profile: None,
             current_price: 0.0,
-            prices: vec![],
+            prices: [vec![], vec![], vec![], vec![], vec![], vec![], vec![]],
             time_frame,
             show_options: false,
             options: None,
@@ -57,9 +57,12 @@ impl StockState {
 
     pub fn set_time_frame(&mut self, time_frame: TimeFrame) {
         self.time_frame = time_frame;
-        self.prices.drain(..);
 
         self.stock_service.update_time_frame(time_frame);
+    }
+
+    pub fn prices(&self) -> &[Price] {
+        &self.prices[self.time_frame.idx()]
     }
 
     pub fn update(&mut self) {
@@ -71,7 +74,7 @@ impl StockState {
                     self.current_price = price;
                 }
                 service::stock::Update::Prices(prices) => {
-                    self.prices = prices;
+                    self.prices[self.time_frame.idx()] = prices;
                 }
                 service::stock::Update::CompanyData(data) => {
                     self.profile = Some(data);
@@ -91,7 +94,7 @@ impl StockState {
     }
 
     pub fn min_max(&self) -> (f32, f32) {
-        let mut data: Vec<_> = self.prices.iter().map(cast_historical_as_price).collect();
+        let mut data: Vec<_> = self.prices().iter().map(cast_historical_as_price).collect();
         data.pop();
         data.push(self.current_price);
         data = remove_zeros(data);
@@ -113,7 +116,7 @@ impl StockState {
     }
 
     pub fn high_low(&self) -> (f32, f32) {
-        let mut data = self.prices.clone();
+        let mut data = self.prices().to_vec();
 
         data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
         let mut max = data.last().map(|d| d.high).unwrap_or(0.0);
@@ -136,7 +139,7 @@ impl StockState {
     pub fn x_bounds(&self) -> [f64; 2] {
         match self.time_frame {
             TimeFrame::Day1 => [0.0, 390.0],
-            _ => [0.0, (self.prices.len() + 1) as f64],
+            _ => [0.0, (self.prices().len() + 1) as f64],
         }
     }
 
@@ -153,7 +156,7 @@ impl StockState {
     }
 
     pub fn pct_change(&self) -> f32 {
-        if self.prices.is_empty() {
+        if self.prices().is_empty() {
             return 0.0;
         }
 
@@ -161,10 +164,10 @@ impl StockState {
             if let Some(profile) = &self.profile {
                 profile.price.regular_market_previous_close.price
             } else {
-                self.prices.first().map(|d| d.close).unwrap()
+                self.prices().first().map(|d| d.close).unwrap()
             }
         } else {
-            self.prices.first().map(|d| d.close).unwrap()
+            self.prices().first().map(|d| d.close).unwrap()
         };
 
         self.current_price / baseline - 1.0
@@ -290,7 +293,12 @@ impl StatefulWidget for StockWidget {
         {
             let (min, max) = state.min_max();
 
-            let mut prices: Vec<_> = state.prices.iter().map(cast_historical_as_price).collect();
+            let mut prices: Vec<_> = state
+                .prices()
+                .iter()
+                .map(cast_historical_as_price)
+                .collect();
+
             prices.pop();
             prices.push(state.current_price);
             zeros_as_pre(&mut prices);

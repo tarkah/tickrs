@@ -4,6 +4,7 @@ use crate::service::{self, Service};
 
 use api::model::{OptionsData, OptionsQuote};
 use chrono::NaiveDateTime;
+use std::collections::HashMap;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
@@ -28,7 +29,7 @@ pub struct OptionsState {
     options_service: service::options::OptionsService,
     exp_dates: Vec<i64>,
     exp_date: Option<i64>,
-    pub data: Option<OptionsData>,
+    data: HashMap<i64, OptionsData>,
     selected_type: OptionType,
     pub selection_mode: SelectionMode,
     selected_option: Option<usize>,
@@ -43,11 +44,19 @@ impl OptionsState {
             options_service,
             exp_dates: vec![],
             exp_date: None,
-            data: None,
+            data: HashMap::new(),
             selected_type: OptionType::Call,
             selection_mode: SelectionMode::Dates,
             selected_option: None,
             quote: None,
+        }
+    }
+
+    pub fn data(&self) -> Option<&OptionsData> {
+        if let Some(date) = self.exp_date {
+            self.data.get(&date)
+        } else {
+            None
         }
     }
 
@@ -56,8 +65,11 @@ impl OptionsState {
 
         self.options_service.set_expiration_date(date);
 
-        self.data.take();
         self.selected_option.take();
+
+        if self.data().is_some() {
+            self.set_selected_as_closest();
+        }
     }
 
     pub fn toggle_option_type(&mut self) {
@@ -71,8 +83,8 @@ impl OptionsState {
 
     fn set_selected_as_closest(&mut self) {
         let selected_range = match self.selected_type {
-            OptionType::Call => &self.data.as_ref().unwrap().calls[..],
-            OptionType::Put => &self.data.as_ref().unwrap().puts[..],
+            OptionType::Call => &self.data().as_ref().unwrap().calls[..],
+            OptionType::Put => &self.data().as_ref().unwrap().puts[..],
         };
 
         let market_price = if let Some(ref quote) = self.quote {
@@ -124,9 +136,9 @@ impl OptionsState {
     pub fn previous_option(&mut self) {
         if let Some(idx) = self.selected_option {
             let option_range = if self.selected_type == OptionType::Call {
-                &self.data.as_ref().unwrap().calls[..]
+                &self.data().as_ref().unwrap().calls[..]
             } else {
-                &self.data.as_ref().unwrap().puts[..]
+                &self.data().as_ref().unwrap().puts[..]
             };
 
             let new_idx = if idx == 0 {
@@ -142,9 +154,9 @@ impl OptionsState {
     pub fn next_option(&mut self) {
         if let Some(idx) = self.selected_option {
             let option_range = if self.selected_type == OptionType::Call {
-                &self.data.as_ref().unwrap().calls[..]
+                &self.data().as_ref().unwrap().calls[..]
             } else {
-                &self.data.as_ref().unwrap().puts[..]
+                &self.data().as_ref().unwrap().puts[..]
             };
 
             let new_idx = (idx + 1) % option_range.len();
@@ -185,7 +197,9 @@ impl OptionsState {
                         header.options[0].puts.reverse();
 
                         self.quote = Some(header.quote);
-                        self.data = Some(header.options.remove(0));
+
+                        self.data
+                            .insert(self.exp_date.unwrap(), header.options.remove(0));
 
                         if self.selected_option.is_none() {
                             self.set_selected_as_closest();
@@ -313,7 +327,7 @@ impl StatefulWidget for OptionsWidget {
             selector_chunks[1] = add_padding(selector_chunks[1], 1, PaddingDirection::Left);
             selector_chunks[1] = add_padding(selector_chunks[1], 1, PaddingDirection::Bottom);
 
-            if let Some(ref data) = state.data {
+            if let Some(data) = state.data() {
                 let selected_data = if state.selected_type == OptionType::Call {
                     &data.calls[..]
                 } else {
@@ -378,9 +392,9 @@ impl StatefulWidget for OptionsWidget {
 
             if let Some(idx) = state.selected_option {
                 let option_range = if state.selected_type == OptionType::Call {
-                    &state.data.as_ref().unwrap().calls[..]
+                    &state.data().as_ref().unwrap().calls[..]
                 } else {
-                    &state.data.as_ref().unwrap().puts[..]
+                    &state.data().as_ref().unwrap().puts[..]
                 };
 
                 if let Some(option) = option_range.get(idx) {

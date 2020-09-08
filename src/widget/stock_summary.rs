@@ -89,7 +89,12 @@ impl StatefulWidget for StockSummaryWidget {
 
             let (min, max) = state.min_max();
 
-            let mut prices: Vec<_> = state.prices.iter().map(cast_historical_as_price).collect();
+            let mut prices: Vec<_> = state
+                .prices()
+                .iter()
+                .map(cast_historical_as_price)
+                .collect();
+
             prices.pop();
             prices.push(state.current_price);
             zeros_as_pre(&mut prices);

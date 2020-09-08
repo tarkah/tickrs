@@ -314,7 +314,7 @@ pub fn handle_keys_display_options<B: Backend>(
                     .options
                     .as_mut()
                     .unwrap()
-                    .data
+                    .data()
                     .is_some()
                 {
                     app.stocks[app.current_tab]
