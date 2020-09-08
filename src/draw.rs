@@ -11,6 +11,10 @@ use tui::widgets::{Block, Borders, Paragraph, Tabs, Text};
 use tui::{Frame, Terminal};
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
+    if app.debug.enabled {
+        app.debug.dimensions = terminal.size().map_or((0, 0), |r| (r.width, r.height));
+    }
+
     terminal
         .draw(|mut frame| {
             if app.debug.enabled && app.mode == Mode::AddStock {
