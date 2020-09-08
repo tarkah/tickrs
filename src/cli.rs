@@ -1,6 +1,6 @@
 use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, StructOpt, Clone)]
 #[structopt(
     name = "tickrs",
     about = "Realtime ticker data in your terminal 📈",
@@ -16,6 +16,9 @@ pub struct Opt {
     #[structopt(long)]
     /// Start in summary mode
     pub summary: bool,
+    #[structopt(short = "i", long, default_value = "1")]
+    /// Interval to update data from API (seconds)
+    pub update_interval: u64,
 }
 
 pub fn get_opts() -> Opt {

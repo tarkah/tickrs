@@ -7,6 +7,8 @@ use crossterm::event::{Event, MouseEvent};
 use crossterm::execute;
 use crossterm::terminal;
 
+use lazy_static::lazy_static;
+
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
@@ -26,8 +28,13 @@ mod widget;
 use crate::app::DebugInfo;
 use crate::common::TimeFrame;
 
+lazy_static! {
+    pub static ref OPTS: cli::Opt = cli::get_opts();
+    pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval;
+}
+
 fn main() {
-    let opts = cli::get_opts();
+    let opts = OPTS.clone();
 
     better_panic::install();
 

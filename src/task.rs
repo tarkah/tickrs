@@ -1,3 +1,5 @@
+use crate::UPDATE_INTERVAL;
+
 use async_std::sync::Arc;
 use async_std::task;
 use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
@@ -52,7 +54,7 @@ pub trait AsyncTask: 'static {
 
             // If no update interval is defined, exit task
             let update_interval = if let Some(interval) = update_interval {
-                interval
+                interval.max(Duration::from_secs(*UPDATE_INTERVAL))
             } else {
                 return;
             };
