@@ -1,3 +1,5 @@
+use crate::common::TimeFrame;
+
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt, Clone)]
@@ -19,6 +21,9 @@ pub struct Opt {
     #[structopt(short = "i", long, default_value = "1")]
     /// Interval to update data from API (seconds)
     pub update_interval: u64,
+    #[structopt(short = "t", long, default_value = "1D", possible_values(&["1D", "1W", "1M", "3M", "6M", "1Y", "5Y"]))]
+    /// Use specified time frame when starting program and when new stocks are added
+    pub time_frame: TimeFrame,
 }
 
 pub fn get_opts() -> Opt {

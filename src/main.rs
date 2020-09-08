@@ -31,6 +31,7 @@ use crate::common::TimeFrame;
 lazy_static! {
     pub static ref OPTS: cli::Opt = cli::get_opts();
     pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval;
+    pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame;
 }
 
 fn main() {
@@ -83,7 +84,7 @@ fn main() {
         } else {
             app::Mode::DisplayStock
         },
-        summary_time_frame: TimeFrame::Day1,
+        summary_time_frame: opts.time_frame,
     };
 
     for stock in app.stocks.iter_mut() {
