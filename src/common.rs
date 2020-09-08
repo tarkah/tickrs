@@ -1,8 +1,10 @@
 use api::{model::ChartData, Range};
 use itertools::izip;
+
+use std::str::FromStr;
 use std::time::Duration;
 
-#[derive(PartialEq, Clone, Copy, PartialOrd)]
+#[derive(PartialEq, Clone, Copy, PartialOrd, Debug)]
 pub enum TimeFrame {
     Day1,
     Week1,
@@ -11,6 +13,25 @@ pub enum TimeFrame {
     Month6,
     Year1,
     Year5,
+}
+
+impl FromStr for TimeFrame {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use TimeFrame::*;
+
+        match s {
+            "1D" => Ok(Day1),
+            "1W" => Ok(Week1),
+            "1M" => Ok(Month1),
+            "3M" => Ok(Month3),
+            "6M" => Ok(Month6),
+            "1Y" => Ok(Year1),
+            "5Y" => Ok(Year5),
+            _ => Err("Valid time frames are: '1D', '1W', '1M', '3M', '6M', '1Y', '5Y'"),
+        }
+    }
 }
 
 impl TimeFrame {

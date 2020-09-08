@@ -2,6 +2,7 @@ use super::{block, OptionsState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
+use crate::TIME_FRAME;
 
 use api::model::CompanyData;
 
@@ -26,7 +27,7 @@ pub struct StockState {
 
 impl StockState {
     pub fn new(symbol: String) -> StockState {
-        let time_frame = TimeFrame::Day1;
+        let time_frame = *TIME_FRAME;
 
         let stock_service = service::stock::StockService::new(symbol.clone(), time_frame);
 
