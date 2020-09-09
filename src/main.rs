@@ -1,6 +1,6 @@
 extern crate tickrs_api as api;
 
-use crossbeam_channel::{select, tick, unbounded, Receiver};
+use crossbeam_channel::{select, tick, unbounded, Receiver, Sender};
 
 use crossterm::cursor;
 use crossterm::event::{Event, MouseEvent};
@@ -14,6 +14,7 @@ use tui::Terminal;
 
 use std::io::{self, Write};
 use std::panic;
+use std::thread;
 use std::time::Duration;
 
 mod app;
@@ -32,6 +33,7 @@ lazy_static! {
     pub static ref OPTS: cli::Opt = cli::get_opts();
     pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval;
     pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame;
+    pub static ref REDRAW_REQUEST: (Sender<()>, Receiver<()>) = unbounded();
 }
 
 fn main() {
@@ -45,7 +47,8 @@ fn main() {
     setup_panic_hook();
     setup_terminal();
 
-    let ticker = tick(Duration::from_millis(1000));
+    let redraw_request = REDRAW_REQUEST.1.clone();
+    let ticker = tick(Duration::from_secs(*UPDATE_INTERVAL));
     let ui_events = setup_ui_events();
 
     let starting_stocks: Vec<_> = opts
@@ -104,8 +107,22 @@ fn main() {
                     }
                 }
 
-                if app.debug.enabled {
-                    app.debug.dimensions = crossterm::terminal::size().unwrap_or((0,0));
+                draw::draw(&mut terminal, &mut app);
+            }
+            recv(redraw_request) -> _ => {
+                // Wait some ms and collect all redraw requests so we don't
+                // redraw on each one. This is mostly important when the app is first
+                // launched with more than one symbol supplied, since each will initially
+                // request a redraw when the API data is first received.
+                thread::sleep(Duration::from_millis(200));
+                let _ = redraw_request.try_iter().collect::<Vec<_>>();
+
+                for stock in app.stocks.iter_mut() {
+                    stock.update();
+
+                    if let Some(options) = stock.options.as_mut() {
+                        options.update();
+                    }
                 }
 
                 draw::draw(&mut terminal, &mut app);
@@ -146,6 +163,8 @@ fn main() {
                         }
                         draw::draw(&mut terminal, &mut app);
                     }
+                } else if let Ok(Event::Resize(_,_)) = message {
+                    draw::draw(&mut terminal, &mut app);
                 }
             }
         }
