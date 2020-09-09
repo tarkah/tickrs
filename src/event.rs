@@ -1,7 +1,7 @@
-use crate::app;
 use crate::cleanup_terminal;
 use crate::draw;
 use crate::widget::options;
+use crate::{app, SHOW_X_LABELS};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -65,6 +65,14 @@ pub fn handle_keys_display_stock<B: Backend>(
             KeyCode::Char('o') => {
                 app.stocks[app.current_tab].toggle_options();
                 app.mode = app::Mode::DisplayOptions;
+                draw::draw(&mut terminal, &mut app);
+            }
+            KeyCode::Char('x') => {
+                {
+                    let mut show_x_labels = SHOW_X_LABELS.write().unwrap();
+                    *show_x_labels = !*show_x_labels;
+                }
+
                 draw::draw(&mut terminal, &mut app);
             }
             KeyCode::Tab => {

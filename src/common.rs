@@ -1,4 +1,5 @@
 use api::{model::ChartData, Range};
+use chrono::{Local, TimeZone, Utc};
 use itertools::izip;
 
 use std::str::FromStr;
@@ -96,6 +97,41 @@ impl TimeFrame {
             TimeFrame::Month6 => Range::Month6,
             TimeFrame::Year1 => Range::Year1,
             TimeFrame::Year5 => Range::Year5,
+        }
+    }
+
+    pub fn format_time(&self, timestamp: i64) -> String {
+        let utc_date = Utc.timestamp(timestamp, 0);
+        let local_date = utc_date.with_timezone(&Local);
+
+        let fmt = match self {
+            TimeFrame::Day1 => "%H:%M",
+            TimeFrame::Week1 => "%m-%d %H:%M",
+            _ => "%F",
+        };
+
+        local_date.format(fmt).to_string()
+    }
+}
+
+pub struct MarketHours(i64, i64);
+
+impl Default for MarketHours {
+    fn default() -> Self {
+        MarketHours(52200, 75600)
+    }
+}
+
+impl Iterator for MarketHours {
+    type Item = i64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 == self.1 {
+            None
+        } else {
+            let result = Some(self.0);
+            self.0 += 60;
+            result
         }
     }
 }
