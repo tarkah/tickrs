@@ -200,6 +200,7 @@ pub struct OptionsContract {
     pub strike: f32,
     pub last_price: f32,
     pub change: f32,
+    #[serde(default)]
     pub percent_change: f32,
     pub volume: Option<u32>,
     pub open_interest: Option<u32>,
