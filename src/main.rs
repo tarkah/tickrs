@@ -14,6 +14,7 @@ use tui::Terminal;
 
 use std::io::{self, Write};
 use std::panic;
+use std::sync::RwLock;
 use std::thread;
 use std::time::Duration;
 
@@ -34,6 +35,7 @@ lazy_static! {
     pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval;
     pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame;
     pub static ref REDRAW_REQUEST: (Sender<()>, Receiver<()>) = unbounded();
+    pub static ref SHOW_X_LABELS: RwLock<bool> = RwLock::new(OPTS.show_x_labels);
 }
 
 fn main() {

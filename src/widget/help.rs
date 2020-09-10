@@ -27,10 +27,12 @@ Toggle Options Pane:
   - Navigate with arrow keys
 Toggle Summary Pane:
   - s: toggle pane
+Toggle X Axis Labels:
+  - x: toggle labels
 "#;
 
 pub const HELP_WIDTH: u16 = 35;
-pub const HELP_HEIGHT: u16 = 24;
+pub const HELP_HEIGHT: u16 = 26;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}

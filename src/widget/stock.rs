@@ -2,7 +2,7 @@ use super::{block, OptionsState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
-use crate::TIME_FRAME;
+use crate::{SHOW_X_LABELS, TIME_FRAME};
 
 use api::model::CompanyData;
 
@@ -143,6 +143,45 @@ impl StockState {
         }
     }
 
+    pub fn x_labels(&self, width: u16) -> Vec<String> {
+        let mut labels = vec![];
+
+        let dates = if self.time_frame == TimeFrame::Day1 {
+            MarketHours::default().collect()
+        } else {
+            self.prices().iter().map(|p| p.date).collect::<Vec<_>>()
+        };
+
+        if dates.is_empty() {
+            return labels;
+        }
+
+        let label_len = dates
+            .get(0)
+            .map_or(0, |d| self.time_frame.format_time(*d).len())
+            + 5;
+        let num_labels = width as usize / label_len;
+        let chunk_size = (dates.len() as f32 / (num_labels - 1) as f32).ceil() as usize;
+
+        for (idx, chunk) in dates.chunks(chunk_size).enumerate() {
+            if idx == 0 {
+                labels.push(
+                    chunk
+                        .get(0)
+                        .map_or("".to_string(), |d| self.time_frame.format_time(*d)),
+                );
+            }
+
+            labels.push(
+                chunk
+                    .get(chunk.len() - 1)
+                    .map_or("".to_string(), |d| self.time_frame.format_time(*d)),
+            );
+        }
+
+        labels
+    }
+
     pub fn y_bounds(&self, min: f32, max: f32) -> [f64; 2] {
         [(min - 0.05) as f64, (max + 0.05) as f64]
     }
@@ -181,6 +220,8 @@ impl StatefulWidget for StockWidget {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let pct_change = state.pct_change();
+
+        let show_x_labes = SHOW_X_LABELS.read().map_or(false, |l| *l);
 
         let (company_name, currency) = match state.profile.as_ref() {
             Some(profile) => (
@@ -261,14 +302,22 @@ impl StatefulWidget for StockWidget {
             let expand_info = [
                 Text::raw("\n\n"),
                 Text::styled(
-                    "Options 'o'\n",
+                    "Options  'o'\n",
                     Style::default().bg(if state.show_options {
                         Color::DarkGray
                     } else {
                         Color::Black
                     }),
                 ),
-                Text::raw("Summary 's'"),
+                Text::raw("Summary  's'\n"),
+                Text::styled(
+                    "X Labels 'x'",
+                    Style::default().bg(if show_x_labes {
+                        Color::DarkGray
+                    } else {
+                        Color::Black
+                    }),
+                ),
             ];
 
             Paragraph::new(company_info.iter())
@@ -310,13 +359,28 @@ impl StatefulWidget for StockWidget {
                 GraphType::Line
             };
 
+            let x_labels = if show_x_labes {
+                state.x_labels(chunks[2].width)
+            } else {
+                vec![]
+            };
+
             Chart::<String, String>::default()
                 .block(
                     Block::default()
                         .borders(Borders::TOP)
                         .border_style(Style::default()),
                 )
-                .x_axis(Axis::default().bounds(state.x_bounds()))
+                .x_axis({
+                    let axis = Axis::default().bounds(state.x_bounds());
+
+                    if show_x_labes {
+                        axis.labels(&x_labels)
+                            .style(Style::default().fg(Color::LightBlue))
+                    } else {
+                        axis
+                    }
+                })
                 .y_axis(
                     Axis::default()
                         .bounds(state.y_bounds(min, max))
