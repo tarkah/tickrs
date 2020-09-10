@@ -25,20 +25,24 @@ cargo install tickrs
 ## Usage
 
 ```
-tickrs 0.4.0
+tickrs 0.5.0
 Realtime ticker data in your terminal 📈
 
 USAGE:
     tickrs [FLAGS] [OPTIONS]
 
 FLAGS:
-    -h, --help         Prints help information
-        --hide-help    Hide help icon in top right
-        --summary      Start in summary mode
-    -V, --version      Prints version information
+    -h, --help             Prints help information
+        --hide-help        Hide help icon in top right
+    -x, --show-x-labels    Show x-axis labels
+        --summary          Start in summary mode
+    -V, --version          Prints version information
 
 OPTIONS:
-    -s, --symbols <symbols>...    Comma separated list of ticker symbols to start app with
+    -s, --symbols <symbols>...                 Comma separated list of ticker symbols to start app with
+    -t, --time-frame <time-frame>              Use specified time frame when starting program and when new stocks are
+                                               added [default: 1D]  [possible values: 1D, 1W, 1M, 3M, 6M, 1Y, 5Y]
+    -i, --update-interval <update-interval>    Interval to update data from API (seconds) [default: 1]
 ```
 
 ### Windows
