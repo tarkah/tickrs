@@ -146,24 +146,24 @@ impl StockState {
     pub fn x_labels(&self, width: u16) -> Vec<String> {
         let mut labels = vec![];
 
-        let prices = if self.time_frame == TimeFrame::Day1 {
+        let dates = if self.time_frame == TimeFrame::Day1 {
             MarketHours::default().collect()
         } else {
             self.prices().iter().map(|p| p.date).collect::<Vec<_>>()
         };
 
-        if prices.is_empty() {
+        if dates.is_empty() {
             return labels;
         }
 
-        let label_len = prices
+        let label_len = dates
             .get(0)
             .map_or(0, |d| self.time_frame.format_time(*d).len())
             + 5;
         let num_labels = width as usize / label_len;
-        let chunk_size = (prices.len() as f32 / (num_labels - 1) as f32).ceil() as usize;
+        let chunk_size = (dates.len() as f32 / (num_labels - 1) as f32).ceil() as usize;
 
-        for (idx, chunk) in prices.chunks(chunk_size).enumerate() {
+        for (idx, chunk) in dates.chunks(chunk_size).enumerate() {
             if idx == 0 {
                 labels.push(
                     chunk
