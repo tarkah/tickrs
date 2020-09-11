@@ -2,7 +2,7 @@ use super::{block, OptionsState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
-use crate::{SHOW_X_LABELS, TIME_FRAME};
+use crate::{HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME};
 
 use api::model::CompanyData;
 
@@ -299,42 +299,44 @@ impl StatefulWidget for StockWidget {
                 Text::styled(format!("{:.2}", low), Style::default().fg(Color::LightCyan)),
             ];
 
-            let expand_info = [
-                Text::styled(
-                    "\n\nOptions  'o'\n",
-                    Style::default().bg(if state.show_options {
-                        Color::DarkGray
-                    } else {
-                        Color::Reset
-                    }),
-                ),
-                Text::styled("Summary  's'\n", Style::default()),
-                Text::styled(
-                    "X Labels 'x'",
-                    Style::default().bg(if show_x_labes {
-                        Color::DarkGray
-                    } else {
-                        Color::Reset
-                    }),
-                ),
-            ];
-
             Paragraph::new(company_info.iter())
                 .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Left)
                 .wrap(true)
                 .render(info_chunks[0], buf);
 
-            let toggle_block = block::new(" Toggle ", None);
-            toggle_block.render(info_chunks[1], buf);
-            info_chunks[1].x += 2;
-            info_chunks[1].width -= 2;
+            if !*HIDE_TOGGLE {
+                let toggle_block = block::new(" Toggle ", None);
+                toggle_block.render(info_chunks[1], buf);
+                info_chunks[1].x += 2;
+                info_chunks[1].width -= 2;
 
-            Paragraph::new(expand_info.iter())
-                .style(Style::default().fg(Color::White))
-                .alignment(Alignment::Left)
-                .wrap(false)
-                .render(info_chunks[1], buf);
+                let toggle_info = [
+                    Text::styled(
+                        "\n\nOptions  'o'\n",
+                        Style::default().bg(if state.show_options {
+                            Color::DarkGray
+                        } else {
+                            Color::Reset
+                        }),
+                    ),
+                    Text::styled("Summary  's'\n", Style::default()),
+                    Text::styled(
+                        "X Labels 'x'",
+                        Style::default().bg(if show_x_labes {
+                            Color::DarkGray
+                        } else {
+                            Color::Reset
+                        }),
+                    ),
+                ];
+
+                Paragraph::new(toggle_info.iter())
+                    .style(Style::default().fg(Color::White))
+                    .alignment(Alignment::Left)
+                    .wrap(false)
+                    .render(info_chunks[1], buf);
+            }
         }
 
         // Draw graph

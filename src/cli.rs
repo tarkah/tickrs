@@ -16,6 +16,9 @@ pub struct Opt {
     /// Hide help icon in top right
     pub hide_help: bool,
     #[structopt(long)]
+    /// Hide toggle block
+    pub hide_toggle: bool,
+    #[structopt(long)]
     /// Start in summary mode
     pub summary: bool,
     #[structopt(short = "i", long, default_value = "1")]
