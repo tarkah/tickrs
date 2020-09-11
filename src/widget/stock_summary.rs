@@ -1,6 +1,7 @@
 use super::stock::StockState;
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
+use crate::HIDE_PREV_CLOSE;
 
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
@@ -105,6 +106,57 @@ impl StatefulWidget for StockSummaryWidget {
                 GraphType::Line
             };
 
+            let data_1 = prices
+                .iter()
+                .enumerate()
+                .map(cast_as_dataset)
+                .collect::<Vec<(f64, f64)>>();
+
+            let data_2 = if state.time_frame == TimeFrame::Day1
+                && state.profile.is_some()
+                && !*HIDE_PREV_CLOSE
+            {
+                Some(
+                    (0..391)
+                        .map(|i| {
+                            (
+                                (i + 1) as f64,
+                                state
+                                    .profile
+                                    .as_ref()
+                                    .unwrap()
+                                    .price
+                                    .regular_market_previous_close
+                                    .price as f64,
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                )
+            } else {
+                None
+            };
+
+            let mut datasets = vec![Dataset::default()
+                .marker(Marker::Braille)
+                .style(Style::default().fg(if pct_change >= 0.0 {
+                    Color::Green
+                } else {
+                    Color::Red
+                }))
+                .graph_type(graph_type)
+                .data(&data_1)];
+
+            if let Some(data) = data_2.as_ref() {
+                datasets.insert(
+                    0,
+                    Dataset::default()
+                        .marker(Marker::Braille)
+                        .style(Style::default().fg(Color::DarkGray))
+                        .graph_type(GraphType::Line)
+                        .data(&data),
+                );
+            }
+
             Chart::<String, String>::default()
                 .block(Block::default().border_style(Style::default()))
                 .x_axis(Axis::default().bounds(state.x_bounds()))
@@ -114,21 +166,7 @@ impl StatefulWidget for StockSummaryWidget {
                         .labels(&state.y_labels(min, max))
                         .style(Style::default().fg(Color::LightBlue)),
                 )
-                .datasets(&[Dataset::default()
-                    .marker(Marker::Braille)
-                    .style(Style::default().fg(if pct_change >= 0.0 {
-                        Color::Green
-                    } else {
-                        Color::Red
-                    }))
-                    .graph_type(graph_type)
-                    .data(
-                        &prices
-                            .iter()
-                            .enumerate()
-                            .map(cast_as_dataset)
-                            .collect::<Vec<(f64, f64)>>(),
-                    )])
+                .datasets(&datasets)
                 .render(layout[1], buf);
         }
     }
