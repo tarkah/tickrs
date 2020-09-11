@@ -275,7 +275,7 @@ impl StatefulWidget for StockWidget {
             let (high, low) = state.high_low();
 
             let company_info = [
-                Text::raw("c: "),
+                Text::styled("c: ", Style::default()),
                 Text::styled(
                     format!("{:.2} {}", state.current_price, currency),
                     Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
@@ -290,38 +290,37 @@ impl StatefulWidget for StockWidget {
                             Color::Red
                         }),
                 ),
-                Text::raw("h: "),
+                Text::styled("h: ", Style::default()),
                 Text::styled(
                     format!("{:.2}\n", high),
                     Style::default().fg(Color::LightCyan),
                 ),
-                Text::raw("l: "),
+                Text::styled("l: ", Style::default()),
                 Text::styled(format!("{:.2}", low), Style::default().fg(Color::LightCyan)),
             ];
 
             let expand_info = [
-                Text::raw("\n\n"),
                 Text::styled(
-                    "Options  'o'\n",
+                    "\n\nOptions  'o'\n",
                     Style::default().bg(if state.show_options {
                         Color::DarkGray
                     } else {
-                        Color::Black
+                        Color::Reset
                     }),
                 ),
-                Text::raw("Summary  's'\n"),
+                Text::styled("Summary  's'\n", Style::default()),
                 Text::styled(
                     "X Labels 'x'",
                     Style::default().bg(if show_x_labes {
                         Color::DarkGray
                     } else {
-                        Color::Black
+                        Color::Reset
                     }),
                 ),
             ];
 
             Paragraph::new(company_info.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Left)
                 .wrap(true)
                 .render(info_chunks[0], buf);
@@ -332,7 +331,7 @@ impl StatefulWidget for StockWidget {
             info_chunks[1].width -= 2;
 
             Paragraph::new(expand_info.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Left)
                 .wrap(false)
                 .render(info_chunks[1], buf);

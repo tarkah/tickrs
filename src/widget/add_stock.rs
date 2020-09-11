@@ -48,7 +48,7 @@ impl StatefulWidget for AddStockWidget {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let text = if !state.has_user_input && state.error_msg.is_some() {
             [
-                Text::raw("> "),
+                Text::styled("> ", Style::default()),
                 Text::styled(
                     state.error_msg.as_ref().unwrap(),
                     Style::default().modifier(Modifier::BOLD).fg(Color::Red),
@@ -56,7 +56,7 @@ impl StatefulWidget for AddStockWidget {
             ]
         } else {
             [
-                Text::raw("> "),
+                Text::styled("> ", Style::default()),
                 Text::styled(
                     &state.search_string,
                     Style::default().modifier(Modifier::BOLD).fg(Color::Cyan),

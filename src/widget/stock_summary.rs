@@ -30,7 +30,6 @@ impl StatefulWidget for StockSummaryWidget {
         Block::default()
             .title(&format!(" {} ", &title[..24.min(title.len())]))
             .borders(Borders::TOP)
-            .border_style(Style::default().fg(Color::White))
             .render(area, buf);
 
         let mut layout = Layout::default()
@@ -46,17 +45,17 @@ impl StatefulWidget for StockSummaryWidget {
             let (high, low) = state.high_low();
 
             let prices = [
-                Text::raw("c: "),
+                Text::styled("c: ", Style::default()),
                 Text::styled(
                     format!("{:.2} {}\n", state.current_price, currency),
                     Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
                 ),
-                Text::raw("h: "),
+                Text::styled("h: ", Style::default()),
                 Text::styled(
                     format!("{:.2}\n", high),
                     Style::default().fg(Color::LightCyan),
                 ),
-                Text::raw("l: "),
+                Text::styled("l: ", Style::default()),
                 Text::styled(format!("{:.2}", low), Style::default().fg(Color::LightCyan)),
             ];
 
@@ -72,12 +71,12 @@ impl StatefulWidget for StockSummaryWidget {
             )];
 
             Paragraph::new(prices.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Left)
                 .render(layout[0], buf);
 
             Paragraph::new(pct.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Right)
                 .render(layout[0], buf);
         }

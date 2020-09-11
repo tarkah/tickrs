@@ -3,6 +3,7 @@ use crate::draw::{add_padding, PaddingDirection};
 
 use tui::buffer::Buffer;
 use tui::layout::Rect;
+use tui::style::Style;
 use tui::widgets::{Paragraph, Text, Widget};
 
 const TEXT: &str = r#"
@@ -54,7 +55,7 @@ impl Widget for HelpWidget {
 
         let text: Vec<_> = TEXT
             .lines()
-            .map(|line| Text::raw(format!("{}\n", line)))
+            .map(|line| Text::styled(format!("{}\n", line), Style::default()))
             .collect();
 
         let mut help_area = area;
