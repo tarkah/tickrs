@@ -19,12 +19,14 @@ impl StatefulWidget for StockSummaryWidget {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let pct_change = state.pct_change();
 
+        let loaded = state.loaded();
+
         let (company_name, currency) = match state.profile.as_ref() {
             Some(profile) => (
                 profile.price.short_name.as_str(),
                 profile.price.currency.as_deref().unwrap_or("USD"),
             ),
-            None => ("", ""),
+            None => ("Loading...", ""),
         };
 
         let title = format!("{} - {}", state.symbol, company_name);
@@ -48,20 +50,39 @@ impl StatefulWidget for StockSummaryWidget {
             let prices = [
                 Text::styled("c: ", Style::default()),
                 Text::styled(
-                    format!("{:.2} {}\n", state.current_price, currency),
+                    if loaded {
+                        format!("{:.2} {}\n", state.current_price, currency)
+                    } else {
+                        "\n".to_string()
+                    },
                     Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
                 ),
                 Text::styled("h: ", Style::default()),
                 Text::styled(
-                    format!("{:.2}\n", high),
+                    if loaded {
+                        format!("{:.2}\n", high)
+                    } else {
+                        "\n".to_string()
+                    },
                     Style::default().fg(Color::LightCyan),
                 ),
                 Text::styled("l: ", Style::default()),
-                Text::styled(format!("{:.2}", low), Style::default().fg(Color::LightCyan)),
+                Text::styled(
+                    if loaded {
+                        format!("{:.2}", low)
+                    } else {
+                        "".to_string()
+                    },
+                    Style::default().fg(Color::LightCyan),
+                ),
             ];
 
             let pct = [Text::styled(
-                format!("  {:.2}%", pct_change * 100.0),
+                if loaded {
+                    format!("  {:.2}%", pct_change * 100.0)
+                } else {
+                    "".to_string()
+                },
                 Style::default()
                     .modifier(Modifier::BOLD)
                     .fg(if pct_change >= 0.0 {
@@ -106,16 +127,17 @@ impl StatefulWidget for StockSummaryWidget {
                 GraphType::Line
             };
 
-            let data_1 = prices
-                .iter()
-                .enumerate()
-                .map(cast_as_dataset)
-                .collect::<Vec<(f64, f64)>>();
+            let data_1 = if loaded {
+                prices
+                    .iter()
+                    .enumerate()
+                    .map(cast_as_dataset)
+                    .collect::<Vec<(f64, f64)>>()
+            } else {
+                vec![]
+            };
 
-            let data_2 = if state.time_frame == TimeFrame::Day1
-                && state.profile.is_some()
-                && !*HIDE_PREV_CLOSE
-            {
+            let data_2 = if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
                 Some(
                     (0..391)
                         .map(|i| {

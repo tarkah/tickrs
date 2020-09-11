@@ -187,11 +187,19 @@ impl StockState {
     }
 
     pub fn y_labels(&self, min: f32, max: f32) -> Vec<String> {
-        vec![
-            format!("{:>7.2}", (min - 0.05)),
-            format!("{:>7.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
-            format!("{:>7.2}", max + 0.05),
-        ]
+        if self.loaded() {
+            vec![
+                format!("{:>7.2}", (min - 0.05)),
+                format!("{:>7.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
+                format!("{:>7.2}", max + 0.05),
+            ]
+        } else {
+            vec![
+                "       ".to_string(),
+                "       ".to_string(),
+                "       ".to_string(),
+            ]
+        }
     }
 
     pub fn pct_change(&self) -> f32 {
@@ -211,6 +219,10 @@ impl StockState {
 
         self.current_price / baseline - 1.0
     }
+
+    pub fn loaded(&self) -> bool {
+        !self.prices().is_empty() && self.current_price > 0.0 && self.profile.is_some()
+    }
 }
 
 pub struct StockWidget {}
@@ -223,12 +235,14 @@ impl StatefulWidget for StockWidget {
 
         let show_x_labes = SHOW_X_LABELS.read().map_or(false, |l| *l);
 
+        let loaded = state.loaded();
+
         let (company_name, currency) = match state.profile.as_ref() {
             Some(profile) => (
                 profile.price.short_name.as_str(),
                 profile.price.currency.as_deref().unwrap_or("USD"),
             ),
-            None => ("", ""),
+            None => ("Loading...", ""),
         };
 
         // Draw widget block
@@ -277,11 +291,19 @@ impl StatefulWidget for StockWidget {
             let company_info = [
                 Text::styled("c: ", Style::default()),
                 Text::styled(
-                    format!("{:.2} {}", state.current_price, currency),
+                    if loaded {
+                        format!("{:.2} {}", state.current_price, currency)
+                    } else {
+                        "".to_string()
+                    },
                     Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
                 ),
                 Text::styled(
-                    format!("  {:.2}%\n\n", pct_change * 100.0),
+                    if loaded {
+                        format!("  {:.2}%\n\n", pct_change * 100.0)
+                    } else {
+                        "\n\n".to_string()
+                    },
                     Style::default()
                         .modifier(Modifier::BOLD)
                         .fg(if pct_change >= 0.0 {
@@ -292,11 +314,22 @@ impl StatefulWidget for StockWidget {
                 ),
                 Text::styled("h: ", Style::default()),
                 Text::styled(
-                    format!("{:.2}\n", high),
+                    if loaded {
+                        format!("{:.2}\n", high)
+                    } else {
+                        "\n".to_string()
+                    },
                     Style::default().fg(Color::LightCyan),
                 ),
                 Text::styled("l: ", Style::default()),
-                Text::styled(format!("{:.2}", low), Style::default().fg(Color::LightCyan)),
+                Text::styled(
+                    if loaded {
+                        format!("{:.2}", low)
+                    } else {
+                        "".to_string()
+                    },
+                    Style::default().fg(Color::LightCyan),
+                ),
             ];
 
             Paragraph::new(company_info.iter())
@@ -366,16 +399,17 @@ impl StatefulWidget for StockWidget {
                 vec![]
             };
 
-            let data_1 = prices
-                .iter()
-                .enumerate()
-                .map(cast_as_dataset)
-                .collect::<Vec<(f64, f64)>>();
+            let data_1 = if loaded {
+                prices
+                    .iter()
+                    .enumerate()
+                    .map(cast_as_dataset)
+                    .collect::<Vec<(f64, f64)>>()
+            } else {
+                vec![]
+            };
 
-            let data_2 = if state.time_frame == TimeFrame::Day1
-                && state.profile.is_some()
-                && !*HIDE_PREV_CLOSE
-            {
+            let data_2 = if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
                 Some(
                     (0..391)
                         .map(|i| {
@@ -426,7 +460,7 @@ impl StatefulWidget for StockWidget {
                 .x_axis({
                     let axis = Axis::default().bounds(state.x_bounds());
 
-                    if show_x_labes {
+                    if show_x_labes && loaded {
                         axis.labels(&x_labels)
                             .style(Style::default().fg(Color::LightBlue))
                     } else {
