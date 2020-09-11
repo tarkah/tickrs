@@ -35,6 +35,7 @@ lazy_static! {
     pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval;
     pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame;
     pub static ref HIDE_TOGGLE: bool = OPTS.hide_toggle;
+    pub static ref HIDE_PREV_CLOSE: bool = OPTS.hide_prev_close;
     pub static ref REDRAW_REQUEST: (Sender<()>, Receiver<()>) = unbounded();
     pub static ref SHOW_X_LABELS: RwLock<bool> = RwLock::new(OPTS.show_x_labels);
 }

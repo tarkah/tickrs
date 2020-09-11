@@ -19,6 +19,9 @@ pub struct Opt {
     /// Hide toggle block
     pub hide_toggle: bool,
     #[structopt(long)]
+    /// Hide previous close line on 1D chart
+    pub hide_prev_close: bool,
+    #[structopt(long)]
     /// Start in summary mode
     pub summary: bool,
     #[structopt(short = "i", long, default_value = "1")]

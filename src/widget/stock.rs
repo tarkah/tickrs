@@ -2,7 +2,7 @@ use super::{block, OptionsState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
-use crate::{HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME};
+use crate::{HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME};
 
 use api::model::CompanyData;
 
@@ -366,6 +366,57 @@ impl StatefulWidget for StockWidget {
                 vec![]
             };
 
+            let data_1 = prices
+                .iter()
+                .enumerate()
+                .map(cast_as_dataset)
+                .collect::<Vec<(f64, f64)>>();
+
+            let data_2 = if state.time_frame == TimeFrame::Day1
+                && state.profile.is_some()
+                && !*HIDE_PREV_CLOSE
+            {
+                Some(
+                    (0..391)
+                        .map(|i| {
+                            (
+                                (i + 1) as f64,
+                                state
+                                    .profile
+                                    .as_ref()
+                                    .unwrap()
+                                    .price
+                                    .regular_market_previous_close
+                                    .price as f64,
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                )
+            } else {
+                None
+            };
+
+            let mut datasets = vec![Dataset::default()
+                .marker(Marker::Braille)
+                .style(Style::default().fg(if pct_change >= 0.0 {
+                    Color::Green
+                } else {
+                    Color::Red
+                }))
+                .graph_type(graph_type)
+                .data(&data_1)];
+
+            if let Some(data) = data_2.as_ref() {
+                datasets.insert(
+                    0,
+                    Dataset::default()
+                        .marker(Marker::Braille)
+                        .style(Style::default().fg(Color::DarkGray))
+                        .graph_type(GraphType::Line)
+                        .data(&data),
+                );
+            }
+
             Chart::<String, String>::default()
                 .block(
                     Block::default()
@@ -388,21 +439,7 @@ impl StatefulWidget for StockWidget {
                         .labels(&state.y_labels(min, max))
                         .style(Style::default().fg(Color::LightBlue)),
                 )
-                .datasets(&[Dataset::default()
-                    .marker(Marker::Braille)
-                    .style(Style::default().fg(if pct_change >= 0.0 {
-                        Color::Green
-                    } else {
-                        Color::Red
-                    }))
-                    .graph_type(graph_type)
-                    .data(
-                        &prices
-                            .iter()
-                            .enumerate()
-                            .map(cast_as_dataset)
-                            .collect::<Vec<(f64, f64)>>(),
-                    )])
+                .datasets(&datasets)
                 .render(chunks[2], buf);
         }
 
