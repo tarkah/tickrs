@@ -128,8 +128,8 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             header[1] = add_padding(header[1], 2, PaddingDirection::Right);
 
             frame.render_widget(
-                Paragraph::new([Text::raw("Help '?'")].iter())
-                    .style(Style::default().fg(Color::White).bg(Color::Black))
+                Paragraph::new([Text::styled("Help '?'", Style::default())].iter())
+                    .style(Style::default().fg(Color::White))
                     .alignment(Alignment::Center)
                     .wrap(false),
                 header[1],
@@ -203,8 +203,8 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         header[1] = add_padding(header[1], 2, PaddingDirection::Right);
 
         frame.render_widget(
-            Paragraph::new([Text::raw("Help '?'")].iter())
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+            Paragraph::new([Text::styled("Help '?'", Style::default())].iter())
+                .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Center),
             header[1],
         );
@@ -254,7 +254,13 @@ fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 
     if layout.width < HELP_WIDTH || layout.height < HELP_HEIGHT {
         frame.render_widget(
-            Paragraph::new([Text::raw("Increase screen size to display help")].iter()),
+            Paragraph::new(
+                [Text::styled(
+                    "Increase screen size to display help",
+                    Style::default(),
+                )]
+                .iter(),
+            ),
             layout,
         );
     } else {
@@ -267,7 +273,7 @@ fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 fn draw_debug<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     app.debug.mode = app.mode;
 
-    let debug_text = [Text::raw(format!("{:?}", app.debug))];
+    let debug_text = [Text::styled(format!("{:?}", app.debug), Style::default())];
     let debug_paragraph = Paragraph::new(debug_text.iter()).wrap(true);
 
     frame.render_widget(debug_paragraph, area);

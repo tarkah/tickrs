@@ -246,7 +246,7 @@ impl StatefulWidget for OptionsWidget {
                         },
                     ),
                 ),
-                Text::raw(" | "),
+                Text::styled(" | ", Style::default()),
                 Text::styled(
                     "Put",
                     Style::default().fg(Color::Red).modifier(
@@ -264,7 +264,7 @@ impl StatefulWidget for OptionsWidget {
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Top);
 
             Paragraph::new(call_put_selector.iter())
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Center)
                 .wrap(false)
                 .render(chunks[0], buf);
@@ -292,11 +292,11 @@ impl StatefulWidget for OptionsWidget {
 
             let dates = state.exp_dates.iter().map(|d| {
                 let date = NaiveDateTime::from_timestamp(*d, 0).date();
-                Text::raw(date.format("%b-%d-%y").to_string())
+                Text::styled(date.format("%b-%d-%y").to_string(), Style::default())
             });
 
             let list = List::new(dates)
-                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .style(Style::default().fg(Color::White))
                 .highlight_style(Style::default().bg(
                     if state.selection_mode == SelectionMode::Dates {
                         Color::LightBlue
@@ -351,8 +351,8 @@ impl StatefulWidget for OptionsWidget {
                 });
 
                 let table = Table::new(["Strike", "Price", "% Change"].iter(), rows)
-                    .style(Style::default().fg(Color::White).bg(Color::Black))
-                    .header_style(Style::default().fg(Color::Cyan).bg(Color::Black))
+                    .style(Style::default().fg(Color::White))
+                    .header_style(Style::default().fg(Color::Cyan))
                     .highlight_style(Style::default().bg(
                         if state.selection_mode == SelectionMode::Options {
                             Color::LightBlue
@@ -424,45 +424,62 @@ impl StatefulWidget for OptionsWidget {
                             + 11);
 
                     let column_0 = [
-                        Text::raw(format!(
-                            "strike:{}{:.2} {}\n\n",
-                            " ".repeat(gap_strike),
-                            option.strike,
-                            currency
-                        )),
-                        Text::raw(format!(
-                            "price:{}{:.2}\n\n",
-                            " ".repeat(gap_last),
-                            option.last_price,
-                        )),
-                        Text::raw(format!(
-                            "bid:{}{:.2}\n\n",
-                            " ".repeat(gap_ask),
-                            option.bid.unwrap_or_default(),
-                        )),
-                        Text::raw(format!(
-                            "ask:{}{:.2}",
-                            " ".repeat(gap_bid),
-                            option.ask.unwrap_or_default(),
-                        )),
+                        Text::styled(
+                            format!(
+                                "strike:{}{:.2} {}\n\n",
+                                " ".repeat(gap_strike),
+                                option.strike,
+                                currency
+                            ),
+                            Style::default(),
+                        ),
+                        Text::styled(
+                            format!("price:{}{:.2}\n\n", " ".repeat(gap_last), option.last_price,),
+                            Style::default(),
+                        ),
+                        Text::styled(
+                            format!(
+                                "bid:{}{:.2}\n\n",
+                                " ".repeat(gap_ask),
+                                option.bid.unwrap_or_default(),
+                            ),
+                            Style::default(),
+                        ),
+                        Text::styled(
+                            format!(
+                                "ask:{}{:.2}",
+                                " ".repeat(gap_bid),
+                                option.ask.unwrap_or_default(),
+                            ),
+                            Style::default(),
+                        ),
                     ];
 
                     let column_1 = [
-                        Text::raw(format!(
-                            "volume:{}{}\n\n",
-                            " ".repeat(gap_volume),
-                            option.volume.unwrap_or_default(),
-                        )),
-                        Text::raw(format!(
-                            "interest:{}{}\n\n",
-                            " ".repeat(gap_open_int),
-                            option.open_interest.unwrap_or_default()
-                        )),
-                        Text::raw(format!(
-                            "volatility:{}{:.0}%",
-                            " ".repeat(gap_impl_vol),
-                            option.implied_volatility.unwrap_or_default() * 100.0
-                        )),
+                        Text::styled(
+                            format!(
+                                "volume:{}{}\n\n",
+                                " ".repeat(gap_volume),
+                                option.volume.unwrap_or_default(),
+                            ),
+                            Style::default(),
+                        ),
+                        Text::styled(
+                            format!(
+                                "interest:{}{}\n\n",
+                                " ".repeat(gap_open_int),
+                                option.open_interest.unwrap_or_default()
+                            ),
+                            Style::default(),
+                        ),
+                        Text::styled(
+                            format!(
+                                "volatility:{}{:.0}%",
+                                " ".repeat(gap_impl_vol),
+                                option.implied_volatility.unwrap_or_default() * 100.0
+                            ),
+                            Style::default(),
+                        ),
                     ];
 
                     Paragraph::new(column_0.iter()).render(columns[0], buf);
