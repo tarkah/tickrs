@@ -33,18 +33,24 @@ impl StatefulWidget for StockSummaryWidget {
         let loading_indicator = ".".repeat(state.loading_tick);
 
         let title = &format!(
-            " {}{:<4} ",
+            " {}{}",
             state.symbol,
-            if loaded {
+            if state.profile.is_some() {
                 format!(" - {}", company_name)
-            } else if state.profile.is_some() {
-                format!(" - {}{}", company_name, loading_indicator)
             } else {
-                loading_indicator
+                "".to_string()
             }
         );
         Block::default()
-            .title(&format!(" {} ", &title[..24.min(title.len())]))
+            .title(&format!(
+                " {}{} ",
+                &title[..24.min(title.len())],
+                if loaded {
+                    "".to_string()
+                } else {
+                    format!("{:<4}", loading_indicator)
+                }
+            ))
             .borders(Borders::TOP)
             .render(area, buf);
 

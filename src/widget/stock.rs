@@ -278,7 +278,7 @@ impl StatefulWidget for StockWidget {
                     if loaded {
                         format!(" - {}", company_name)
                     } else if state.profile.is_some() {
-                        format!(" - {}{}", company_name, loading_indicator)
+                        format!(" - {}{:<4}", company_name, loading_indicator)
                     } else {
                         loading_indicator
                     }
