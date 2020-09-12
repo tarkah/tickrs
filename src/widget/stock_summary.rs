@@ -20,16 +20,29 @@ impl StatefulWidget for StockSummaryWidget {
         let pct_change = state.pct_change();
 
         let loaded = state.loaded();
+        state.loading_tick();
 
         let (company_name, currency) = match state.profile.as_ref() {
             Some(profile) => (
                 profile.price.short_name.as_str(),
                 profile.price.currency.as_deref().unwrap_or("USD"),
             ),
-            None => ("Loading...", ""),
+            None => ("", ""),
         };
 
-        let title = format!("{} - {}", state.symbol, company_name);
+        let loading_indicator = ".".repeat(state.loading_tick);
+
+        let title = &format!(
+            " {}{:<4} ",
+            state.symbol,
+            if loaded {
+                format!(" - {}", company_name)
+            } else if state.profile.is_some() {
+                format!(" - {}{}", company_name, loading_indicator)
+            } else {
+                loading_indicator
+            }
+        );
         Block::default()
             .title(&format!(" {} ", &title[..24.min(title.len())]))
             .borders(Borders::TOP)

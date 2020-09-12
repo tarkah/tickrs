@@ -1,4 +1,4 @@
-use crate::{REDRAW_REQUEST, UPDATE_INTERVAL};
+use crate::{DATA_RECEIVED, UPDATE_INTERVAL};
 
 use async_std::sync::Arc;
 use async_std::task;
@@ -40,7 +40,7 @@ pub trait AsyncTask: 'static {
     fn connect(&self) -> AsyncTaskHandle<Self::Response> {
         let (drop_sender, drop_receiver) = bounded::<()>(1);
         let (response_sender, response_receiver) = unbounded::<Self::Response>();
-        let redraw_request = REDRAW_REQUEST.0.clone();
+        let data_received = DATA_RECEIVED.0.clone();
 
         let update_interval = self.update_interval();
         let input = Arc::new(self.input());
@@ -51,7 +51,7 @@ pub trait AsyncTask: 'static {
             // Execute the task initially and request a redraw to display this data
             if let Some(response) = <Self as AsyncTask>::task(input.clone()).await {
                 let _ = response_sender.send(response);
-                let _ = redraw_request.send(());
+                let _ = data_received.try_send(());
             }
 
             // If no update interval is defined, exit task
@@ -66,6 +66,7 @@ pub trait AsyncTask: 'static {
                 if last_updated.elapsed() >= update_interval {
                     if let Some(response) = <Self as AsyncTask>::task(input.clone()).await {
                         let _ = response_sender.send(response);
+                        let _ = data_received.try_send(());
                     }
 
                     last_updated = Instant::now();

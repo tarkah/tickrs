@@ -5,7 +5,6 @@ use crate::service::{self, Service};
 use crate::{HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME};
 
 use api::model::CompanyData;
-
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
@@ -13,6 +12,8 @@ use tui::symbols::Marker;
 use tui::widgets::{
     Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs, Text, Widget,
 };
+
+const NUM_LOADING_TICKS: usize = 4;
 
 pub struct StockState {
     pub symbol: String,
@@ -23,6 +24,8 @@ pub struct StockState {
     pub time_frame: TimeFrame,
     pub show_options: bool,
     pub options: Option<OptionsState>,
+    pub loading_tick: usize,
+    pub prev_state_loaded: bool,
 }
 
 impl StockState {
@@ -40,6 +43,8 @@ impl StockState {
             time_frame,
             show_options: false,
             options: None,
+            loading_tick: NUM_LOADING_TICKS,
+            prev_state_loaded: false,
         }
     }
 
@@ -223,6 +228,22 @@ impl StockState {
     pub fn loaded(&self) -> bool {
         !self.prices().is_empty() && self.current_price > 0.0 && self.profile.is_some()
     }
+
+    pub fn loading_tick(&mut self) {
+        let loaded = self.loaded();
+
+        if !loaded {
+            // Reset tick
+            if self.prev_state_loaded {
+                self.prev_state_loaded = false;
+                self.loading_tick = NUM_LOADING_TICKS;
+            }
+
+            self.loading_tick = (self.loading_tick + 1) % (NUM_LOADING_TICKS + 1);
+        } else if !self.prev_state_loaded {
+            self.prev_state_loaded = true;
+        }
+    }
 }
 
 pub struct StockWidget {}
@@ -236,18 +257,35 @@ impl StatefulWidget for StockWidget {
         let show_x_labes = SHOW_X_LABELS.read().map_or(false, |l| *l);
 
         let loaded = state.loaded();
+        state.loading_tick();
 
         let (company_name, currency) = match state.profile.as_ref() {
             Some(profile) => (
                 profile.price.short_name.as_str(),
                 profile.price.currency.as_deref().unwrap_or("USD"),
             ),
-            None => ("Loading...", ""),
+            None => ("", ""),
         };
+
+        let loading_indicator = ".".repeat(state.loading_tick);
 
         // Draw widget block
         {
-            block::new(&format!(" {} - {} ", state.symbol, company_name), None).render(area, buf);
+            block::new(
+                &format!(
+                    " {}{:<4} ",
+                    state.symbol,
+                    if loaded {
+                        format!(" - {}", company_name)
+                    } else if state.profile.is_some() {
+                        format!(" - {}{}", company_name, loading_indicator)
+                    } else {
+                        loading_indicator
+                    }
+                ),
+                None,
+            )
+            .render(area, buf);
         }
 
         // chunks[0] - Top Padding
