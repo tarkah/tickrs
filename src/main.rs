@@ -1,6 +1,6 @@
 extern crate tickrs_api as api;
 
-use crossbeam_channel::{select, tick, unbounded, Receiver, Sender};
+use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
 
 use crossterm::cursor;
 use crossterm::event::{Event, MouseEvent};
@@ -14,7 +14,7 @@ use tui::Terminal;
 
 use std::io::{self, Write};
 use std::panic;
-use std::sync::RwLock;
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
@@ -36,7 +36,8 @@ lazy_static! {
     pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame;
     pub static ref HIDE_TOGGLE: bool = OPTS.hide_toggle;
     pub static ref HIDE_PREV_CLOSE: bool = OPTS.hide_prev_close;
-    pub static ref REDRAW_REQUEST: (Sender<()>, Receiver<()>) = unbounded();
+    pub static ref REDRAW_REQUEST: (Sender<()>, Receiver<()>) = bounded(1);
+    pub static ref DATA_RECEIVED: (Sender<()>, Receiver<()>) = bounded(1);
     pub static ref SHOW_X_LABELS: RwLock<bool> = RwLock::new(OPTS.show_x_labels);
 }
 
@@ -51,8 +52,8 @@ fn main() {
     setup_panic_hook();
     setup_terminal();
 
-    let redraw_request = REDRAW_REQUEST.1.clone();
-    let ticker = tick(Duration::from_secs(*UPDATE_INTERVAL));
+    let request_redraw = REDRAW_REQUEST.0.clone();
+    let data_received = DATA_RECEIVED.1.clone();
     let ui_events = setup_ui_events();
 
     let starting_stocks: Vec<_> = opts
@@ -69,7 +70,7 @@ fn main() {
         app::Mode::DisplayStock
     };
 
-    let mut app = app::App {
+    let app = Arc::new(Mutex::new(app::App {
         mode: starting_mode,
         stocks: starting_stocks,
         add_stock: widget::AddStockState::new(),
@@ -92,34 +93,39 @@ fn main() {
             app::Mode::DisplayStock
         },
         summary_time_frame: opts.time_frame,
-    };
+    }));
 
-    for stock in app.stocks.iter_mut() {
-        stock.update();
-    }
+    let move_app = app.clone();
 
-    draw::draw(&mut terminal, &mut app);
+    // Redraw thread
+    thread::spawn(move || {
+        let app = move_app;
+
+        let redraw_requested = REDRAW_REQUEST.1.clone();
+
+        loop {
+            select! {
+                recv(redraw_requested) -> _ => {
+                    let mut app = app.lock().unwrap();
+
+                    draw::draw(&mut terminal, &mut app);
+                }
+                // Default redraw on every duration
+                default(Duration::from_millis(500)) => {
+                    let mut app = app.lock().unwrap();
+
+                    draw::draw(&mut terminal, &mut app);
+                }
+            }
+        }
+    });
 
     loop {
         select! {
-            recv(ticker) -> _ => {
-                for stock in app.stocks.iter_mut() {
-                    stock.update();
-
-                    if let Some(options) = stock.options.as_mut() {
-                        options.update();
-                    }
-                }
-
-                draw::draw(&mut terminal, &mut app);
-            }
-            recv(redraw_request) -> _ => {
-                // Wait some ms and collect all redraw requests so we don't
-                // redraw on each one. This is mostly important when the app is first
-                // launched with more than one symbol supplied, since each will initially
-                // request a redraw when the API data is first received.
-                thread::sleep(Duration::from_millis(200));
-                let _ = redraw_request.try_iter().collect::<Vec<_>>();
+            // Notified that new data has been fetched from API, update widgets
+            // so they can update their state with this new information
+            recv(data_received) -> _ => {
+                let mut app = app.lock().unwrap();
 
                 for stock in app.stocks.iter_mut() {
                     stock.update();
@@ -128,33 +134,32 @@ fn main() {
                         options.update();
                     }
                 }
-
-                draw::draw(&mut terminal, &mut app);
             }
             recv(ui_events) -> message => {
+                let mut app = app.lock().unwrap();
+
                 if app.debug.enabled {
                     if let Ok(event) = message {
                         app.debug.last_event = Some(event);
-                        draw::draw(&mut terminal, &mut app);
                     }
                 }
 
                 if let Ok(Event::Key(key_event)) = message {
                     match app.mode {
                         app::Mode::AddStock => {
-                            event::handle_keys_add_stock(key_event, &mut terminal, &mut app);
+                            event::handle_keys_add_stock(key_event, &mut app, &request_redraw);
                         }
                         app::Mode::DisplayStock => {
-                            event::handle_keys_display_stock(key_event, &mut terminal, &mut app);
+                            event::handle_keys_display_stock(key_event,&mut app, &request_redraw);
                         }
                         app::Mode::DisplaySummary => {
-                            event::handle_keys_display_summary(key_event, &mut terminal, &mut app);
+                            event::handle_keys_display_summary(key_event, &mut app, &request_redraw);
                         }
                         app::Mode::Help => {
-                            event::handle_keys_help(key_event, &mut terminal, &mut app);
+                            event::handle_keys_help(key_event, &mut app, &request_redraw);
                         }
                         app::Mode::DisplayOptions => {
-                            event::handle_keys_display_options(key_event, &mut terminal, &mut app);
+                            event::handle_keys_display_options(key_event, &mut app, &request_redraw);
                         }
                     }
                 } else if let Ok(Event::Mouse(event)) = message {
@@ -165,10 +170,7 @@ fn main() {
                             MouseEvent::Drag(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
                             _ => {}
                         }
-                        draw::draw(&mut terminal, &mut app);
                     }
-                } else if let Ok(Event::Resize(_,_)) = message {
-                    draw::draw(&mut terminal, &mut app);
                 }
             }
         }
