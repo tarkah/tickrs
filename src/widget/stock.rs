@@ -117,6 +117,18 @@ impl StockState {
             max = &self.current_price;
         }
 
+        if self.time_frame == TimeFrame::Day1 && !*HIDE_PREV_CLOSE {
+            if let Some(profile) = &self.profile {
+                if profile.price.regular_market_previous_close.price.le(&min) {
+                    min = &profile.price.regular_market_previous_close.price;
+                }
+
+                if profile.price.regular_market_previous_close.price.gt(&max) {
+                    max = &profile.price.regular_market_previous_close.price;
+                }
+            }
+        }
+
         (*min, *max)
     }
 
