@@ -128,6 +128,16 @@ impl StatefulWidget for StockSummaryWidget {
             layout[1] = add_padding(layout[1], 1, PaddingDirection::Top);
 
             let (min, max) = state.min_max();
+            let start = state
+                .current_trading_period
+                .as_ref()
+                .map(|p| p.start)
+                .unwrap_or(52200);
+            let end = state
+                .current_trading_period
+                .as_ref()
+                .map(|p| p.end)
+                .unwrap_or(75600);
 
             let mut prices: Vec<_> = state
                 .prices()
@@ -200,7 +210,7 @@ impl StatefulWidget for StockSummaryWidget {
 
             Chart::<String, String>::default()
                 .block(Block::default().border_style(Style::default()))
-                .x_axis(Axis::default().bounds(state.x_bounds()))
+                .x_axis(Axis::default().bounds(state.x_bounds(start, end)))
                 .y_axis(
                     Axis::default()
                         .bounds(state.y_bounds(min, max))

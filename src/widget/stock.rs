@@ -4,7 +4,7 @@ use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::{HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME};
 
-use api::model::CompanyData;
+use api::model::{ChartTradingPeriod, CompanyData};
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
@@ -26,6 +26,7 @@ pub struct StockState {
     pub options: Option<OptionsState>,
     pub loading_tick: usize,
     pub prev_state_loaded: bool,
+    pub current_trading_period: Option<ChartTradingPeriod>,
 }
 
 impl StockState {
@@ -45,6 +46,7 @@ impl StockState {
             options: None,
             loading_tick: NUM_LOADING_TICKS,
             prev_state_loaded: false,
+            current_trading_period: None,
         }
     }
 
@@ -78,8 +80,9 @@ impl StockState {
                 service::stock::Update::NewPrice(price) => {
                     self.current_price = price;
                 }
-                service::stock::Update::Prices(prices) => {
+                service::stock::Update::Prices((trading_period, prices)) => {
                     self.prices[self.time_frame.idx()] = prices;
+                    self.current_trading_period = trading_period;
                 }
                 service::stock::Update::CompanyData(data) => {
                     self.profile = Some(data);
@@ -153,18 +156,20 @@ impl StockState {
         (max, min)
     }
 
-    pub fn x_bounds(&self) -> [f64; 2] {
+    pub fn x_bounds(&self, start: i64, end: i64) -> [f64; 2] {
+        let num_points = ((end - start) / 60) as f64;
+
         match self.time_frame {
-            TimeFrame::Day1 => [0.0, 390.0],
+            TimeFrame::Day1 => [0.0, num_points],
             _ => [0.0, (self.prices().len() + 1) as f64],
         }
     }
 
-    pub fn x_labels(&self, width: u16) -> Vec<String> {
+    pub fn x_labels(&self, width: u16, start: i64, end: i64) -> Vec<String> {
         let mut labels = vec![];
 
         let dates = if self.time_frame == TimeFrame::Day1 {
-            MarketHours::default().collect()
+            MarketHours(start, end).collect()
         } else {
             self.prices().iter().map(|p| p.date).collect::<Vec<_>>()
         };
@@ -425,6 +430,16 @@ impl StatefulWidget for StockWidget {
         // Draw graph
         {
             let (min, max) = state.min_max();
+            let start = state
+                .current_trading_period
+                .as_ref()
+                .map(|p| p.start)
+                .unwrap_or(52200);
+            let end = state
+                .current_trading_period
+                .as_ref()
+                .map(|p| p.end)
+                .unwrap_or(75600);
 
             let mut prices: Vec<_> = state
                 .prices()
@@ -444,7 +459,7 @@ impl StatefulWidget for StockWidget {
             };
 
             let x_labels = if show_x_labes {
-                state.x_labels(chunks[2].width)
+                state.x_labels(chunks[2].width, start, end)
             } else {
                 vec![]
             };
@@ -460,8 +475,10 @@ impl StatefulWidget for StockWidget {
             };
 
             let data_2 = if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
+                let num_points = (end - start) / 60 + 1;
+
                 Some(
-                    (0..391)
+                    (0..num_points)
                         .map(|i| {
                             (
                                 (i + 1) as f64,
@@ -508,7 +525,7 @@ impl StatefulWidget for StockWidget {
                         .border_style(Style::default()),
                 )
                 .x_axis({
-                    let axis = Axis::default().bounds(state.x_bounds());
+                    let axis = Axis::default().bounds(state.x_bounds(start, end));
 
                     if show_x_labes && loaded {
                         axis.labels(&x_labels)

@@ -70,8 +70,21 @@ pub struct ChartData {
 pub struct ChartMeta {
     pub regular_market_price: f32,
     pub chart_previous_close: f32,
+    pub current_trading_period: Option<ChartCurrentTradingPeriod>,
 }
 
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct ChartCurrentTradingPeriod {
+    pub regular: ChartTradingPeriod,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct ChartTradingPeriod {
+    pub start: i64,
+    pub end: i64,
+}
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
 pub struct ChartIndicators {
@@ -82,6 +95,7 @@ pub struct ChartIndicators {
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
 pub struct ChartAdjClose {
+    #[serde(deserialize_with = "deserialize_vec")]
     pub adjclose: Vec<f32>,
 }
 
@@ -118,7 +132,7 @@ pub struct CompanyStatus {
 #[derive(Debug, Deserialize, Clone)]
 pub struct CompanyData {
     #[serde(rename = "assetProfile")]
-    pub profile: CompanyProfile,
+    pub profile: Option<CompanyProfile>,
     pub price: CompanyPrice,
 }
 
@@ -139,7 +153,7 @@ pub struct CompanyProfile {
 pub struct CompanyPrice {
     pub symbol: String,
     pub short_name: String,
-    pub long_name: String,
+    pub long_name: Option<String>,
     pub regular_market_price: CompanyRegularMarketPrice,
     pub regular_market_previous_close: CompanyRegularMarketPreviousClose,
     pub currency: Option<String>,
