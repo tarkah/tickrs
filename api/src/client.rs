@@ -218,7 +218,7 @@ mod tests {
     async fn test_company_data() {
         let client = Client::new();
 
-        let symbols = vec!["SPY", "AAPL", "AMD", "TSLA"];
+        let symbols = vec!["SPY", "AAPL", "AMD", "TSLA", "ES=F"];
 
         for symbol in symbols {
             let data = client.get_company_data(symbol).await;

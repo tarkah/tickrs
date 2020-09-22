@@ -114,7 +114,7 @@ impl TimeFrame {
     }
 }
 
-pub struct MarketHours(i64, i64);
+pub struct MarketHours(pub i64, pub i64);
 
 impl Default for MarketHours {
     fn default() -> Self {

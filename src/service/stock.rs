@@ -2,12 +2,12 @@ use super::*;
 use crate::common::*;
 use crate::task::*;
 
-use api::model::CompanyData;
+use api::model::{ChartTradingPeriod, CompanyData};
 
 pub struct StockService {
     symbol: String,
     current_price_handle: AsyncTaskHandle<f32>,
-    prices_handle: AsyncTaskHandle<Vec<Price>>,
+    prices_handle: AsyncTaskHandle<(Option<ChartTradingPeriod>, Vec<Price>)>,
     company_handle: AsyncTaskHandle<CompanyData>,
 }
 
@@ -41,7 +41,7 @@ impl StockService {
 #[derive(Debug)]
 pub enum Update {
     NewPrice(f32),
-    Prices(Vec<Price>),
+    Prices((Option<ChartTradingPeriod>, Vec<Price>)),
     CompanyData(CompanyData),
 }
 
