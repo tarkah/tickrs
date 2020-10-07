@@ -1,6 +1,6 @@
 [package]
 name = "tickrs"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["tarkah <admin@tarkah.dev>"]
 edition = "2018"
 license = "MIT"
