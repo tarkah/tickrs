@@ -1,7 +1,7 @@
 use super::*;
 use crate::common::{chart_data_to_prices, Price, TimeFrame};
 
-use api::{model::ChartTradingPeriod, Interval};
+use api::{model::ChartMeta, Interval};
 use async_std::sync::Arc;
 use futures::future::BoxFuture;
 
@@ -19,7 +19,7 @@ impl Prices {
 
 impl AsyncTask for Prices {
     type Input = (String, TimeFrame, api::Client);
-    type Response = (Option<ChartTradingPeriod>, Vec<Price>);
+    type Response = (ChartMeta, Vec<Price>);
 
     fn update_interval(&self) -> Option<Duration> {
         Some(self.time_frame.update_interval())
@@ -48,14 +48,7 @@ impl AsyncTask for Prices {
                 .get_chart_data(&symbol, interval, time_frame.as_range())
                 .await
             {
-                Some((
-                    response
-                        .meta
-                        .current_trading_period
-                        .as_ref()
-                        .map(|p| p.regular.to_owned()),
-                    chart_data_to_prices(response),
-                ))
+                Some((response.meta.clone(), chart_data_to_prices(response)))
             } else {
                 None
             }

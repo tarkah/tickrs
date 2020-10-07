@@ -4,7 +4,7 @@ use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::{HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME};
 
-use api::model::{ChartTradingPeriod, CompanyData};
+use api::model::{ChartMeta, CompanyData};
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
@@ -26,7 +26,7 @@ pub struct StockState {
     pub options: Option<OptionsState>,
     pub loading_tick: usize,
     pub prev_state_loaded: bool,
-    pub current_trading_period: Option<ChartTradingPeriod>,
+    pub chart_meta: Option<ChartMeta>,
 }
 
 impl StockState {
@@ -46,7 +46,7 @@ impl StockState {
             options: None,
             loading_tick: NUM_LOADING_TICKS,
             prev_state_loaded: false,
-            current_trading_period: None,
+            chart_meta: None,
         }
     }
 
@@ -80,9 +80,9 @@ impl StockState {
                 service::stock::Update::NewPrice(price) => {
                     self.current_price = price;
                 }
-                service::stock::Update::Prices((trading_period, prices)) => {
+                service::stock::Update::Prices((chart_meta, prices)) => {
                     self.prices[self.time_frame.idx()] = prices;
-                    self.current_trading_period = trading_period;
+                    self.chart_meta = Some(chart_meta);
                 }
                 service::stock::Update::CompanyData(data) => {
                     self.profile = Some(data);
@@ -121,13 +121,13 @@ impl StockState {
         }
 
         if self.time_frame == TimeFrame::Day1 && !*HIDE_PREV_CLOSE {
-            if let Some(profile) = &self.profile {
-                if profile.price.regular_market_previous_close.price.le(&min) {
-                    min = &profile.price.regular_market_previous_close.price;
+            if let Some(meta) = &self.chart_meta {
+                if meta.chart_previous_close.le(&min) {
+                    min = &meta.chart_previous_close;
                 }
 
-                if profile.price.regular_market_previous_close.price.gt(&max) {
-                    max = &profile.price.regular_market_previous_close.price;
+                if meta.chart_previous_close.gt(&max) {
+                    max = &meta.chart_previous_close;
                 }
             }
         }
@@ -230,8 +230,8 @@ impl StockState {
         }
 
         let baseline = if self.time_frame == TimeFrame::Day1 {
-            if let Some(profile) = &self.profile {
-                profile.price.regular_market_previous_close.price
+            if let Some(meta) = &self.chart_meta {
+                meta.chart_previous_close
             } else {
                 self.prices().first().map(|d| d.close).unwrap()
             }
@@ -431,14 +431,24 @@ impl StatefulWidget for StockWidget {
         {
             let (min, max) = state.min_max();
             let start = state
-                .current_trading_period
+                .chart_meta
                 .as_ref()
-                .map(|p| p.start)
+                .map(|c| {
+                    c.current_trading_period
+                        .as_ref()
+                        .map(|p| p.regular.start)
+                        .unwrap_or(52200)
+                })
                 .unwrap_or(52200);
             let end = state
-                .current_trading_period
+                .chart_meta
                 .as_ref()
-                .map(|p| p.end)
+                .map(|c| {
+                    c.current_trading_period
+                        .as_ref()
+                        .map(|p| p.regular.end)
+                        .unwrap_or(75600)
+                })
                 .unwrap_or(75600);
 
             let mut prices: Vec<_> = state
@@ -482,13 +492,7 @@ impl StatefulWidget for StockWidget {
                         .map(|i| {
                             (
                                 (i + 1) as f64,
-                                state
-                                    .profile
-                                    .as_ref()
-                                    .unwrap()
-                                    .price
-                                    .regular_market_previous_close
-                                    .price as f64,
+                                state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
                             )
                         })
                         .collect::<Vec<_>>(),

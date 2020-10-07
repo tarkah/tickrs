@@ -129,14 +129,24 @@ impl StatefulWidget for StockSummaryWidget {
 
             let (min, max) = state.min_max();
             let start = state
-                .current_trading_period
+                .chart_meta
                 .as_ref()
-                .map(|p| p.start)
+                .map(|c| {
+                    c.current_trading_period
+                        .as_ref()
+                        .map(|p| p.regular.start)
+                        .unwrap_or(52200)
+                })
                 .unwrap_or(52200);
             let end = state
-                .current_trading_period
+                .chart_meta
                 .as_ref()
-                .map(|p| p.end)
+                .map(|c| {
+                    c.current_trading_period
+                        .as_ref()
+                        .map(|p| p.regular.end)
+                        .unwrap_or(75600)
+                })
                 .unwrap_or(75600);
 
             let mut prices: Vec<_> = state
@@ -167,18 +177,14 @@ impl StatefulWidget for StockSummaryWidget {
             };
 
             let data_2 = if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
+                let num_points = (end - start) / 60 + 1;
+
                 Some(
-                    (0..391)
+                    (0..num_points)
                         .map(|i| {
                             (
                                 (i + 1) as f64,
-                                state
-                                    .profile
-                                    .as_ref()
-                                    .unwrap()
-                                    .price
-                                    .regular_market_previous_close
-                                    .price as f64,
+                                state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
                             )
                         })
                         .collect::<Vec<_>>(),
