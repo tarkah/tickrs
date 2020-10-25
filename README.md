@@ -22,6 +22,12 @@ Download the latest [release](https://github.com/tarkah/tickrs/releases/latest) 
 cargo install tickrs
 ```
 
+### AUR
+
+```
+yay -S tickrs-git
+```
+
 ## Usage
 
 ```
