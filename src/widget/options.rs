@@ -78,7 +78,9 @@ impl OptionsState {
             OptionType::Put => self.selected_type = OptionType::Call,
         }
 
-        self.set_selected_as_closest();
+        if self.data().is_some() {
+            self.set_selected_as_closest();
+        }
     }
 
     fn set_selected_as_closest(&mut self) {
