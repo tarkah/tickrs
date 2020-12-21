@@ -31,7 +31,7 @@ yay -S tickrs-git
 ## Usage
 
 ```
-tickrs 0.7.1
+tickrs 0.7.2
 Realtime ticker data in your terminal 📈
 
 USAGE:
