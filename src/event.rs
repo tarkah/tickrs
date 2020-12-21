@@ -107,7 +107,11 @@ pub fn handle_keys_add_stock(
     if key_event.modifiers.is_empty() || key_event.modifiers == KeyModifiers::SHIFT {
         match key_event.code {
             KeyCode::Enter => {
-                let stock = app.add_stock.enter();
+                let mut stock = app.add_stock.enter();
+
+                if app.previous_mode == app::Mode::DisplaySummary {
+                    stock.set_time_frame(app.summary_time_frame);
+                }
 
                 app.stocks.push(stock);
                 app.current_tab = app.stocks.len() - 1;
