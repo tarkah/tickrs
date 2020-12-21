@@ -58,9 +58,10 @@ pub fn handle_keys_display_stock(
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('o') => {
-                app.stocks[app.current_tab].toggle_options();
-                app.mode = app::Mode::DisplayOptions;
-                let _ = request_redraw.try_send(());
+                if app.stocks[app.current_tab].toggle_options() {
+                    app.mode = app::Mode::DisplayOptions;
+                    let _ = request_redraw.try_send(());
+                }
             }
             KeyCode::Char('x') => {
                 let mut show_x_labels = SHOW_X_LABELS.write().unwrap();

@@ -68,6 +68,7 @@ pub struct ChartData {
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
 pub struct ChartMeta {
+    pub instrument_type: Option<String>,
     pub regular_market_price: f32,
     pub chart_previous_close: f32,
     pub current_trading_period: Option<ChartCurrentTradingPeriod>,

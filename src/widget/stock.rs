@@ -91,7 +91,19 @@ impl StockState {
         }
     }
 
-    pub fn toggle_options(&mut self) {
+    fn options_enabled(&self) -> bool {
+        self.chart_meta
+            .as_ref()
+            .map(|m| m.instrument_type.as_deref())
+            .flatten()
+            != Some("CRYPTOCURRENCY")
+    }
+
+    pub fn toggle_options(&mut self) -> bool {
+        if !self.options_enabled() {
+            return false;
+        }
+
         self.show_options = !self.show_options;
 
         if self.options.is_some() {
@@ -99,6 +111,8 @@ impl StockState {
         } else {
             self.options = Some(OptionsState::new(self.symbol.clone()));
         }
+
+        true
     }
 
     pub fn min_max(&self) -> (f32, f32) {
@@ -398,26 +412,32 @@ impl StatefulWidget for StockWidget {
                 toggle_block.render(info_chunks[1], buf);
                 info_chunks[1].x += 2;
                 info_chunks[1].width -= 2;
+                info_chunks[1].y += 2;
+                info_chunks[1].height -= 2;
 
-                let toggle_info = [
-                    Text::styled(
-                        "\n\nOptions  'o'\n",
-                        Style::default().bg(if state.show_options {
-                            Color::DarkGray
-                        } else {
-                            Color::Reset
-                        }),
-                    ),
-                    Text::styled("Summary  's'\n", Style::default()),
-                    Text::styled(
-                        "X Labels 'x'",
+                let mut toggle_info = vec![Text::styled("Summary  's'", Style::default())];
+
+                if loaded {
+                    toggle_info.push(Text::styled(
+                        "\nX Labels 'x'",
                         Style::default().bg(if show_x_labes {
                             Color::DarkGray
                         } else {
                             Color::Reset
                         }),
-                    ),
-                ];
+                    ));
+                }
+
+                if state.options_enabled() && loaded {
+                    toggle_info.push(Text::styled(
+                        "\nOptions  'o'",
+                        Style::default().bg(if state.show_options {
+                            Color::DarkGray
+                        } else {
+                            Color::Reset
+                        }),
+                    ));
+                }
 
                 Paragraph::new(toggle_info.iter())
                     .style(Style::default().fg(Color::White))
