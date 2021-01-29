@@ -2,9 +2,7 @@ use super::{block, OptionsState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
-use crate::{
-    ENABLE_PRE_POST, FULL_PRE_TIME, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME,
-};
+use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME, TRUNC_PRE};
 
 use api::model::{ChartMeta, CompanyData};
 use tui::buffer::Buffer;
@@ -165,7 +163,7 @@ impl StockState {
         let post_end = post.map(|p| p.end).unwrap_or(90000);
 
         // Pre market really only has activity 30 min before open
-        if reg_start - pre_start >= 1800 && !*FULL_PRE_TIME {
+        if reg_start - pre_start >= 1800 && *TRUNC_PRE {
             pre_start = reg_start - 1800;
         }
 

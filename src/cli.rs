@@ -37,9 +37,8 @@ pub struct Opt {
     /// Enable pre / post market hours for graphs
     pub enable_pre_post: bool,
     #[structopt(long)]
-    /// Graph entire pre market period, otherwise pre market graphing is truncated
-    /// to only 30 minutes prior to markets opening
-    pub full_pre_time: bool,
+    /// Truncate pre market graphing to only 30 minutes prior to markets opening
+    pub trunc_pre: bool,
 }
 
 pub fn get_opts() -> Opt {

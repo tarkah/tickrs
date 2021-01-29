@@ -38,7 +38,7 @@ lazy_static! {
     pub static ref DATA_RECEIVED: (Sender<()>, Receiver<()>) = bounded(1);
     pub static ref SHOW_X_LABELS: RwLock<bool> = RwLock::new(OPTS.show_x_labels);
     pub static ref ENABLE_PRE_POST: RwLock<bool> = RwLock::new(OPTS.enable_pre_post);
-    pub static ref FULL_PRE_TIME: bool = OPTS.full_pre_time;
+    pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
 }
 
 fn main() {
