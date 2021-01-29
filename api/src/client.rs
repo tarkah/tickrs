@@ -56,10 +56,15 @@ impl Client {
         symbol: &str,
         interval: Interval,
         range: Range,
+        include_pre_post: bool,
     ) -> Result<ChartData> {
         let mut params = HashMap::new();
         params.insert("interval", format!("{}", interval));
         params.insert("range", format!("{}", range));
+
+        if include_pre_post {
+            params.insert("includePrePost", format!("{}", true));
+        }
 
         let url = self.get_url(
             Version::V8,
@@ -218,7 +223,7 @@ mod tests {
     async fn test_company_data() {
         let client = Client::new();
 
-        let symbols = vec!["SPY", "AAPL", "AMD", "TSLA", "ES=F"];
+        let symbols = vec!["SPY", "AAPL", "AMD", "TSLA", "ES=F", "BTC-USD"];
 
         for symbol in symbols {
             let data = client.get_company_data(symbol).await;
@@ -277,7 +282,7 @@ mod tests {
         let ticker = "SPY";
 
         for (idx, (range, interval)) in combinations.iter().enumerate() {
-            let data = client.get_chart_data(ticker, *interval, *range).await;
+            let data = client.get_chart_data(ticker, *interval, *range, true).await;
 
             if let Err(e) = data {
                 println!("{}", e);

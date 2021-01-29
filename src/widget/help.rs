@@ -28,12 +28,13 @@ Toggle Options Pane:
   - Navigate with arrow keys
 Toggle Summary Pane:
   - s: toggle pane
-Toggle X Axis Labels:
+Graphing Display:
+  - p: toggle pre / post market
   - x: toggle labels
 "#;
 
 pub const HELP_WIDTH: u16 = 35;
-pub const HELP_HEIGHT: u16 = 26;
+pub const HELP_HEIGHT: u16 = 27;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}

@@ -31,13 +31,16 @@ yay -S tickrs-git
 ## Usage
 
 ```
-tickrs 0.7.2
+tickrs
 Realtime ticker data in your terminal 📈
 
 USAGE:
     tickrs [FLAGS] [OPTIONS]
 
 FLAGS:
+    -p, --enable-pre-post    Enable pre / post market hours for graphs
+        --full-pre-time      Graph entire pre market period, otherwise pre market graphing is truncated to only 30
+                             minutes prior to markets opening
     -h, --help               Prints help information
         --hide-help          Hide help icon in top right
         --hide-prev-close    Hide previous close line on 1D chart

@@ -114,6 +114,7 @@ impl TimeFrame {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct MarketHours(pub i64, pub i64);
 
 impl Default for MarketHours {
@@ -136,13 +137,20 @@ impl Iterator for MarketHours {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TradingPeriod {
+    Pre,
+    Regular,
+    Post,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Price {
-    pub close: f32,
-    pub volume: u32,
-    pub high: f32,
-    pub low: f32,
-    pub open: f32,
+    pub close: f64,
+    pub volume: u64,
+    pub high: f64,
+    pub low: f64,
+    pub open: f64,
     pub date: i64,
 }
 
@@ -173,15 +181,15 @@ pub fn chart_data_to_prices(mut chart_data: ChartData) -> Vec<Price> {
     .collect()
 }
 
-pub fn cast_as_dataset(input: (usize, &f32)) -> (f64, f64) {
-    ((input.0 + 1) as f64, *input.1 as f64)
+pub fn cast_as_dataset(input: (usize, &f64)) -> (f64, f64) {
+    ((input.0 + 1) as f64, *input.1)
 }
 
-pub fn cast_historical_as_price(input: &Price) -> f32 {
+pub fn cast_historical_as_price(input: &Price) -> f64 {
     input.close
 }
 
-pub fn zeros_as_pre(prices: &mut [f32]) {
+pub fn zeros_as_pre(prices: &mut [f64]) {
     if prices.len() <= 1 {
         return;
     }
@@ -201,7 +209,7 @@ pub fn zeros_as_pre(prices: &mut [f32]) {
     }
 }
 
-pub fn remove_zeros(prices: Vec<f32>) -> Vec<f32> {
+pub fn remove_zeros(prices: Vec<f64>) -> Vec<f64> {
     prices.into_iter().filter(|x| x.ne(&0.0)).collect()
 }
 

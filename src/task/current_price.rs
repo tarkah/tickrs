@@ -16,7 +16,7 @@ impl CurrentPrice {
 
 impl AsyncTask for CurrentPrice {
     type Input = (String, api::Client);
-    type Response = f32;
+    type Response = (f64, Option<f64>);
 
     fn update_interval(&self) -> Option<Duration> {
         Some(Duration::from_secs(1))
@@ -32,7 +32,11 @@ impl AsyncTask for CurrentPrice {
             let client = &input.1;
 
             if let Ok(response) = client.get_company_data(symbol).await {
-                Some(response.price.regular_market_price.price)
+                let regular_price = response.price.regular_market_price.price;
+
+                let post_price = response.price.post_market_price.price;
+
+                Some((regular_price, post_price))
             } else {
                 None
             }

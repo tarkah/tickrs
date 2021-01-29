@@ -44,8 +44,10 @@ impl AsyncTask for Prices {
                 _ => Interval::Day1,
             };
 
+            let include_pre_post = time_frame == TimeFrame::Day1;
+
             if let Ok(response) = client
-                .get_chart_data(&symbol, interval, time_frame.as_range())
+                .get_chart_data(&symbol, interval, time_frame.as_range(), include_pre_post)
                 .await
             {
                 Some((response.meta.clone(), chart_data_to_prices(response)))

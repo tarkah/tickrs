@@ -2,7 +2,9 @@ use super::{block, OptionsState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
-use crate::{HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME};
+use crate::{
+    ENABLE_PRE_POST, FULL_PRE_TIME, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME,
+};
 
 use api::model::{ChartMeta, CompanyData};
 use tui::buffer::Buffer;
@@ -19,7 +21,8 @@ pub struct StockState {
     pub symbol: String,
     pub stock_service: service::stock::StockService,
     pub profile: Option<CompanyData>,
-    pub current_price: f32,
+    pub current_regular_price: f64,
+    pub current_post_price: Option<f64>,
     pub prices: [Vec<Price>; 7],
     pub time_frame: TimeFrame,
     pub show_options: bool,
@@ -39,7 +42,8 @@ impl StockState {
             symbol,
             stock_service,
             profile: None,
-            current_price: 0.0,
+            current_regular_price: 0.0,
+            current_post_price: None,
             prices: [vec![], vec![], vec![], vec![], vec![], vec![], vec![]],
             time_frame,
             show_options: false,
@@ -68,8 +72,26 @@ impl StockState {
         self.stock_service.update_time_frame(time_frame);
     }
 
-    pub fn prices(&self) -> &[Price] {
-        &self.prices[self.time_frame.idx()]
+    pub fn prices(&self) -> impl Iterator<Item = &Price> {
+        let (start, end) = self.start_end();
+
+        self.prices[self.time_frame.idx()].iter().filter(move |p| {
+            if self.time_frame == TimeFrame::Day1 {
+                (p.date > start && p.date < end) || p.date == start || p.date == end
+            } else {
+                true
+            }
+        })
+    }
+
+    pub fn current_price(&self) -> f64 {
+        let enable_pre_post = { *ENABLE_PRE_POST.read().unwrap() };
+
+        if enable_pre_post && self.current_post_price.is_some() {
+            self.current_post_price.unwrap()
+        } else {
+            self.current_regular_price
+        }
     }
 
     pub fn update(&mut self) {
@@ -77,8 +99,9 @@ impl StockState {
 
         for update in updates {
             match update {
-                service::stock::Update::NewPrice(price) => {
-                    self.current_price = price;
+                service::stock::Update::NewPrice((regular, post)) => {
+                    self.current_regular_price = regular;
+                    self.current_post_price = post;
                 }
                 service::stock::Update::Prices((chart_meta, prices)) => {
                     self.prices[self.time_frame.idx()] = prices;
@@ -115,42 +138,126 @@ impl StockState {
         true
     }
 
-    pub fn min_max(&self) -> (f32, f32) {
-        let mut data: Vec<_> = self.prices().iter().map(cast_historical_as_price).collect();
+    pub fn start_end(&self) -> (i64, i64) {
+        let enable_pre_post = { *ENABLE_PRE_POST.read().unwrap() };
+
+        let pre = self
+            .chart_meta
+            .as_ref()
+            .and_then(|c| c.current_trading_period.as_ref())
+            .map(|p| &p.pre);
+
+        let regular = self
+            .chart_meta
+            .as_ref()
+            .and_then(|c| c.current_trading_period.as_ref())
+            .map(|p| &p.regular);
+
+        let post = self
+            .chart_meta
+            .as_ref()
+            .and_then(|c| c.current_trading_period.as_ref())
+            .map(|p| &p.post);
+
+        let mut pre_start = pre.map(|p| p.start).unwrap_or(32400);
+        let reg_start = regular.map(|p| p.start).unwrap_or(52200);
+        let reg_end = regular.map(|p| p.end).unwrap_or(75600);
+        let post_end = post.map(|p| p.end).unwrap_or(90000);
+
+        // Pre market really only has activity 30 min before open
+        if reg_start - pre_start >= 1800 && !*FULL_PRE_TIME {
+            pre_start = reg_start - 1800;
+        }
+
+        let start = if !enable_pre_post {
+            reg_start
+        } else {
+            pre_start
+        };
+
+        let end = if !enable_pre_post { reg_end } else { post_end };
+
+        (start, end)
+    }
+
+    pub fn regular_start_end_idx(&self) -> (Option<usize>, Option<usize>) {
+        let reg_start = self
+            .chart_meta
+            .as_ref()
+            .and_then(|m| m.current_trading_period.as_ref())
+            .map(|c| c.regular.start);
+
+        let reg_end = self
+            .chart_meta
+            .as_ref()
+            .and_then(|m| m.current_trading_period.as_ref())
+            .map(|c| c.regular.end);
+
+        let start_idx = self
+            .prices()
+            .enumerate()
+            .find(|(_, p)| Some(p.date) >= reg_start)
+            .map(|(idx, _)| idx);
+
+        let end_idx = self
+            .prices()
+            .enumerate()
+            .find(|(_, p)| Some(p.date) >= reg_end)
+            .map(|(idx, _)| idx);
+
+        (start_idx, end_idx)
+    }
+
+    pub fn current_trading_period(&self) -> TradingPeriod {
+        let (reg_start, reg_end) = self.regular_start_end_idx();
+
+        if self.time_frame != TimeFrame::Day1 {
+            TradingPeriod::Regular
+        } else if reg_start.is_some() && reg_end.is_some() {
+            TradingPeriod::Post
+        } else if reg_start.is_some() {
+            TradingPeriod::Regular
+        } else {
+            TradingPeriod::Pre
+        }
+    }
+
+    pub fn min_max(&self) -> (f64, f64) {
+        let mut data: Vec<_> = self.prices().map(cast_historical_as_price).collect();
         data.pop();
-        data.push(self.current_price);
+        data.push(self.current_price());
         data = remove_zeros(data);
 
         data.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        let mut min = data.first().unwrap_or(&0.0);
-        let mut max = data.last().unwrap_or(&1.0);
+        let mut min = data.first().cloned().unwrap_or(0.0);
+        let mut max = data.last().cloned().unwrap_or(1.0);
 
-        if self.current_price.le(&min) {
-            min = &self.current_price;
+        if self.current_price().le(&min) {
+            min = self.current_price();
         }
 
-        if self.current_price.gt(&max) {
-            max = &self.current_price;
+        if self.current_price().gt(&max) {
+            max = self.current_price();
         }
 
         if self.time_frame == TimeFrame::Day1 && !*HIDE_PREV_CLOSE {
             if let Some(meta) = &self.chart_meta {
                 if meta.chart_previous_close.le(&min) {
-                    min = &meta.chart_previous_close;
+                    min = meta.chart_previous_close;
                 }
 
                 if meta.chart_previous_close.gt(&max) {
-                    max = &meta.chart_previous_close;
+                    max = meta.chart_previous_close;
                 }
             }
         }
 
-        (*min, *max)
+        (min, max)
     }
 
-    pub fn high_low(&self) -> (f32, f32) {
-        let mut data = self.prices().to_vec();
+    pub fn high_low(&self) -> (f64, f64) {
+        let mut data = self.prices().cloned().collect::<Vec<_>>();
 
         data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
         let mut max = data.last().map(|d| d.high).unwrap_or(0.0);
@@ -159,12 +266,12 @@ impl StockState {
         data.sort_by(|a, b| a.low.partial_cmp(&b.low).unwrap());
         let mut min = data.first().map(|d| d.low).unwrap_or(0.0);
 
-        if self.current_price.le(&min) {
-            min = self.current_price;
+        if self.current_price().le(&min) {
+            min = self.current_price();
         }
 
-        if self.current_price.gt(&max) {
-            max = self.current_price;
+        if self.current_price().gt(&max) {
+            max = self.current_price();
         }
 
         (max, min)
@@ -175,7 +282,7 @@ impl StockState {
 
         match self.time_frame {
             TimeFrame::Day1 => [0.0, num_points],
-            _ => [0.0, (self.prices().len() + 1) as f64],
+            _ => [0.0, (self.prices().count() + 1) as f64],
         }
     }
 
@@ -185,7 +292,7 @@ impl StockState {
         let dates = if self.time_frame == TimeFrame::Day1 {
             MarketHours(start, end).collect()
         } else {
-            self.prices().iter().map(|p| p.date).collect::<Vec<_>>()
+            self.prices().map(|p| p.date).collect::<Vec<_>>()
         };
 
         if dates.is_empty() {
@@ -218,16 +325,16 @@ impl StockState {
         labels
     }
 
-    pub fn y_bounds(&self, min: f32, max: f32) -> [f64; 2] {
-        [(min - 0.05) as f64, (max + 0.05) as f64]
+    pub fn y_bounds(&self, min: f64, max: f64) -> [f64; 2] {
+        [(min - 0.05), (max + 0.05)]
     }
 
-    pub fn y_labels(&self, min: f32, max: f32) -> Vec<String> {
+    pub fn y_labels(&self, min: f64, max: f64) -> Vec<String> {
         if self.loaded() {
             vec![
-                format!("{:>7.2}", (min - 0.05)),
-                format!("{:>7.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
-                format!("{:>7.2}", max + 0.05),
+                format!("{:>8.2}", (min - 0.05)),
+                format!("{:>8.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
+                format!("{:>8.2}", max + 0.05),
             ]
         } else {
             vec![
@@ -238,8 +345,8 @@ impl StockState {
         }
     }
 
-    pub fn pct_change(&self) -> f32 {
-        if self.prices().is_empty() {
+    pub fn pct_change(&self) -> f64 {
+        if self.prices().count() == 0 {
             return 0.0;
         }
 
@@ -247,17 +354,17 @@ impl StockState {
             if let Some(meta) = &self.chart_meta {
                 meta.chart_previous_close
             } else {
-                self.prices().first().map(|d| d.close).unwrap()
+                self.prices().next().map(|d| d.close).unwrap()
             }
         } else {
-            self.prices().first().map(|d| d.close).unwrap()
+            self.prices().next().map(|d| d.close).unwrap()
         };
 
-        self.current_price / baseline - 1.0
+        self.current_price() / baseline - 1.0
     }
 
     pub fn loaded(&self) -> bool {
-        !self.prices().is_empty() && self.current_price > 0.0 && self.profile.is_some()
+        self.prices().count() > 0 && self.current_price() > 0.0 && self.profile.is_some()
     }
 
     pub fn loading_tick(&mut self) {
@@ -282,10 +389,12 @@ pub struct StockWidget {}
 impl StatefulWidget for StockWidget {
     type State = StockState;
 
+    #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let pct_change = state.pct_change();
 
         let show_x_labes = SHOW_X_LABELS.read().map_or(false, |l| *l);
+        let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
 
         let loaded = state.loaded();
         state.loading_tick();
@@ -361,7 +470,7 @@ impl StatefulWidget for StockWidget {
                 Text::styled("c: ", Style::default()),
                 Text::styled(
                     if loaded {
-                        format!("{:.2} {}", state.current_price, currency)
+                        format!("{:.2} {}", state.current_price(), currency)
                     } else {
                         "".to_string()
                     },
@@ -412,8 +521,8 @@ impl StatefulWidget for StockWidget {
                 toggle_block.render(info_chunks[1], buf);
                 info_chunks[1].x += 2;
                 info_chunks[1].width -= 2;
-                info_chunks[1].y += 2;
-                info_chunks[1].height -= 2;
+                info_chunks[1].y += 1;
+                info_chunks[1].height -= 1;
 
                 let mut toggle_info = vec![Text::styled("Summary  's'", Style::default())];
 
@@ -421,6 +530,15 @@ impl StatefulWidget for StockWidget {
                     toggle_info.push(Text::styled(
                         "\nX Labels 'x'",
                         Style::default().bg(if show_x_labes {
+                            Color::DarkGray
+                        } else {
+                            Color::Reset
+                        }),
+                    ));
+
+                    toggle_info.push(Text::styled(
+                        "\nPre Post 'p'",
+                        Style::default().bg(if enable_pre_post {
                             Color::DarkGray
                         } else {
                             Color::Reset
@@ -450,35 +568,12 @@ impl StatefulWidget for StockWidget {
         // Draw graph
         {
             let (min, max) = state.min_max();
-            let start = state
-                .chart_meta
-                .as_ref()
-                .map(|c| {
-                    c.current_trading_period
-                        .as_ref()
-                        .map(|p| p.regular.start)
-                        .unwrap_or(52200)
-                })
-                .unwrap_or(52200);
-            let end = state
-                .chart_meta
-                .as_ref()
-                .map(|c| {
-                    c.current_trading_period
-                        .as_ref()
-                        .map(|p| p.regular.end)
-                        .unwrap_or(75600)
-                })
-                .unwrap_or(75600);
+            let (start, end) = state.start_end();
 
-            let mut prices: Vec<_> = state
-                .prices()
-                .iter()
-                .map(cast_historical_as_price)
-                .collect();
+            let mut prices: Vec<_> = state.prices().map(cast_historical_as_price).collect();
 
             prices.pop();
-            prices.push(state.current_price);
+            prices.push(state.current_price());
             zeros_as_pre(&mut prices);
 
             // Need more than one price for GraphType::Line to work
@@ -494,44 +589,159 @@ impl StatefulWidget for StockWidget {
                 vec![]
             };
 
-            let data_1 = if loaded {
-                prices
-                    .iter()
-                    .enumerate()
-                    .map(cast_as_dataset)
-                    .collect::<Vec<(f64, f64)>>()
+            let trading_period = state.current_trading_period();
+
+            let (reg_prices, pre_prices, post_prices) = if loaded {
+                let (start_idx, end_idx) = state.regular_start_end_idx();
+
+                if enable_pre_post && state.time_frame == TimeFrame::Day1 {
+                    (
+                        prices
+                            .iter()
+                            .enumerate()
+                            .filter(|(idx, _)| {
+                                if let Some(start) = start_idx {
+                                    *idx >= start
+                                } else {
+                                    false
+                                }
+                            })
+                            .filter(|(idx, _)| {
+                                if let Some(end) = end_idx {
+                                    *idx <= end
+                                } else {
+                                    true
+                                }
+                            })
+                            .map(cast_as_dataset)
+                            .collect::<Vec<(f64, f64)>>(),
+                        {
+                            let pre_end_idx_noninclusive = if let Some(start_idx) = start_idx {
+                                if start_idx == 0 {
+                                    0
+                                } else {
+                                    start_idx
+                                }
+                            } else {
+                                prices.len()
+                            };
+
+                            if pre_end_idx_noninclusive > 0 {
+                                Some(
+                                    prices
+                                        .iter()
+                                        .enumerate()
+                                        .filter(|(idx, _)| *idx <= pre_end_idx_noninclusive)
+                                        .map(cast_as_dataset)
+                                        .collect::<Vec<(f64, f64)>>(),
+                                )
+                            } else {
+                                None
+                            }
+                        },
+                        {
+                            let post_start_idx_noninclusive = end_idx.unwrap_or(prices.len());
+
+                            if post_start_idx_noninclusive < prices.len() {
+                                Some(
+                                    prices
+                                        .iter()
+                                        .enumerate()
+                                        .filter(|(idx, _)| *idx >= post_start_idx_noninclusive)
+                                        .map(cast_as_dataset)
+                                        .collect::<Vec<(f64, f64)>>(),
+                                )
+                            } else {
+                                None
+                            }
+                        },
+                    )
+                } else {
+                    (
+                        prices
+                            .iter()
+                            .enumerate()
+                            .map(cast_as_dataset)
+                            .collect::<Vec<(f64, f64)>>(),
+                        None,
+                        None,
+                    )
+                }
             } else {
-                vec![]
+                (vec![], None, None)
             };
 
-            let data_2 = if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
-                let num_points = (end - start) / 60 + 1;
+            let prev_close_line =
+                if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
+                    let num_points = (end - start) / 60 + 1;
 
-                Some(
-                    (0..num_points)
-                        .map(|i| {
-                            (
-                                (i + 1) as f64,
-                                state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
-                            )
-                        })
-                        .collect::<Vec<_>>(),
-                )
-            } else {
-                None
-            };
+                    Some(
+                        (0..num_points)
+                            .map(|i| {
+                                (
+                                    (i + 1) as f64,
+                                    state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
+                                )
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                } else {
+                    None
+                };
 
             let mut datasets = vec![Dataset::default()
                 .marker(Marker::Braille)
-                .style(Style::default().fg(if pct_change >= 0.0 {
-                    Color::Green
-                } else {
-                    Color::Red
-                }))
+                .style(Style::default().fg(
+                    if trading_period != TradingPeriod::Regular && enable_pre_post {
+                        Color::DarkGray
+                    } else if pct_change >= 0.0 {
+                        Color::Green
+                    } else {
+                        Color::Red
+                    },
+                ))
                 .graph_type(graph_type)
-                .data(&data_1)];
+                .data(&reg_prices)];
 
-            if let Some(data) = data_2.as_ref() {
+            if let Some(data) = pre_prices.as_ref() {
+                datasets.insert(
+                    0,
+                    Dataset::default()
+                        .marker(Marker::Braille)
+                        .style(
+                            Style::default().fg(if trading_period != TradingPeriod::Pre {
+                                Color::DarkGray
+                            } else if pct_change >= 0.0 {
+                                Color::Green
+                            } else {
+                                Color::Red
+                            }),
+                        )
+                        .graph_type(GraphType::Line)
+                        .data(&data),
+                );
+            }
+
+            if let Some(data) = post_prices.as_ref() {
+                datasets.insert(
+                    0,
+                    Dataset::default()
+                        .marker(Marker::Braille)
+                        .style(
+                            Style::default().fg(if trading_period != TradingPeriod::Post {
+                                Color::DarkGray
+                            } else if pct_change >= 0.0 {
+                                Color::Green
+                            } else {
+                                Color::Red
+                            }),
+                        )
+                        .graph_type(GraphType::Line)
+                        .data(&data),
+                );
+            }
+
+            if let Some(data) = prev_close_line.as_ref() {
                 datasets.insert(
                     0,
                     Dataset::default()
