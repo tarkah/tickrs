@@ -6,7 +6,7 @@ use api::model::{ChartMeta, CompanyData};
 
 pub struct StockService {
     symbol: String,
-    current_price_handle: AsyncTaskHandle<f32>,
+    current_price_handle: AsyncTaskHandle<(f64, Option<f64>)>,
     prices_handle: AsyncTaskHandle<(ChartMeta, Vec<Price>)>,
     company_handle: AsyncTaskHandle<CompanyData>,
 }
@@ -40,7 +40,7 @@ impl StockService {
 
 #[derive(Debug)]
 pub enum Update {
-    NewPrice(f32),
+    NewPrice((f64, Option<f64>)),
     Prices((ChartMeta, Vec<Price>)),
     CompanyData(CompanyData),
 }

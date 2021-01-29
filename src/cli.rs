@@ -33,6 +33,12 @@ pub struct Opt {
     #[structopt(short = "x", long)]
     /// Show x-axis labels
     pub show_x_labels: bool,
+    #[structopt(short = "p", long)]
+    /// Enable pre / post market hours for graphs
+    pub enable_pre_post: bool,
+    #[structopt(long)]
+    /// Truncate pre market graphing to only 30 minutes prior to markets opening
+    pub trunc_pre: bool,
 }
 
 pub fn get_opts() -> Opt {

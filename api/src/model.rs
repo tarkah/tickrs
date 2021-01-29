@@ -69,8 +69,8 @@ pub struct ChartData {
 #[derive(Debug, Deserialize, Clone)]
 pub struct ChartMeta {
     pub instrument_type: Option<String>,
-    pub regular_market_price: f32,
-    pub chart_previous_close: f32,
+    pub regular_market_price: f64,
+    pub chart_previous_close: f64,
     pub current_trading_period: Option<ChartCurrentTradingPeriod>,
 }
 
@@ -78,6 +78,8 @@ pub struct ChartMeta {
 #[derive(Debug, Deserialize, Clone)]
 pub struct ChartCurrentTradingPeriod {
     pub regular: ChartTradingPeriod,
+    pub pre: ChartTradingPeriod,
+    pub post: ChartTradingPeriod,
 }
 
 #[serde(rename_all = "camelCase")]
@@ -97,22 +99,22 @@ pub struct ChartIndicators {
 #[derive(Debug, Deserialize, Clone)]
 pub struct ChartAdjClose {
     #[serde(deserialize_with = "deserialize_vec")]
-    pub adjclose: Vec<f32>,
+    pub adjclose: Vec<f64>,
 }
 
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
 pub struct ChartQuote {
     #[serde(deserialize_with = "deserialize_vec")]
-    pub close: Vec<f32>,
+    pub close: Vec<f64>,
     #[serde(deserialize_with = "deserialize_vec")]
-    pub volume: Vec<u32>,
+    pub volume: Vec<u64>,
     #[serde(deserialize_with = "deserialize_vec")]
-    pub high: Vec<f32>,
+    pub high: Vec<f64>,
     #[serde(deserialize_with = "deserialize_vec")]
-    pub low: Vec<f32>,
+    pub low: Vec<f64>,
     #[serde(deserialize_with = "deserialize_vec")]
-    pub open: Vec<f32>,
+    pub open: Vec<f64>,
 }
 
 #[serde(rename_all = "camelCase")]
@@ -155,23 +157,24 @@ pub struct CompanyPrice {
     pub symbol: String,
     pub short_name: String,
     pub long_name: Option<String>,
-    pub regular_market_price: CompanyRegularMarketPrice,
-    pub regular_market_previous_close: CompanyRegularMarketPreviousClose,
+    pub regular_market_price: CompanyMarketPrice,
+    pub regular_market_previous_close: CompanyMarketPrice,
+    pub post_market_price: CompanyPostMarketPrice,
     pub currency: Option<String>,
 }
 
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
-pub struct CompanyRegularMarketPrice {
+pub struct CompanyMarketPrice {
     #[serde(rename = "raw")]
-    pub price: f32,
+    pub price: f64,
 }
 
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
-pub struct CompanyRegularMarketPreviousClose {
+pub struct CompanyPostMarketPrice {
     #[serde(rename = "raw")]
-    pub price: f32,
+    pub price: Option<f64>,
 }
 
 #[serde(rename_all = "camelCase")]
@@ -198,7 +201,7 @@ pub struct OptionsHeader {
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
 pub struct OptionsQuote {
-    pub regular_market_price: f32,
+    pub regular_market_price: f64,
 }
 
 #[serde(rename_all = "camelCase")]
@@ -212,16 +215,16 @@ pub struct OptionsData {
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
 pub struct OptionsContract {
-    pub strike: f32,
-    pub last_price: f32,
-    pub change: f32,
+    pub strike: f64,
+    pub last_price: f64,
+    pub change: f64,
     #[serde(default)]
-    pub percent_change: f32,
-    pub volume: Option<u32>,
-    pub open_interest: Option<u32>,
-    pub bid: Option<f32>,
-    pub ask: Option<f32>,
-    pub implied_volatility: Option<f32>,
+    pub percent_change: f64,
+    pub volume: Option<u64>,
+    pub open_interest: Option<u64>,
+    pub bid: Option<f64>,
+    pub ask: Option<f64>,
+    pub implied_volatility: Option<f64>,
     pub in_the_money: Option<bool>,
     pub currency: Option<String>,
 }

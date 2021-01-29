@@ -1,7 +1,7 @@
 use super::stock::StockState;
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
-use crate::HIDE_PREV_CLOSE;
+use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE};
 
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
@@ -18,6 +18,8 @@ impl StatefulWidget for StockSummaryWidget {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let pct_change = state.pct_change();
+
+        let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
 
         let loaded = state.loaded();
         state.loading_tick();
@@ -70,7 +72,7 @@ impl StatefulWidget for StockSummaryWidget {
                 Text::styled("c: ", Style::default()),
                 Text::styled(
                     if loaded {
-                        format!("{:.2} {}\n", state.current_price, currency)
+                        format!("{:.2} {}\n", state.current_price(), currency)
                     } else {
                         "\n".to_string()
                     },
@@ -128,35 +130,12 @@ impl StatefulWidget for StockSummaryWidget {
             layout[1] = add_padding(layout[1], 1, PaddingDirection::Top);
 
             let (min, max) = state.min_max();
-            let start = state
-                .chart_meta
-                .as_ref()
-                .map(|c| {
-                    c.current_trading_period
-                        .as_ref()
-                        .map(|p| p.regular.start)
-                        .unwrap_or(52200)
-                })
-                .unwrap_or(52200);
-            let end = state
-                .chart_meta
-                .as_ref()
-                .map(|c| {
-                    c.current_trading_period
-                        .as_ref()
-                        .map(|p| p.regular.end)
-                        .unwrap_or(75600)
-                })
-                .unwrap_or(75600);
+            let (start, end) = state.start_end();
 
-            let mut prices: Vec<_> = state
-                .prices()
-                .iter()
-                .map(cast_historical_as_price)
-                .collect();
+            let mut prices: Vec<_> = state.prices().map(cast_historical_as_price).collect();
 
             prices.pop();
-            prices.push(state.current_price);
+            prices.push(state.current_price());
             zeros_as_pre(&mut prices);
 
             // Need more than one price for GraphType::Line to work
@@ -166,44 +145,159 @@ impl StatefulWidget for StockSummaryWidget {
                 GraphType::Line
             };
 
-            let data_1 = if loaded {
-                prices
-                    .iter()
-                    .enumerate()
-                    .map(cast_as_dataset)
-                    .collect::<Vec<(f64, f64)>>()
+            let trading_period = state.current_trading_period();
+
+            let (reg_prices, pre_prices, post_prices) = if loaded {
+                let (start_idx, end_idx) = state.regular_start_end_idx();
+
+                if enable_pre_post && state.time_frame == TimeFrame::Day1 {
+                    (
+                        prices
+                            .iter()
+                            .enumerate()
+                            .filter(|(idx, _)| {
+                                if let Some(start) = start_idx {
+                                    *idx >= start
+                                } else {
+                                    false
+                                }
+                            })
+                            .filter(|(idx, _)| {
+                                if let Some(end) = end_idx {
+                                    *idx <= end
+                                } else {
+                                    true
+                                }
+                            })
+                            .map(cast_as_dataset)
+                            .collect::<Vec<(f64, f64)>>(),
+                        {
+                            let pre_end_idx_noninclusive = if let Some(start_idx) = start_idx {
+                                if start_idx == 0 {
+                                    0
+                                } else {
+                                    start_idx
+                                }
+                            } else {
+                                prices.len()
+                            };
+
+                            if pre_end_idx_noninclusive > 0 {
+                                Some(
+                                    prices
+                                        .iter()
+                                        .enumerate()
+                                        .filter(|(idx, _)| *idx <= pre_end_idx_noninclusive)
+                                        .map(cast_as_dataset)
+                                        .collect::<Vec<(f64, f64)>>(),
+                                )
+                            } else {
+                                None
+                            }
+                        },
+                        {
+                            let post_start_idx_noninclusive = end_idx.unwrap_or(prices.len());
+
+                            if post_start_idx_noninclusive < prices.len() {
+                                Some(
+                                    prices
+                                        .iter()
+                                        .enumerate()
+                                        .filter(|(idx, _)| *idx >= post_start_idx_noninclusive)
+                                        .map(cast_as_dataset)
+                                        .collect::<Vec<(f64, f64)>>(),
+                                )
+                            } else {
+                                None
+                            }
+                        },
+                    )
+                } else {
+                    (
+                        prices
+                            .iter()
+                            .enumerate()
+                            .map(cast_as_dataset)
+                            .collect::<Vec<(f64, f64)>>(),
+                        None,
+                        None,
+                    )
+                }
             } else {
-                vec![]
+                (vec![], None, None)
             };
 
-            let data_2 = if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
-                let num_points = (end - start) / 60 + 1;
+            let prev_close_line =
+                if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
+                    let num_points = (end - start) / 60 + 1;
 
-                Some(
-                    (0..num_points)
-                        .map(|i| {
-                            (
-                                (i + 1) as f64,
-                                state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
-                            )
-                        })
-                        .collect::<Vec<_>>(),
-                )
-            } else {
-                None
-            };
+                    Some(
+                        (0..num_points)
+                            .map(|i| {
+                                (
+                                    (i + 1) as f64,
+                                    state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
+                                )
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                } else {
+                    None
+                };
 
             let mut datasets = vec![Dataset::default()
                 .marker(Marker::Braille)
-                .style(Style::default().fg(if pct_change >= 0.0 {
-                    Color::Green
-                } else {
-                    Color::Red
-                }))
+                .style(Style::default().fg(
+                    if trading_period != TradingPeriod::Regular && enable_pre_post {
+                        Color::DarkGray
+                    } else if pct_change >= 0.0 {
+                        Color::Green
+                    } else {
+                        Color::Red
+                    },
+                ))
                 .graph_type(graph_type)
-                .data(&data_1)];
+                .data(&reg_prices)];
 
-            if let Some(data) = data_2.as_ref() {
+            if let Some(data) = pre_prices.as_ref() {
+                datasets.insert(
+                    0,
+                    Dataset::default()
+                        .marker(Marker::Braille)
+                        .style(
+                            Style::default().fg(if trading_period != TradingPeriod::Pre {
+                                Color::DarkGray
+                            } else if pct_change >= 0.0 {
+                                Color::Green
+                            } else {
+                                Color::Red
+                            }),
+                        )
+                        .graph_type(GraphType::Line)
+                        .data(&data),
+                );
+            }
+
+            if let Some(data) = post_prices.as_ref() {
+                datasets.insert(
+                    0,
+                    Dataset::default()
+                        .marker(Marker::Braille)
+                        .style(
+                            Style::default().fg(if trading_period != TradingPeriod::Post {
+                                Color::DarkGray
+                            } else if pct_change >= 0.0 {
+                                Color::Green
+                            } else {
+                                Color::Red
+                            }),
+                        )
+                        .graph_type(GraphType::Line)
+                        .data(&data),
+                );
+            }
+
+            if let Some(data) = prev_close_line.as_ref() {
                 datasets.insert(
                     0,
                     Dataset::default()
