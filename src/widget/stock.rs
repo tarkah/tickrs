@@ -247,13 +247,13 @@ impl StockState {
         }
 
         if self.time_frame == TimeFrame::Day1 && !*HIDE_PREV_CLOSE {
-            if let Some(meta) = &self.chart_meta {
-                if meta.chart_previous_close.le(&min) {
-                    min = meta.chart_previous_close;
+            if let Some(prev_close) = self.prev_close_price {
+                if prev_close.le(&min) {
+                    min = prev_close;
                 }
 
-                if meta.chart_previous_close.gt(&max) {
-                    max = meta.chart_previous_close;
+                if prev_close.gt(&max) {
+                    max = prev_close;
                 }
             }
         }
@@ -356,8 +356,8 @@ impl StockState {
         }
 
         let baseline = if self.time_frame == TimeFrame::Day1 {
-            if let Some(meta) = &self.chart_meta {
-                meta.chart_previous_close
+            if let Some(prev_close) = self.prev_close_price {
+                prev_close
             } else {
                 self.prices().next().map(|d| d.close).unwrap()
             }
