@@ -103,10 +103,10 @@ impl StockState {
                     self.current_regular_price = regular;
                     self.current_post_price = post;
                 }
-                service::stock::Update::Prices((chart_meta, prices)) => {
-                    self.prices[self.time_frame.idx()] = prices;
+                service::stock::Update::Prices((time_frame, chart_meta, prices)) => {
+                    self.prices[time_frame.idx()] = prices;
 
-                    if self.time_frame == TimeFrame::Day1 {
+                    if time_frame == TimeFrame::Day1 {
                         self.prev_close_price = Some(chart_meta.chart_previous_close);
                     }
 

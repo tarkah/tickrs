@@ -19,7 +19,7 @@ impl Prices {
 
 impl AsyncTask for Prices {
     type Input = (String, TimeFrame, api::Client);
-    type Response = (ChartMeta, Vec<Price>);
+    type Response = (TimeFrame, ChartMeta, Vec<Price>);
 
     fn update_interval(&self) -> Option<Duration> {
         Some(self.time_frame.update_interval())
@@ -50,7 +50,11 @@ impl AsyncTask for Prices {
                 .get_chart_data(&symbol, interval, time_frame.as_range(), include_pre_post)
                 .await
             {
-                Some((response.meta.clone(), chart_data_to_prices(response)))
+                Some((
+                    time_frame,
+                    response.meta.clone(),
+                    chart_data_to_prices(response),
+                ))
             } else {
                 None
             }
