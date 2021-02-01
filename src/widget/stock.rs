@@ -21,6 +21,7 @@ pub struct StockState {
     pub profile: Option<CompanyData>,
     pub current_regular_price: f64,
     pub current_post_price: Option<f64>,
+    pub prev_close_price: Option<f64>,
     pub prices: [Vec<Price>; 7],
     pub time_frame: TimeFrame,
     pub show_options: bool,
@@ -42,6 +43,7 @@ impl StockState {
             profile: None,
             current_regular_price: 0.0,
             current_post_price: None,
+            prev_close_price: None,
             prices: [vec![], vec![], vec![], vec![], vec![], vec![], vec![]],
             time_frame,
             show_options: false,
@@ -103,6 +105,11 @@ impl StockState {
                 }
                 service::stock::Update::Prices((chart_meta, prices)) => {
                     self.prices[self.time_frame.idx()] = prices;
+
+                    if self.time_frame == TimeFrame::Day1 {
+                        self.prev_close_price = Some(chart_meta.chart_previous_close);
+                    }
+
                     self.chart_meta = Some(chart_meta);
                 }
                 service::stock::Update::CompanyData(data) => {
@@ -669,23 +676,21 @@ impl StatefulWidget for StockWidget {
                 (vec![], None, None)
             };
 
-            let prev_close_line =
-                if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
-                    let num_points = (end - start) / 60 + 1;
+            let prev_close_line = if state.time_frame == TimeFrame::Day1
+                && loaded
+                && !*HIDE_PREV_CLOSE
+                && state.prev_close_price.is_some()
+            {
+                let num_points = (end - start) / 60 + 1;
 
-                    Some(
-                        (0..num_points)
-                            .map(|i| {
-                                (
-                                    (i + 1) as f64,
-                                    state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
-                                )
-                            })
-                            .collect::<Vec<_>>(),
-                    )
-                } else {
-                    None
-                };
+                Some(
+                    (0..num_points)
+                        .map(|i| ((i + 1) as f64, state.prev_close_price.unwrap()))
+                        .collect::<Vec<_>>(),
+                )
+            } else {
+                None
+            };
 
             let mut datasets = vec![Dataset::default()
                 .marker(Marker::Braille)

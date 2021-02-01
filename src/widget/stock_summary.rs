@@ -227,23 +227,21 @@ impl StatefulWidget for StockSummaryWidget {
                 (vec![], None, None)
             };
 
-            let prev_close_line =
-                if state.time_frame == TimeFrame::Day1 && loaded && !*HIDE_PREV_CLOSE {
-                    let num_points = (end - start) / 60 + 1;
+            let prev_close_line = if state.time_frame == TimeFrame::Day1
+                && loaded
+                && !*HIDE_PREV_CLOSE
+                && state.prev_close_price.is_some()
+            {
+                let num_points = (end - start) / 60 + 1;
 
-                    Some(
-                        (0..num_points)
-                            .map(|i| {
-                                (
-                                    (i + 1) as f64,
-                                    state.chart_meta.as_ref().unwrap().chart_previous_close as f64,
-                                )
-                            })
-                            .collect::<Vec<_>>(),
-                    )
-                } else {
-                    None
-                };
+                Some(
+                    (0..num_points)
+                        .map(|i| ((i + 1) as f64, state.prev_close_price.unwrap()))
+                        .collect::<Vec<_>>(),
+                )
+            } else {
+                None
+            };
 
             let mut datasets = vec![Dataset::default()
                 .marker(Marker::Braille)
