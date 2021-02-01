@@ -11,8 +11,14 @@ use tui::widgets::{Block, Borders, Paragraph, Tabs, Text};
 use tui::{Frame, Terminal};
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
+    let current_size = terminal.size().unwrap_or_default();
+
+    if current_size.width <= 10 || current_size.height <= 10 {
+        return;
+    }
+
     if app.debug.enabled {
-        app.debug.dimensions = terminal.size().map_or((0, 0), |r| (r.width, r.height));
+        app.debug.dimensions = (current_size.width, current_size.height);
     }
 
     terminal
