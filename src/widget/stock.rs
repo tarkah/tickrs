@@ -817,7 +817,9 @@ impl StatefulWidget for StockWidget {
                 let mut volume_chunks = graph_chunks[1];
                 volume_chunks.height += 1;
 
-                let x_offset = if show_x_labels {
+                let x_offset = if !loaded {
+                    8
+                } else if show_x_labels {
                     match state.time_frame {
                         TimeFrame::Day1 => 9,
                         TimeFrame::Week1 => 12,

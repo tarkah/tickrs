@@ -329,7 +329,7 @@ impl StatefulWidget for StockSummaryWidget {
                 let mut volume_chunks = graph_chunks[1];
                 volume_chunks.height += 1;
 
-                let x_offset = 9;
+                let x_offset = if !loaded { 8 } else { 9 };
                 volume_chunks.x += x_offset;
 
                 if volume_chunks.width > x_offset + 1 {
