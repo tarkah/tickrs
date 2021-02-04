@@ -17,6 +17,7 @@ pub fn handle_keys_display_stock(
             }
             KeyCode::Right => {
                 app.stocks[app.current_tab].time_frame_up();
+
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('/') => {
