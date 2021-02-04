@@ -1,6 +1,6 @@
 use crate::cleanup_terminal;
 use crate::widget::options;
-use crate::{app, ENABLE_PRE_POST, SHOW_X_LABELS};
+use crate::{app, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
 
 use crossbeam_channel::Sender;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -40,8 +40,8 @@ pub fn handle_keys_display_stock(
             }
             KeyCode::Char('p') => {
                 let mut guard = ENABLE_PRE_POST.write().unwrap();
-
                 *guard = !*guard;
+                let _ = request_redraw.try_send(());
             }
             KeyCode::Char('q') => {
                 cleanup_terminal();
@@ -71,6 +71,11 @@ pub fn handle_keys_display_stock(
             KeyCode::Char('x') => {
                 let mut show_x_labels = SHOW_X_LABELS.write().unwrap();
                 *show_x_labels = !*show_x_labels;
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::Char('v') => {
+                let mut show_volumes = SHOW_VOLUMES.write().unwrap();
+                *show_volumes = !*show_volumes;
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Tab => {
@@ -176,8 +181,8 @@ pub fn handle_keys_display_summary(
             }
             KeyCode::Char('p') => {
                 let mut guard = ENABLE_PRE_POST.write().unwrap();
-
                 *guard = !*guard;
+                let _ = request_redraw.try_send(());
             }
             KeyCode::Char('q') => {
                 cleanup_terminal();

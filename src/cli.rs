@@ -39,6 +39,9 @@ pub struct Opt {
     #[structopt(long)]
     /// Truncate pre market graphing to only 30 minutes prior to markets opening
     pub trunc_pre: bool,
+    #[structopt(long)]
+    /// Show volumes graph
+    pub show_volumes: bool,
 }
 
 pub fn get_opts() -> Opt {

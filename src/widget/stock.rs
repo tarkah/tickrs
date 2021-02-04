@@ -2,15 +2,22 @@ use super::{block, OptionsState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
-use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_X_LABELS, TIME_FRAME, TRUNC_PRE};
+use crate::{
+    ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS, TIME_FRAME,
+    TRUNC_PRE,
+};
 
 use api::model::{ChartMeta, CompanyData};
+use itertools::Itertools;
 use tui::buffer::Buffer;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::symbols::Marker;
+use tui::symbols::{bar, Marker};
 use tui::widgets::{
     Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs, Text, Widget,
+};
+use tui::{
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    widgets::BarChart,
 };
 
 const NUM_LOADING_TICKS: usize = 4;
@@ -22,6 +29,7 @@ pub struct StockState {
     pub current_regular_price: f64,
     pub current_post_price: Option<f64>,
     pub prev_close_price: Option<f64>,
+    pub reg_mkt_volume: Option<String>,
     pub prices: [Vec<Price>; 7],
     pub time_frame: TimeFrame,
     pub show_options: bool,
@@ -44,6 +52,7 @@ impl StockState {
             current_regular_price: 0.0,
             current_post_price: None,
             prev_close_price: None,
+            reg_mkt_volume: None,
             prices: [vec![], vec![], vec![], vec![], vec![], vec![], vec![]],
             time_frame,
             show_options: false,
@@ -84,6 +93,28 @@ impl StockState {
         })
     }
 
+    pub fn volumes(&self) -> Vec<u64> {
+        let (start, end) = self.start_end();
+
+        let mut prices = self.prices();
+
+        if self.time_frame == TimeFrame::Day1 {
+            let times = MarketHours(start, end);
+
+            times
+                .map(|t| {
+                    if let Some(p) = prices.find(|p| p.date == t) {
+                        p.volume
+                    } else {
+                        0
+                    }
+                })
+                .collect()
+        } else {
+            prices.map(|p| p.volume).collect()
+        }
+    }
+
     pub fn current_price(&self) -> f64 {
         let enable_pre_post = { *ENABLE_PRE_POST.read().unwrap() };
 
@@ -99,9 +130,10 @@ impl StockState {
 
         for update in updates {
             match update {
-                service::stock::Update::NewPrice((regular, post)) => {
+                service::stock::Update::NewPrice((regular, post, vol)) => {
                     self.current_regular_price = regular;
                     self.current_post_price = post;
+                    self.reg_mkt_volume = Some(vol);
                 }
                 service::stock::Update::Prices((time_frame, chart_meta, prices)) => {
                     self.prices[time_frame.idx()] = prices;
@@ -398,8 +430,9 @@ impl StatefulWidget for StockWidget {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let pct_change = state.pct_change();
 
-        let show_x_labes = SHOW_X_LABELS.read().map_or(false, |l| *l);
+        let show_x_labels = SHOW_X_LABELS.read().map_or(false, |l| *l);
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
+        let show_volumes = *SHOW_VOLUMES.read().unwrap();
 
         let loaded = state.loaded();
         state.loading_tick();
@@ -442,7 +475,7 @@ impl StatefulWidget for StockWidget {
             .constraints(
                 [
                     Constraint::Length(2),
-                    Constraint::Length(5),
+                    Constraint::Length(6),
                     Constraint::Min(0),
                     Constraint::Length(2),
                     Constraint::Length(1),
@@ -470,6 +503,7 @@ impl StatefulWidget for StockWidget {
             info_chunks[1].height += 1;
 
             let (high, low) = state.high_low();
+            let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let company_info = [
                 Text::styled("c: ", Style::default()),
@@ -483,9 +517,9 @@ impl StatefulWidget for StockWidget {
                 ),
                 Text::styled(
                     if loaded {
-                        format!("  {:.2}%\n\n", pct_change * 100.0)
+                        format!("  {:.2}%\n", pct_change * 100.0)
                     } else {
-                        "\n\n".to_string()
+                        "\n".to_string()
                     },
                     Style::default()
                         .modifier(Modifier::BOLD)
@@ -507,10 +541,15 @@ impl StatefulWidget for StockWidget {
                 Text::styled("l: ", Style::default()),
                 Text::styled(
                     if loaded {
-                        format!("{:.2}", low)
+                        format!("{:.2}\n\n", low)
                     } else {
-                        "".to_string()
+                        "\n\n".to_string()
                     },
+                    Style::default().fg(Color::LightCyan),
+                ),
+                Text::styled("v: ", Style::default()),
+                Text::styled(
+                    if loaded { vol } else { "".to_string() },
                     Style::default().fg(Color::LightCyan),
                 ),
             ];
@@ -533,8 +572,17 @@ impl StatefulWidget for StockWidget {
 
                 if loaded {
                     toggle_info.push(Text::styled(
+                        "\nVolumes  'v'",
+                        Style::default().bg(if show_volumes {
+                            Color::DarkGray
+                        } else {
+                            Color::Reset
+                        }),
+                    ));
+
+                    toggle_info.push(Text::styled(
                         "\nX Labels 'x'",
-                        Style::default().bg(if show_x_labes {
+                        Style::default().bg(if show_x_labels {
                             Color::DarkGray
                         } else {
                             Color::Reset
@@ -588,7 +636,7 @@ impl StatefulWidget for StockWidget {
                 GraphType::Line
             };
 
-            let x_labels = if show_x_labes {
+            let x_labels = if show_x_labels {
                 state.x_labels(chunks[2].width, start, end)
             } else {
                 vec![]
@@ -755,6 +803,68 @@ impl StatefulWidget for StockWidget {
                 );
             }
 
+            // graph_chunks[0] = prices
+            // graph_chunks[1] = volume
+            let graph_chunks = if show_volumes {
+                Layout::default()
+                    .constraints([Constraint::Min(6), Constraint::Length(5)].as_ref())
+                    .split(chunks[2])
+            } else {
+                Layout::default()
+                    .constraints([Constraint::Min(0)].as_ref())
+                    .split(chunks[2])
+            };
+
+            if show_volumes {
+                let mut volume_chunks = graph_chunks[1];
+                volume_chunks.height += 1;
+
+                let x_offset = if show_x_labels {
+                    match state.time_frame {
+                        TimeFrame::Day1 => 9,
+                        TimeFrame::Week1 => 12,
+                        _ => 11,
+                    }
+                } else {
+                    9
+                };
+                volume_chunks.x += x_offset;
+                volume_chunks.width -= x_offset + 1;
+
+                let width = volume_chunks.width;
+                let num_bars = width as usize;
+
+                let volumes = state.volumes();
+                let vol_count = volumes.len();
+
+                if vol_count > 0 {
+                    let volumes = state
+                        .prices()
+                        .map(|p| [p.volume].repeat(num_bars))
+                        .flatten()
+                        .chunks(vol_count)
+                        .into_iter()
+                        .map(|c| ("", c.into_iter().sum::<u64>() / vol_count as u64))
+                        .collect::<Vec<_>>();
+
+                    volume_chunks.x -= 1;
+
+                    Block::default()
+                        .borders(Borders::LEFT)
+                        .border_style(Style::default().fg(Color::Blue))
+                        .render(volume_chunks, buf);
+
+                    volume_chunks.x += 1;
+
+                    BarChart::default()
+                        .bar_gap(0)
+                        .bar_set(bar::NINE_LEVELS)
+                        .style(Style::default().fg(Color::DarkGray))
+                        .data(&volumes)
+                        .render(volume_chunks, buf);
+                }
+            }
+
             Chart::<String, String>::default()
                 .block(
                     Block::default()
@@ -764,7 +874,7 @@ impl StatefulWidget for StockWidget {
                 .x_axis({
                     let axis = Axis::default().bounds(state.x_bounds(start, end));
 
-                    if show_x_labes && loaded {
+                    if show_x_labels && loaded {
                         axis.labels(&x_labels)
                             .style(Style::default().fg(Color::LightBlue))
                     } else {
@@ -778,7 +888,7 @@ impl StatefulWidget for StockWidget {
                         .style(Style::default().fg(Color::LightBlue)),
                 )
                 .datasets(&datasets)
-                .render(chunks[2], buf);
+                .render(graph_chunks[0], buf);
         }
 
         // Draw time frame tabs

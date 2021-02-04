@@ -30,11 +30,12 @@ Toggle Summary Pane:
   - s: toggle pane
 Graphing Display:
   - p: toggle pre / post market
+  - v: toggle volumes graph
   - x: toggle labels
 "#;
 
 pub const HELP_WIDTH: u16 = 35;
-pub const HELP_HEIGHT: u16 = 27;
+pub const HELP_HEIGHT: u16 = 28;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}

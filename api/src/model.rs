@@ -160,6 +160,7 @@ pub struct CompanyPrice {
     pub regular_market_price: CompanyMarketPrice,
     pub regular_market_previous_close: CompanyMarketPrice,
     pub post_market_price: CompanyPostMarketPrice,
+    pub regular_market_volume: CompanyMarketPrice,
     pub currency: Option<String>,
 }
 
@@ -168,6 +169,7 @@ pub struct CompanyPrice {
 pub struct CompanyMarketPrice {
     #[serde(rename = "raw")]
     pub price: f64,
+    pub fmt: String,
 }
 
 #[serde(rename_all = "camelCase")]

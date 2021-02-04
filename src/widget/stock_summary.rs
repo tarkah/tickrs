@@ -62,11 +62,12 @@ impl StatefulWidget for StockSummaryWidget {
             .split(area);
 
         {
-            layout[0] = add_padding(layout[0], 2, PaddingDirection::Top);
+            layout[0] = add_padding(layout[0], 1, PaddingDirection::Top);
             layout[0] = add_padding(layout[0], 1, PaddingDirection::Left);
             layout[0] = add_padding(layout[0], 2, PaddingDirection::Right);
 
             let (high, low) = state.high_low();
+            let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let prices = [
                 Text::styled("c: ", Style::default()),
@@ -90,10 +91,15 @@ impl StatefulWidget for StockSummaryWidget {
                 Text::styled("l: ", Style::default()),
                 Text::styled(
                     if loaded {
-                        format!("{:.2}", low)
+                        format!("{:.2}\n", low)
                     } else {
-                        "".to_string()
+                        "\n".to_string()
                     },
+                    Style::default().fg(Color::LightCyan),
+                ),
+                Text::styled("v: ", Style::default()),
+                Text::styled(
+                    if loaded { vol } else { "".to_string() },
                     Style::default().fg(Color::LightCyan),
                 ),
             ];
