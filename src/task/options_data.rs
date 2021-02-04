@@ -1,10 +1,10 @@
-use super::*;
+use std::time::Duration;
 
-use api::model;
 use async_std::sync::Arc;
 use futures::future::BoxFuture;
 
-use std::time::Duration;
+use super::*;
+use crate::api::model;
 
 /// Returns options data for a company
 pub struct OptionsData {

@@ -1,12 +1,12 @@
-use crate::{
-    model::{ChartData, CompanyData, OptionsHeader, Response, ResponseType},
-    Interval, Range,
-};
+use std::collections::HashMap;
+
 use anyhow::{bail, Context, Result};
 use futures::AsyncReadExt;
 use http::Uri;
 use isahc::HttpClient;
-use std::collections::HashMap;
+
+use crate::model::{ChartData, CompanyData, OptionsHeader, Response, ResponseType};
+use crate::{Interval, Range};
 
 #[derive(Debug)]
 pub struct Client {

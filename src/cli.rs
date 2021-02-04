@@ -1,6 +1,6 @@
-use crate::common::TimeFrame;
-
 use structopt::StructOpt;
+
+use crate::common::TimeFrame;
 
 #[derive(Debug, StructOpt, Clone)]
 #[structopt(

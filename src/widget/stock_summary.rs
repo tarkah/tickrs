@@ -1,8 +1,3 @@
-use super::stock::StockState;
-use crate::common::*;
-use crate::draw::{add_padding, PaddingDirection};
-use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE};
-
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
@@ -10,6 +5,11 @@ use tui::symbols::Marker;
 use tui::widgets::{
     Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Text, Widget,
 };
+
+use super::stock::StockState;
+use crate::common::*;
+use crate::draw::{add_padding, PaddingDirection};
+use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE};
 
 pub struct StockSummaryWidget {}
 

@@ -1,10 +1,6 @@
-use super::block;
-use crate::draw::{add_padding, PaddingDirection};
-use crate::service::{self, Service};
-
-use api::model::{OptionsData, OptionsQuote};
-use chrono::NaiveDateTime;
 use std::collections::HashMap;
+
+use chrono::NaiveDateTime;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
@@ -12,6 +8,11 @@ use tui::widgets::{
     Block, Borders, List, ListState, Paragraph, Row, StatefulWidget, Table, TableState, Text,
     Widget,
 };
+
+use super::block;
+use crate::api::model::{OptionsData, OptionsQuote};
+use crate::draw::{add_padding, PaddingDirection};
+use crate::service::{self, Service};
 
 #[derive(Clone, Copy, PartialEq)]
 enum OptionType {

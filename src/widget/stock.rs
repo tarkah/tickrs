@@ -1,23 +1,21 @@
+use itertools::Itertools;
+use tui::buffer::Buffer;
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::style::{Color, Modifier, Style};
+use tui::symbols::{bar, Marker};
+use tui::widgets::{
+    Axis, BarChart, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs,
+    Text, Widget,
+};
+
 use super::{block, OptionsState};
+use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::{
     ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS, TIME_FRAME,
     TRUNC_PRE,
-};
-
-use api::model::{ChartMeta, CompanyData};
-use itertools::Itertools;
-use tui::buffer::Buffer;
-use tui::style::{Color, Modifier, Style};
-use tui::symbols::{bar, Marker};
-use tui::widgets::{
-    Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs, Text, Widget,
-};
-use tui::{
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    widgets::BarChart,
 };
 
 const NUM_LOADING_TICKS: usize = 4;

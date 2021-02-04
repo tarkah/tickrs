@@ -1,8 +1,7 @@
 use super::*;
+use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
 use crate::task::*;
-
-use api::model::{ChartMeta, CompanyData};
 
 pub struct StockService {
     symbol: String,

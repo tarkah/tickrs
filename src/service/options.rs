@@ -1,7 +1,6 @@
 use super::*;
+use crate::api::model;
 use crate::task::*;
-
-use api::model;
 
 pub struct OptionsService {
     symbol: String,

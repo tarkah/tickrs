@@ -1,10 +1,9 @@
-use anyhow::{bail, Result};
-use serde::{
-    de::{SeqAccess, Visitor},
-    Deserialize, Deserializer,
-};
 use std::fmt;
 use std::marker::PhantomData;
+
+use anyhow::{bail, Result};
+use serde::de::{SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 
 pub(crate) enum ResponseType {
     Chart,

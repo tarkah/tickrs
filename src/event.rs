@@ -1,9 +1,8 @@
-use crate::cleanup_terminal;
-use crate::widget::options;
-use crate::{app, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
-
 use crossbeam_channel::Sender;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+use crate::widget::options;
+use crate::{app, cleanup_terminal, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
 
 pub fn handle_keys_display_stock(
     key_event: KeyEvent,

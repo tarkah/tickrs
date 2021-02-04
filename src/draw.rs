@@ -1,14 +1,14 @@
-use crate::app::{App, Mode};
-use crate::common::TimeFrame;
-use crate::widget::{
-    block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
-};
-
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph, Tabs, Text};
 use tui::{Frame, Terminal};
+
+use crate::app::{App, Mode};
+use crate::common::TimeFrame;
+use crate::widget::{
+    block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
+};
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     let current_size = terminal.size().unwrap_or_default();

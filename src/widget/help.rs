@@ -1,10 +1,10 @@
-use super::block;
-use crate::draw::{add_padding, PaddingDirection};
-
 use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::Style;
 use tui::widgets::{Paragraph, Text, Widget};
+
+use super::block;
+use crate::draw::{add_padding, PaddingDirection};
 
 const TEXT: &str = r#"
 Quit: q or <Ctrl+c>

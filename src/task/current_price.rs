@@ -1,7 +1,7 @@
-use super::*;
-
 use async_std::sync::Arc;
 use futures::future::BoxFuture;
+
+use super::*;
 
 /// Returns the current price, only if it has changed
 pub struct CurrentPrice {
