@@ -192,6 +192,11 @@ pub fn handle_keys_display_summary(
                 app.mode = app::Mode::DisplayStock;
                 let _ = request_redraw.try_send(());
             }
+            KeyCode::Char('v') => {
+                let mut show_volumes = SHOW_VOLUMES.write().unwrap();
+                *show_volumes = !*show_volumes;
+                let _ = request_redraw.try_send(());
+            }
             KeyCode::Char('?') => {
                 app.previous_mode = app.mode;
                 app.mode = app::Mode::Help;

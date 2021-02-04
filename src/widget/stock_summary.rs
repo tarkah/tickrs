@@ -1,15 +1,17 @@
+use itertools::Itertools;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::symbols::Marker;
+use tui::symbols::{bar, Marker};
 use tui::widgets::{
-    Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Text, Widget,
+    Axis, BarChart, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Text,
+    Widget,
 };
 
 use super::stock::StockState;
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
-use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE};
+use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE, SHOW_VOLUMES};
 
 pub struct StockSummaryWidget {}
 
@@ -20,6 +22,7 @@ impl StatefulWidget for StockSummaryWidget {
         let pct_change = state.pct_change();
 
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
+        let show_volumes = *SHOW_VOLUMES.read().unwrap();
 
         let loaded = state.loaded();
         state.loading_tick();
@@ -91,9 +94,9 @@ impl StatefulWidget for StockSummaryWidget {
                 Text::styled("l: ", Style::default()),
                 Text::styled(
                     if loaded {
-                        format!("{:.2}\n", low)
+                        format!("{:.2}\n\n", low)
                     } else {
-                        "\n".to_string()
+                        "\n\n".to_string()
                     },
                     Style::default().fg(Color::LightCyan),
                 ),
@@ -312,6 +315,61 @@ impl StatefulWidget for StockSummaryWidget {
                 );
             }
 
+            // graph_chunks[0] = prices
+            // graph_chunks[1] = volume
+            let graph_chunks = if show_volumes {
+                Layout::default()
+                    .constraints([Constraint::Length(5), Constraint::Length(1)].as_ref())
+                    .split(layout[1])
+            } else {
+                vec![layout[1]]
+            };
+
+            if show_volumes {
+                let mut volume_chunks = graph_chunks[1];
+                volume_chunks.height += 1;
+
+                let x_offset = 9;
+                volume_chunks.x += x_offset;
+
+                if volume_chunks.width > x_offset + 1 {
+                    volume_chunks.width -= x_offset + 1;
+
+                    let width = volume_chunks.width;
+                    let num_bars = width as usize;
+
+                    let volumes = state.volumes();
+                    let vol_count = volumes.len();
+
+                    if vol_count > 0 {
+                        let volumes = state
+                            .prices()
+                            .map(|p| [p.volume].repeat(num_bars))
+                            .flatten()
+                            .chunks(vol_count)
+                            .into_iter()
+                            .map(|c| ("", c.into_iter().sum::<u64>() / vol_count as u64))
+                            .collect::<Vec<_>>();
+
+                        volume_chunks.x -= 1;
+
+                        Block::default()
+                            .borders(Borders::LEFT)
+                            .border_style(Style::default().fg(Color::Blue))
+                            .render(volume_chunks, buf);
+
+                        volume_chunks.x += 1;
+
+                        BarChart::default()
+                            .bar_gap(0)
+                            .bar_set(bar::NINE_LEVELS)
+                            .style(Style::default().fg(Color::DarkGray))
+                            .data(&volumes)
+                            .render(volume_chunks, buf);
+                    }
+                }
+            }
+
             Chart::<String, String>::default()
                 .block(Block::default().border_style(Style::default()))
                 .x_axis(Axis::default().bounds(state.x_bounds(start, end)))
@@ -322,7 +380,7 @@ impl StatefulWidget for StockSummaryWidget {
                         .style(Style::default().fg(Color::LightBlue)),
                 )
                 .datasets(&datasets)
-                .render(layout[1], buf);
+                .render(graph_chunks[0], buf);
         }
     }
 }

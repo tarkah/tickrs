@@ -9,6 +9,7 @@ use crate::common::TimeFrame;
 use crate::widget::{
     block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
 };
+use crate::SHOW_VOLUMES;
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     let current_size = terminal.size().unwrap_or_default();
@@ -172,8 +173,11 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     let border = block::new(" Summary ", None);
     frame.render_widget(border, area);
 
+    let show_volumes = *SHOW_VOLUMES.read().unwrap();
+    let stock_widget_height = if show_volumes { 7 } else { 6 };
+
     let height = area.height;
-    let num_to_render = (((height - 5) / 6) as usize).min(app.stocks.len());
+    let num_to_render = (((height - 5) / stock_widget_height) as usize).min(app.stocks.len());
 
     // layouy[0] - Header
     // layouy[1] - Summary window
@@ -182,7 +186,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         .constraints(
             [
                 Constraint::Length(2),
-                Constraint::Length((num_to_render * 6) as u16),
+                Constraint::Length((num_to_render * stock_widget_height as usize) as u16),
                 Constraint::Min(0),
             ]
             .as_ref(),
@@ -221,7 +225,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 
     let contraints = app.stocks[..num_to_render]
         .iter()
-        .map(|_| Constraint::Length(6))
+        .map(|_| Constraint::Length(stock_widget_height))
         .collect::<Vec<_>>();
 
     let stock_layout = Layout::default().constraints(contraints).split(layout[1]);
@@ -232,11 +236,19 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 
     // Draw time frame
     {
-        let offset = layout[2].height - 3;
-
-        layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
         layout[2] = add_padding(layout[2], 2, PaddingDirection::Left);
         layout[2] = add_padding(layout[2], 2, PaddingDirection::Right);
+
+        // Clear out empty area
+        frame.render_widget(
+            Block::default()
+                .borders(Borders::TOP)
+                .border_style(Style::default().bg(Color::Black).fg(Color::Black)),
+            layout[2],
+        );
+
+        let offset = layout[2].height - 3;
+        layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
 
         frame.render_widget(Block::default().borders(Borders::TOP), layout[2]);
 
