@@ -1,20 +1,19 @@
 extern crate tickrs_api as api;
 
-use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
+use std::io::{self, Write};
+use std::sync::{Arc, Mutex, RwLock};
+use std::time::Duration;
+use std::{panic, thread};
 
+use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
 use crossterm::event::{Event, MouseEvent};
 use crossterm::{cursor, execute, terminal, write_ansi_code};
-
 use lazy_static::lazy_static;
-
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
-use std::io::{self, Write};
-use std::panic;
-use std::sync::{Arc, Mutex, RwLock};
-use std::thread;
-use std::time::Duration;
+use crate::app::DebugInfo;
+use crate::common::TimeFrame;
 
 mod app;
 mod cli;
@@ -24,9 +23,6 @@ mod event;
 mod service;
 mod task;
 mod widget;
-
-use crate::app::DebugInfo;
-use crate::common::TimeFrame;
 
 lazy_static! {
     pub static ref OPTS: cli::Opt = cli::get_opts();
@@ -39,6 +35,7 @@ lazy_static! {
     pub static ref SHOW_X_LABELS: RwLock<bool> = RwLock::new(OPTS.show_x_labels);
     pub static ref ENABLE_PRE_POST: RwLock<bool> = RwLock::new(OPTS.enable_pre_post);
     pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
+    pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
 }
 
 fn main() {

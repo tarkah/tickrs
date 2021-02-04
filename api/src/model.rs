@@ -1,10 +1,9 @@
-use anyhow::{bail, Result};
-use serde::{
-    de::{SeqAccess, Visitor},
-    Deserialize, Deserializer,
-};
 use std::fmt;
 use std::marker::PhantomData;
+
+use anyhow::{bail, Result};
+use serde::de::{SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer};
 
 pub(crate) enum ResponseType {
     Chart,
@@ -160,6 +159,7 @@ pub struct CompanyPrice {
     pub regular_market_price: CompanyMarketPrice,
     pub regular_market_previous_close: CompanyMarketPrice,
     pub post_market_price: CompanyPostMarketPrice,
+    pub regular_market_volume: CompanyMarketPrice,
     pub currency: Option<String>,
 }
 
@@ -168,6 +168,7 @@ pub struct CompanyPrice {
 pub struct CompanyMarketPrice {
     #[serde(rename = "raw")]
     pub price: f64,
+    pub fmt: String,
 }
 
 #[serde(rename_all = "camelCase")]

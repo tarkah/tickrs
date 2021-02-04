@@ -1,9 +1,9 @@
-use super::*;
+use std::time::Duration;
 
 use async_std::sync::Arc;
 use futures::future::BoxFuture;
 
-use std::time::Duration;
+use super::*;
 
 /// Returns options expiration dates for a company
 pub struct OptionsDates {

@@ -1,9 +1,9 @@
-use super::block;
-
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Paragraph, StatefulWidget, Text, Widget};
+
+use super::block;
 
 pub struct AddStockState {
     search_string: String,

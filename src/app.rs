@@ -1,7 +1,7 @@
+use crossterm::event::Event;
+
 use crate::common::TimeFrame;
 use crate::widget;
-
-use crossterm::event::Event;
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Mode {

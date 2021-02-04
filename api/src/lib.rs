@@ -1,7 +1,7 @@
+pub use self::client::Client;
+
 mod client;
 pub mod model;
-
-pub use client::Client;
 
 #[derive(Copy, Clone)]
 pub enum Interval {

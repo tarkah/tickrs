@@ -1,10 +1,10 @@
-use super::block;
-use crate::draw::{add_padding, PaddingDirection};
-
 use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::Style;
 use tui::widgets::{Paragraph, Text, Widget};
+
+use super::block;
+use crate::draw::{add_padding, PaddingDirection};
 
 const TEXT: &str = r#"
 Quit: q or <Ctrl+c>
@@ -30,11 +30,12 @@ Toggle Summary Pane:
   - s: toggle pane
 Graphing Display:
   - p: toggle pre / post market
+  - v: toggle volumes graph
   - x: toggle labels
 "#;
 
 pub const HELP_WIDTH: u16 = 35;
-pub const HELP_HEIGHT: u16 = 27;
+pub const HELP_HEIGHT: u16 = 28;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}

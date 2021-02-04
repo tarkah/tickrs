@@ -45,11 +45,12 @@ jobs:
             target
           key: ${{ runner.os }}-lints-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install stable toolchain
+      # use nightly toolchain for rustfmt
+      - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           override: true
           components: rustfmt, clippy
 

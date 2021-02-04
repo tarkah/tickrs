@@ -1,9 +1,10 @@
-use super::*;
-use crate::common::{chart_data_to_prices, Price, TimeFrame};
-
-use api::{model::ChartMeta, Interval};
 use async_std::sync::Arc;
 use futures::future::BoxFuture;
+
+use super::*;
+use crate::api::model::ChartMeta;
+use crate::api::Interval;
+use crate::common::{chart_data_to_prices, Price, TimeFrame};
 
 /// Returns an array of prices, depending on the TimeFrame chosen
 pub struct Prices {

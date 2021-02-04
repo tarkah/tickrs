@@ -1,8 +1,8 @@
-use super::*;
-
-use api::model::CompanyData;
 use async_std::sync::Arc;
 use futures::future::BoxFuture;
+
+use super::*;
+use crate::api::model::CompanyData;
 
 /// Returns a companies profile information. Only needs to be returned once.
 pub struct Company {

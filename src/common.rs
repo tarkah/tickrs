@@ -1,9 +1,11 @@
-use api::{model::ChartData, Range};
+use std::str::FromStr;
+use std::time::Duration;
+
 use chrono::{Local, TimeZone, Utc};
 use itertools::izip;
 
-use std::str::FromStr;
-use std::time::Duration;
+use crate::api::model::ChartData;
+use crate::api::Range;
 
 #[derive(PartialEq, Clone, Copy, PartialOrd, Debug)]
 pub enum TimeFrame {
