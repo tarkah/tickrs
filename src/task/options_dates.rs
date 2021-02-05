@@ -21,7 +21,7 @@ impl AsyncTask for OptionsDates {
     type Response = Vec<i64>;
 
     fn update_interval(&self) -> Option<Duration> {
-        Some(Duration::from_secs(60 * 60))
+        Some(Duration::from_secs(60 * 15))
     }
 
     fn input(&self) -> Self::Input {

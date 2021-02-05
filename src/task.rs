@@ -7,6 +7,7 @@ use futures::future::BoxFuture;
 
 pub use self::company::Company;
 pub use self::current_price::CurrentPrice;
+pub use self::default_timestamps::DefaultTimestamps;
 pub use self::options_data::OptionsData;
 pub use self::options_dates::OptionsDates;
 pub use self::prices::Prices;
@@ -14,6 +15,7 @@ use crate::{DATA_RECEIVED, UPDATE_INTERVAL};
 
 mod company;
 mod current_price;
+mod default_timestamps;
 mod options_data;
 mod options_dates;
 mod prices;
