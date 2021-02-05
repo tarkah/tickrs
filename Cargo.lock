@@ -1218,7 +1218,7 @@ dependencies = [
 
 [[package]]
 name = "tickrs"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "async-std",
