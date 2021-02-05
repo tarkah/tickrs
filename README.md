@@ -43,6 +43,7 @@ FLAGS:
         --hide-help          Hide help icon in top right
         --hide-prev-close    Hide previous close line on 1D chart
         --hide-toggle        Hide toggle block
+        --show-volumes       Show volumes graph
     -x, --show-x-labels      Show x-axis labels
         --summary            Start in summary mode
         --trunc-pre          Truncate pre market graphing to only 30 minutes prior to markets opening
