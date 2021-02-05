@@ -181,22 +181,18 @@ impl StatefulWidget for StockSummaryWidget {
                             .map(cast_as_dataset)
                             .collect::<Vec<(f64, f64)>>(),
                         {
-                            let pre_end_idx_noninclusive = if let Some(start_idx) = start_idx {
-                                if start_idx == 0 {
-                                    0
-                                } else {
-                                    start_idx
-                                }
+                            let pre_end_idx = if let Some(start_idx) = start_idx {
+                                start_idx
                             } else {
                                 prices.len()
                             };
 
-                            if pre_end_idx_noninclusive > 0 {
+                            if pre_end_idx > 0 {
                                 Some(
                                     prices
                                         .iter()
                                         .enumerate()
-                                        .filter(|(idx, _)| *idx <= pre_end_idx_noninclusive)
+                                        .filter(|(idx, _)| *idx <= pre_end_idx)
                                         .map(cast_as_dataset)
                                         .collect::<Vec<(f64, f64)>>(),
                                 )
@@ -205,14 +201,12 @@ impl StatefulWidget for StockSummaryWidget {
                             }
                         },
                         {
-                            let post_start_idx_noninclusive = end_idx.unwrap_or(prices.len());
-
-                            if post_start_idx_noninclusive < prices.len() {
+                            if let Some(post_start_idx) = end_idx {
                                 Some(
                                     prices
                                         .iter()
                                         .enumerate()
-                                        .filter(|(idx, _)| *idx >= post_start_idx_noninclusive)
+                                        .filter(|(idx, _)| *idx >= post_start_idx)
                                         .map(cast_as_dataset)
                                         .collect::<Vec<(f64, f64)>>(),
                                 )

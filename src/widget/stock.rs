@@ -79,16 +79,37 @@ impl StockState {
         self.stock_service.update_time_frame(time_frame);
     }
 
-    pub fn prices(&self) -> impl Iterator<Item = &Price> {
+    pub fn prices(&self) -> impl Iterator<Item = Price> {
         let (start, end) = self.start_end();
 
-        self.prices[self.time_frame.idx()].iter().filter(move |p| {
-            if self.time_frame == TimeFrame::Day1 {
-                (p.date > start && p.date < end) || p.date == start || p.date == end
-            } else {
-                true
-            }
-        })
+        let prices = self.prices[self.time_frame.idx()].clone();
+
+        let max_time = prices.last().map(|p| p.date).unwrap_or(end);
+
+        let prices = if self.time_frame == TimeFrame::Day1 {
+            let times = MarketHours(start, max_time);
+
+            times
+                .map(|t| {
+                    if let Some(p) = prices.iter().find(|p| {
+                        let min_rounded = p.date - p.date % 60;
+
+                        min_rounded == t
+                    }) {
+                        *p
+                    } else {
+                        Price {
+                            date: t,
+                            ..Default::default()
+                        }
+                    }
+                })
+                .collect::<Vec<_>>()
+        } else {
+            prices
+        };
+
+        prices.into_iter()
     }
 
     pub fn volumes(&self) -> Vec<u64> {
@@ -226,7 +247,8 @@ impl StockState {
             .chart_meta
             .as_ref()
             .and_then(|m| m.current_trading_period.as_ref())
-            .map(|c| c.regular.end);
+            // Last data point is always 1 minute before "end" time
+            .map(|c| c.regular.end - 60);
 
         let start_idx = self
             .prices()
@@ -292,7 +314,7 @@ impl StockState {
     }
 
     pub fn high_low(&self) -> (f64, f64) {
-        let mut data = self.prices().cloned().collect::<Vec<_>>();
+        let mut data = self.prices().collect::<Vec<_>>();
 
         data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
         let mut max = data.last().map(|d| d.high).unwrap_or(0.0);
@@ -667,22 +689,18 @@ impl StatefulWidget for StockWidget {
                             .map(cast_as_dataset)
                             .collect::<Vec<(f64, f64)>>(),
                         {
-                            let pre_end_idx_noninclusive = if let Some(start_idx) = start_idx {
-                                if start_idx == 0 {
-                                    0
-                                } else {
-                                    start_idx
-                                }
+                            let pre_end_idx = if let Some(start_idx) = start_idx {
+                                start_idx
                             } else {
                                 prices.len()
                             };
 
-                            if pre_end_idx_noninclusive > 0 {
+                            if pre_end_idx > 0 {
                                 Some(
                                     prices
                                         .iter()
                                         .enumerate()
-                                        .filter(|(idx, _)| *idx <= pre_end_idx_noninclusive)
+                                        .filter(|(idx, _)| *idx <= pre_end_idx)
                                         .map(cast_as_dataset)
                                         .collect::<Vec<(f64, f64)>>(),
                                 )
@@ -691,14 +709,12 @@ impl StatefulWidget for StockWidget {
                             }
                         },
                         {
-                            let post_start_idx_noninclusive = end_idx.unwrap_or(prices.len());
-
-                            if post_start_idx_noninclusive < prices.len() {
+                            if let Some(post_start_idx) = end_idx {
                                 Some(
                                     prices
                                         .iter()
                                         .enumerate()
-                                        .filter(|(idx, _)| *idx >= post_start_idx_noninclusive)
+                                        .filter(|(idx, _)| *idx >= post_start_idx)
                                         .map(cast_as_dataset)
                                         .collect::<Vec<(f64, f64)>>(),
                                 )

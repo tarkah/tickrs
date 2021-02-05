@@ -116,7 +116,7 @@ impl TimeFrame {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct MarketHours(pub i64, pub i64);
 
 impl Default for MarketHours {
@@ -129,11 +129,14 @@ impl Iterator for MarketHours {
     type Item = i64;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.0 == self.1 {
+        let min_rounded_0 = self.0 - self.0 % 60;
+        let min_rounded_1 = self.1 - self.1 % 60;
+
+        if min_rounded_0 == min_rounded_1 {
             None
         } else {
-            let result = Some(self.0);
-            self.0 += 60;
+            let result = Some(min_rounded_0);
+            self.0 = min_rounded_0 + 60;
             result
         }
     }
@@ -146,7 +149,7 @@ pub enum TradingPeriod {
     Post,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Price {
     pub close: f64,
     pub volume: u64,
@@ -187,7 +190,7 @@ pub fn cast_as_dataset(input: (usize, &f64)) -> (f64, f64) {
     ((input.0 + 1) as f64, *input.1)
 }
 
-pub fn cast_historical_as_price(input: &Price) -> f64 {
+pub fn cast_historical_as_price(input: Price) -> f64 {
     input.close
 }
 
