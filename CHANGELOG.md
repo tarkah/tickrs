@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.9.1] - 2021-02-06
+
 ### Changed
 
 - Help page can be exited with `q` key (#51)
