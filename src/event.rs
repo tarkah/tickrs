@@ -226,7 +226,7 @@ pub fn handle_keys_display_summary(
 pub fn handle_keys_help(key_event: KeyEvent, mut app: &mut app::App, request_redraw: &Sender<()>) {
     if key_event.modifiers.is_empty() {
         match key_event.code {
-            KeyCode::Esc | KeyCode::Char('?') => {
+            KeyCode::Esc | KeyCode::Char('?') | KeyCode::Char('q') => {
                 app.mode = app.previous_mode;
                 let _ = request_redraw.try_send(());
             }
