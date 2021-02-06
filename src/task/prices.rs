@@ -18,7 +18,7 @@ impl Prices {
 }
 
 impl AsyncTask for Prices {
-    type Input = (String, TimeFrame, api::Client);
+    type Input = (String, TimeFrame);
     type Response = (TimeFrame, ChartMeta, Vec<Price>);
 
     fn update_interval(&self) -> Option<Duration> {
@@ -26,20 +26,19 @@ impl AsyncTask for Prices {
     }
 
     fn input(&self) -> Self::Input {
-        (self.symbol.clone(), self.time_frame, api::Client::new())
+        (self.symbol.clone(), self.time_frame)
     }
 
     fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
             let symbol = &input.0;
             let time_frame = input.1;
-            let client = &input.2;
 
             let interval = time_frame.api_interval();
 
             let include_pre_post = time_frame == TimeFrame::Day1;
 
-            if let Ok(response) = client
+            if let Ok(response) = crate::CLIENT
                 .get_chart_data(&symbol, interval, time_frame.as_range(), include_pre_post)
                 .await
             {

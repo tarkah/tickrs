@@ -19,7 +19,7 @@ impl OptionsData {
 }
 
 impl AsyncTask for OptionsData {
-    type Input = (String, i64, api::Client);
+    type Input = (String, i64);
     type Response = model::OptionsHeader;
 
     fn update_interval(&self) -> Option<Duration> {
@@ -27,16 +27,15 @@ impl AsyncTask for OptionsData {
     }
 
     fn input(&self) -> Self::Input {
-        (self.symbol.clone(), self.date, api::Client::new())
+        (self.symbol.clone(), self.date)
     }
 
     fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
             let symbol = &input.0;
             let date = input.1;
-            let client = &input.2;
 
-            client
+            crate::CLIENT
                 .get_options_for_expiration_date(symbol, date)
                 .await
                 .ok()

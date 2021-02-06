@@ -27,6 +27,7 @@ mod task;
 mod widget;
 
 lazy_static! {
+    static ref CLIENT: api::Client = api::Client::new();
     pub static ref OPTS: cli::Opt = cli::get_opts();
     pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval;
     pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame;
