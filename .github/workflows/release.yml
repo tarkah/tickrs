@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           mkdir package
-          cp -R assets LICENSE README.md package/
+          cp -R assets LICENSE README.md  CHANGELOG.md package/
           cp ${{ matrix.target.binary_path }} package/
 
       - name: Create Archive

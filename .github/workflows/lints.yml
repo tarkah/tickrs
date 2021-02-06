@@ -6,6 +6,7 @@ on:
       - "LICENSE"
       - "README.md"
       - "assets/**"
+      - "CHANGELOG.md"
   pull_request:
     branches: [master]
     paths-ignore:
@@ -13,6 +14,7 @@ on:
       - "LICENSE"
       - "README.md"
       - "assets/**"
+      - "CHANGELOG.md"
 
 name: Lints
 
