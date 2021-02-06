@@ -16,7 +16,7 @@ impl Company {
 }
 
 impl AsyncTask for Company {
-    type Input = (String, api::Client);
+    type Input = String;
     type Response = CompanyData;
 
     fn update_interval(&self) -> Option<Duration> {
@@ -24,15 +24,14 @@ impl AsyncTask for Company {
     }
 
     fn input(&self) -> Self::Input {
-        (self.symbol.clone(), api::Client::new())
+        self.symbol.clone()
     }
 
     fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
-            let symbol = &input.0;
-            let client = &input.1;
+            let symbol = input.as_ref();
 
-            client.get_company_data(symbol).await.ok()
+            crate::CLIENT.get_company_data(symbol).await.ok()
         })
     }
 }

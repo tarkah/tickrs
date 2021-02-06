@@ -29,25 +29,19 @@ impl AsyncTask for DefaultTimestamps {
 
     fn task<'a>(_input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
-            let client = Arc::new(api::Client::new());
-
             let symbol = "SPY";
 
-            let tasks = TimeFrame::ALL[1..].iter().map(|timeframe| {
-                let client_clone = client.clone();
+            let tasks = TimeFrame::ALL[1..].iter().map(|timeframe| async move {
+                let interval = timeframe.api_interval();
+                let range = timeframe.as_range();
 
-                async move {
-                    let interval = timeframe.api_interval();
-                    let range = timeframe.as_range();
-
-                    if let Ok(chart) = client_clone
-                        .get_chart_data(symbol, interval, range, false)
-                        .await
-                    {
-                        Some((*timeframe, chart.timestamp))
-                    } else {
-                        None
-                    }
+                if let Ok(chart) = crate::CLIENT
+                    .get_chart_data(symbol, interval, range, false)
+                    .await
+                {
+                    Some((*timeframe, chart.timestamp))
+                } else {
+                    None
                 }
             });
 
