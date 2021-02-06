@@ -26,6 +26,7 @@ Toggle Options Pane:
   - <Escape>: close pane
   - <Tab>: toggle calls / puts
   - Navigate with arrow keys
+  - Not available for cryptocurrency
 Toggle Summary Pane:
   - s: toggle pane
 Graphing Display:
@@ -34,8 +35,8 @@ Graphing Display:
   - x: toggle labels
 "#;
 
-pub const HELP_WIDTH: u16 = 35;
-pub const HELP_HEIGHT: u16 = 28;
+pub const HELP_WIDTH: u16 = 40;
+pub const HELP_HEIGHT: u16 = 29;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
