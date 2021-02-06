@@ -14,6 +14,18 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Changed
+
+- Help page can be exited with `q` key (#51)
+- Added a note to help page about options not being enabled for crypto (#50)
+
+### Fixed
+
+- Stocks that IPOd more recently than selected timeframe no longer stretch the
+  entire x-axis width and now start plotting at the correct spot (#48)
+- Fix bug where too many file descriptors are opened due to recreating http
+  client (#53)
+
 ## [0.9.0] - 2021-02-04
 
 ### Added
