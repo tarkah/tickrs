@@ -1,20 +1,14 @@
 on:
   push:
-    branches: [master]
-    paths-ignore:
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
-      - "assets/**"
-      - "CHANGELOG.md"
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
   pull_request:
-    branches: [master]
-    paths-ignore:
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
-      - "assets/**"
-      - "CHANGELOG.md"
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
 
 name: Check
 

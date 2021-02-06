@@ -1,20 +1,14 @@
 on:
   push:
-    branches: [master]
-    paths-ignore:
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
-      - "assets/**"
-      - "CHANGELOG.md"
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
   pull_request:
-    branches: [master]
-    paths-ignore:
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
-      - "assets/**"
-      - "CHANGELOG.md"
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
 
 name: Test
 
@@ -58,4 +52,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          args: --workspace
