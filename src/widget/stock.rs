@@ -889,7 +889,7 @@ impl StatefulWidget for StockWidget {
                         .flatten()
                         .chunks(vol_count)
                         .into_iter()
-                        .map(|c| ("", c.into_iter().sum::<u64>() / vol_count as u64))
+                        .map(|c| ("", c.sum::<u64>() / vol_count as u64))
                         .collect::<Vec<_>>();
 
                     volume_chunks.x -= 1;
