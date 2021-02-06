@@ -113,3 +113,32 @@ jobs:
           asset_path: ./tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.zip
           asset_name: tickrs-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target.target }}.zip
           asset_content_type: application/zip
+
+  publish:
+    name: "Publish"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Publish tickrs-api
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_TOKEN }} --manifest-path ./api/Cargo.toml
+
+      - name: Wait
+        shell: bash
+        run: sleep 30
+
+      - name: Publish tickrs
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_TOKEN }}
