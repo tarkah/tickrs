@@ -14,8 +14,8 @@ use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::{
-    ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS, TIME_FRAME,
-    TRUNC_PRE,
+    DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS,
+    TIME_FRAME, TRUNC_PRE,
 };
 
 const NUM_LOADING_TICKS: usize = 4;
@@ -86,6 +86,11 @@ impl StockState {
 
         let max_time = prices.last().map(|p| p.date).unwrap_or(end);
 
+        let default_timestamps = {
+            let defaults = DEFAULT_TIMESTAMPS.read().unwrap();
+            defaults.get(&self.time_frame).cloned()
+        };
+
         let prices = if self.time_frame == TimeFrame::Day1 {
             let times = MarketHours(start, max_time);
 
@@ -95,6 +100,25 @@ impl StockState {
                         let min_rounded = p.date - p.date % 60;
 
                         min_rounded == t
+                    }) {
+                        *p
+                    } else {
+                        Price {
+                            date: t,
+                            ..Default::default()
+                        }
+                    }
+                })
+                .collect::<Vec<_>>()
+        } else if let Some(default_timestamps) = default_timestamps {
+            default_timestamps
+                .into_iter()
+                .map(|t| {
+                    if let Some(p) = prices.iter().find(|p| {
+                        let a_rounded = p.date - p.date % self.time_frame.round_by();
+                        let b_rounded = t - t % self.time_frame.round_by();
+
+                        a_rounded == b_rounded
                     }) {
                         *p
                     } else {
@@ -403,7 +427,7 @@ impl StockState {
     }
 
     pub fn pct_change(&self) -> f64 {
-        if self.prices().count() == 0 {
+        if self.prices().filter(|p| p.close > 0.0).count() == 0 {
             return 0.0;
         }
 
@@ -411,10 +435,16 @@ impl StockState {
             if let Some(prev_close) = self.prev_close_price {
                 prev_close
             } else {
-                self.prices().next().map(|d| d.close).unwrap()
+                self.prices()
+                    .find(|p| p.close > 0.0)
+                    .map(|d| d.close)
+                    .unwrap()
             }
         } else {
-            self.prices().next().map(|d| d.close).unwrap()
+            self.prices()
+                .find(|p| p.close > 0.0)
+                .map(|d| d.close)
+                .unwrap()
         };
 
         self.current_price() / baseline - 1.0
@@ -768,13 +798,12 @@ impl StatefulWidget for StockWidget {
                 .graph_type(graph_type)
                 .data(&reg_prices)];
 
-            if let Some(data) = pre_prices.as_ref() {
-                datasets.insert(
-                    0,
+            if let Some(data) = post_prices.as_ref() {
+                datasets.push(
                     Dataset::default()
                         .marker(Marker::Braille)
                         .style(
-                            Style::default().fg(if trading_period != TradingPeriod::Pre {
+                            Style::default().fg(if trading_period != TradingPeriod::Post {
                                 Color::DarkGray
                             } else if pct_change >= 0.0 {
                                 Color::Green
@@ -787,13 +816,13 @@ impl StatefulWidget for StockWidget {
                 );
             }
 
-            if let Some(data) = post_prices.as_ref() {
+            if let Some(data) = pre_prices.as_ref() {
                 datasets.insert(
                     0,
                     Dataset::default()
                         .marker(Marker::Braille)
                         .style(
-                            Style::default().fg(if trading_period != TradingPeriod::Post {
+                            Style::default().fg(if trading_period != TradingPeriod::Pre {
                                 Color::DarkGray
                             } else if pct_change >= 0.0 {
                                 Color::Green

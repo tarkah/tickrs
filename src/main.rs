@@ -1,5 +1,6 @@
 extern crate tickrs_api as api;
 
+use std::collections::HashMap;
 use std::io::{self, Write};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
@@ -9,6 +10,7 @@ use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
 use crossterm::event::{Event, MouseEvent};
 use crossterm::{cursor, execute, terminal, write_ansi_code};
 use lazy_static::lazy_static;
+use service::default_timestamps::DefaultTimestampService;
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
@@ -36,6 +38,7 @@ lazy_static! {
     pub static ref ENABLE_PRE_POST: RwLock<bool> = RwLock::new(OPTS.enable_pre_post);
     pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
+    pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
 }
 
 fn main() {
@@ -67,6 +70,8 @@ fn main() {
         app::Mode::DisplayStock
     };
 
+    let default_timestamp_service = DefaultTimestampService::new();
+
     let app = Arc::new(Mutex::new(app::App {
         mode: starting_mode,
         stocks: starting_stocks,
@@ -90,6 +95,7 @@ fn main() {
             app::Mode::DisplayStock
         },
         summary_time_frame: opts.time_frame,
+        default_timestamp_service,
     }));
 
     let move_app = app.clone();
@@ -123,6 +129,8 @@ fn main() {
             // so they can update their state with this new information
             recv(data_received) -> _ => {
                 let mut app = app.lock().unwrap();
+
+                app.update();
 
                 for stock in app.stocks.iter_mut() {
                     stock.update();

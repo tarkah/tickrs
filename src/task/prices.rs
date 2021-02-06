@@ -3,7 +3,6 @@ use futures::future::BoxFuture;
 
 use super::*;
 use crate::api::model::ChartMeta;
-use crate::api::Interval;
 use crate::common::{chart_data_to_prices, Price, TimeFrame};
 
 /// Returns an array of prices, depending on the TimeFrame chosen
@@ -36,14 +35,7 @@ impl AsyncTask for Prices {
             let time_frame = input.1;
             let client = &input.2;
 
-            let interval = match time_frame {
-                TimeFrame::Day1 => Interval::Minute1,
-                TimeFrame::Week1 => Interval::Minute5,
-                TimeFrame::Month1 => Interval::Minute30,
-                TimeFrame::Month3 => Interval::Minute60,
-                TimeFrame::Month6 => Interval::Minute60,
-                _ => Interval::Day1,
-            };
+            let interval = time_frame.api_interval();
 
             let include_pre_post = time_frame == TimeFrame::Day1;
 

@@ -3,11 +3,12 @@ use std::time::Duration;
 
 use chrono::{Local, TimeZone, Utc};
 use itertools::izip;
+use tickrs_api::Interval;
 
 use crate::api::model::ChartData;
 use crate::api::Range;
 
-#[derive(PartialEq, Clone, Copy, PartialOrd, Debug)]
+#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq)]
 pub enum TimeFrame {
     Day1,
     Week1,
@@ -54,6 +55,16 @@ impl TimeFrame {
         ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y"]
     }
 
+    pub const ALL: [TimeFrame; 7] = [
+        TimeFrame::Day1,
+        TimeFrame::Week1,
+        TimeFrame::Month1,
+        TimeFrame::Month3,
+        TimeFrame::Month6,
+        TimeFrame::Year1,
+        TimeFrame::Year5,
+    ];
+
     pub fn update_interval(self) -> Duration {
         match self {
             TimeFrame::Day1 => Duration::from_secs(60),
@@ -99,6 +110,28 @@ impl TimeFrame {
             TimeFrame::Month6 => Range::Month6,
             TimeFrame::Year1 => Range::Year1,
             TimeFrame::Year5 => Range::Year5,
+        }
+    }
+
+    pub fn api_interval(self) -> Interval {
+        match self {
+            TimeFrame::Day1 => Interval::Minute1,
+            TimeFrame::Week1 => Interval::Minute5,
+            TimeFrame::Month1 => Interval::Minute30,
+            TimeFrame::Month3 => Interval::Minute60,
+            TimeFrame::Month6 => Interval::Minute60,
+            _ => Interval::Day1,
+        }
+    }
+
+    pub fn round_by(self) -> i64 {
+        match self {
+            TimeFrame::Day1 => 60,
+            TimeFrame::Week1 => 60 * 5,
+            TimeFrame::Month1 => 60 * 30,
+            TimeFrame::Month3 => 60 * 60,
+            TimeFrame::Month6 => 60 * 60,
+            _ => 60 * 60 * 24,
         }
     }
 

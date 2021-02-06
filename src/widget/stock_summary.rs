@@ -260,13 +260,12 @@ impl StatefulWidget for StockSummaryWidget {
                 .graph_type(graph_type)
                 .data(&reg_prices)];
 
-            if let Some(data) = pre_prices.as_ref() {
-                datasets.insert(
-                    0,
+            if let Some(data) = post_prices.as_ref() {
+                datasets.push(
                     Dataset::default()
                         .marker(Marker::Braille)
                         .style(
-                            Style::default().fg(if trading_period != TradingPeriod::Pre {
+                            Style::default().fg(if trading_period != TradingPeriod::Post {
                                 Color::DarkGray
                             } else if pct_change >= 0.0 {
                                 Color::Green
@@ -279,13 +278,13 @@ impl StatefulWidget for StockSummaryWidget {
                 );
             }
 
-            if let Some(data) = post_prices.as_ref() {
+            if let Some(data) = pre_prices.as_ref() {
                 datasets.insert(
                     0,
                     Dataset::default()
                         .marker(Marker::Braille)
                         .style(
-                            Style::default().fg(if trading_period != TradingPeriod::Post {
+                            Style::default().fg(if trading_period != TradingPeriod::Pre {
                                 Color::DarkGray
                             } else if pct_change >= 0.0 {
                                 Color::Green

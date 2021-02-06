@@ -1,7 +1,9 @@
 use crossterm::event::Event;
 
 use crate::common::TimeFrame;
-use crate::widget;
+use crate::service::default_timestamps::DefaultTimestampService;
+use crate::service::Service;
+use crate::{widget, DEFAULT_TIMESTAMPS};
 
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Mode {
@@ -22,6 +24,17 @@ pub struct App {
     pub debug: DebugInfo,
     pub previous_mode: Mode,
     pub summary_time_frame: TimeFrame,
+    pub default_timestamp_service: DefaultTimestampService,
+}
+
+impl App {
+    pub fn update(&self) {
+        let mut timestamp_updates = self.default_timestamp_service.updates();
+
+        if let Some(new_defaults) = timestamp_updates.pop() {
+            *DEFAULT_TIMESTAMPS.write().unwrap() = new_defaults;
+        }
+    }
 }
 
 #[derive(Debug)]

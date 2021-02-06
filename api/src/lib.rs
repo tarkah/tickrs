@@ -3,7 +3,7 @@ pub use self::client::Client;
 mod client;
 pub mod model;
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum Interval {
     Minute1,
     Minute2,
@@ -44,7 +44,7 @@ impl std::fmt::Display for Interval {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum Range {
     Day1,
     Day5,
