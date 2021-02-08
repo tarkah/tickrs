@@ -1,3 +1,6 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
@@ -157,9 +160,39 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             vec![layout[1]]
         };
 
+        let mut hasher = DefaultHasher::default();
+        stock.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        let cached_area = stock.cached_area;
+
+        if hash == stock.prev_hash
+            && cached_area.width == main_chunks[0].width
+            && cached_area.height == main_chunks[0].height
+        {
+            stock.use_cache = true;
+        } else if hash != stock.prev_hash {
+            stock.prev_hash = hash;
+        }
+
         frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
 
         if let Some(options) = stock.options.as_mut() {
+            let mut hasher = DefaultHasher::default();
+            options.hash(&mut hasher);
+            let hash = hasher.finish();
+
+            let cached_area = options.cached_area;
+
+            if hash == options.prev_hash
+                && cached_area.width == main_chunks[1].width
+                && cached_area.height == main_chunks[1].height
+            {
+                options.use_cache = true;
+            } else if hash != options.prev_hash {
+                options.prev_hash = hash;
+            }
+
             frame.render_stateful_widget(OptionsWidget {}, main_chunks[1], options);
         }
     }
@@ -231,6 +264,21 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     let stock_layout = Layout::default().constraints(contraints).split(layout[1]);
 
     for (idx, stock) in app.stocks[..num_to_render].iter_mut().enumerate() {
+        let mut hasher = DefaultHasher::default();
+        stock.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        let cached_area = stock.cached_area;
+
+        if hash == stock.prev_hash
+            && cached_area.width == stock_layout[idx].width
+            && cached_area.height == stock_layout[idx].height
+        {
+            stock.use_cache = true;
+        } else if hash != stock.prev_hash {
+            stock.prev_hash = hash;
+        }
+
         frame.render_stateful_widget(StockSummaryWidget {}, stock_layout[idx], stock);
     }
 

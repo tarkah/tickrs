@@ -19,13 +19,30 @@ impl StatefulWidget for StockSummaryWidget {
     type State = StockState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let pct_change = state.pct_change();
+        if state.use_cache {
+            for (idx, cell) in buf.content.iter_mut().enumerate() {
+                let x = idx as u16 % buf.area.width;
+                let y = idx as u16 / buf.area.width;
+
+                if x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
+                {
+                    if let Some(cached_cell) = state.cached_content.get(idx) {
+                        *cell = cached_cell.clone();
+                    }
+                }
+            }
+
+            state.use_cache = false;
+            return;
+        }
+
+        let data = state.prices().collect::<Vec<_>>();
+        let pct_change = state.pct_change(&data);
 
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
         let show_volumes = *SHOW_VOLUMES.read().unwrap();
 
         let loaded = state.loaded();
-        state.loading_tick();
 
         let (company_name, currency) = match state.profile.as_ref() {
             Some(profile) => (
@@ -69,7 +86,7 @@ impl StatefulWidget for StockSummaryWidget {
             layout[0] = add_padding(layout[0], 1, PaddingDirection::Left);
             layout[0] = add_padding(layout[0], 2, PaddingDirection::Right);
 
-            let (high, low) = state.high_low();
+            let (high, low) = state.high_low(&data);
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let prices = [
@@ -138,10 +155,10 @@ impl StatefulWidget for StockSummaryWidget {
             layout[1] = add_padding(layout[1], 1, PaddingDirection::Left);
             layout[1] = add_padding(layout[1], 1, PaddingDirection::Top);
 
-            let (min, max) = state.min_max();
+            let (min, max) = state.min_max(&data);
             let (start, end) = state.start_end();
 
-            let mut prices: Vec<_> = state.prices().map(cast_historical_as_price).collect();
+            let mut prices: Vec<_> = data.iter().map(cast_historical_as_price).collect();
 
             prices.pop();
             prices.push(state.current_price());
@@ -154,10 +171,10 @@ impl StatefulWidget for StockSummaryWidget {
                 GraphType::Line
             };
 
-            let trading_period = state.current_trading_period();
+            let trading_period = state.current_trading_period(&data);
 
             let (reg_prices, pre_prices, post_prices) = if loaded {
-                let (start_idx, end_idx) = state.regular_start_end_idx();
+                let (start_idx, end_idx) = state.regular_start_end_idx(&data);
 
                 if enable_pre_post && state.time_frame == TimeFrame::Day1 {
                     (
@@ -331,12 +348,12 @@ impl StatefulWidget for StockSummaryWidget {
                     let width = volume_chunks.width;
                     let num_bars = width as usize;
 
-                    let volumes = state.volumes();
+                    let volumes = state.volumes(&data);
                     let vol_count = volumes.len();
 
                     if vol_count > 0 {
-                        let volumes = state
-                            .prices()
+                        let volumes = data
+                            .iter()
                             .map(|p| [p.volume].repeat(num_bars))
                             .flatten()
                             .chunks(vol_count)
@@ -365,7 +382,7 @@ impl StatefulWidget for StockSummaryWidget {
 
             Chart::<String, String>::default()
                 .block(Block::default().border_style(Style::default()))
-                .x_axis(Axis::default().bounds(state.x_bounds(start, end)))
+                .x_axis(Axis::default().bounds(state.x_bounds(start, end, &data)))
                 .y_axis(
                     Axis::default()
                         .bounds(state.y_bounds(min, max))
@@ -375,5 +392,10 @@ impl StatefulWidget for StockSummaryWidget {
                 .datasets(&datasets)
                 .render(graph_chunks[0], buf);
         }
+
+        // Cache current area, buf and reset use_cache flag
+        state.cached_area = area;
+        state.cached_content = buf.content.clone();
+        state.use_cache = false;
     }
 }

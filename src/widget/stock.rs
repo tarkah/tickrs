@@ -1,5 +1,7 @@
+use std::hash::{Hash, Hasher};
+
 use itertools::Itertools;
-use tui::buffer::Buffer;
+use tui::buffer::{Buffer, Cell};
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::symbols::{bar, Marker};
@@ -35,6 +37,41 @@ pub struct StockState {
     pub loading_tick: usize,
     pub prev_state_loaded: bool,
     pub chart_meta: Option<ChartMeta>,
+    pub prev_hash: u64,
+    pub cached_area: Rect,
+    pub cached_content: Vec<Cell>,
+    pub use_cache: bool,
+}
+
+impl Hash for StockState {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.symbol.hash(state);
+        self.current_regular_price.to_bits().hash(state);
+        // Only fetched once, so just need to check if Some
+        self.profile.is_some().hash(state);
+        self.current_post_price.map(|f| f.to_bits()).hash(state);
+        self.prev_close_price.map(|f| f.to_bits()).hash(state);
+        self.reg_mkt_volume.hash(state);
+        self.prices.hash(state);
+        self.time_frame.hash(state);
+        self.show_options.hash(state);
+        self.loading_tick.hash(state);
+        self.prev_state_loaded.hash(state);
+        self.chart_meta.hash(state);
+
+        // Hash globals since they affect "state" of how widget is rendered
+        DEFAULT_TIMESTAMPS
+            .read()
+            .unwrap()
+            .get(&self.time_frame)
+            .hash(state);
+        ENABLE_PRE_POST.read().unwrap().hash(state);
+        HIDE_PREV_CLOSE.hash(state);
+        HIDE_TOGGLE.hash(state);
+        SHOW_VOLUMES.read().unwrap().hash(state);
+        SHOW_X_LABELS.read().unwrap().hash(state);
+        TRUNC_PRE.hash(state);
+    }
 }
 
 impl StockState {
@@ -58,6 +95,10 @@ impl StockState {
             loading_tick: NUM_LOADING_TICKS,
             prev_state_loaded: false,
             chart_meta: None,
+            prev_hash: Default::default(),
+            cached_area: Default::default(),
+            cached_content: Default::default(),
+            use_cache: false,
         }
     }
 
@@ -136,17 +177,15 @@ impl StockState {
         prices.into_iter()
     }
 
-    pub fn volumes(&self) -> Vec<u64> {
+    pub fn volumes(&self, data: &[Price]) -> Vec<u64> {
         let (start, end) = self.start_end();
-
-        let mut prices = self.prices();
 
         if self.time_frame == TimeFrame::Day1 {
             let times = MarketHours(start, end);
 
             times
                 .map(|t| {
-                    if let Some(p) = prices.find(|p| p.date == t) {
+                    if let Some(p) = data.iter().find(|p| p.date == t) {
                         p.volume
                     } else {
                         0
@@ -154,7 +193,7 @@ impl StockState {
                 })
                 .collect()
         } else {
-            prices.map(|p| p.volume).collect()
+            data.iter().map(|p| p.volume).collect()
         }
     }
 
@@ -162,7 +201,8 @@ impl StockState {
         let enable_pre_post = { *ENABLE_PRE_POST.read().unwrap() };
 
         if enable_pre_post && self.current_post_price.is_some() {
-            self.current_post_price.unwrap()
+            self.current_post_price
+                .unwrap_or(self.current_regular_price)
         } else {
             self.current_regular_price
         }
@@ -260,7 +300,7 @@ impl StockState {
         (start, end)
     }
 
-    pub fn regular_start_end_idx(&self) -> (Option<usize>, Option<usize>) {
+    pub fn regular_start_end_idx(&self, data: &[Price]) -> (Option<usize>, Option<usize>) {
         let reg_start = self
             .chart_meta
             .as_ref()
@@ -274,14 +314,14 @@ impl StockState {
             // Last data point is always 1 minute before "end" time
             .map(|c| c.regular.end - 60);
 
-        let start_idx = self
-            .prices()
+        let start_idx = data
+            .iter()
             .enumerate()
             .find(|(_, p)| Some(p.date) >= reg_start)
             .map(|(idx, _)| idx);
 
-        let end_idx = self
-            .prices()
+        let end_idx = data
+            .iter()
             .enumerate()
             .find(|(_, p)| Some(p.date) >= reg_end)
             .map(|(idx, _)| idx);
@@ -289,8 +329,8 @@ impl StockState {
         (start_idx, end_idx)
     }
 
-    pub fn current_trading_period(&self) -> TradingPeriod {
-        let (reg_start, reg_end) = self.regular_start_end_idx();
+    pub fn current_trading_period(&self, data: &[Price]) -> TradingPeriod {
+        let (reg_start, reg_end) = self.regular_start_end_idx(data);
 
         if self.time_frame != TimeFrame::Day1 {
             TradingPeriod::Regular
@@ -303,8 +343,8 @@ impl StockState {
         }
     }
 
-    pub fn min_max(&self) -> (f64, f64) {
-        let mut data: Vec<_> = self.prices().map(cast_historical_as_price).collect();
+    pub fn min_max(&self, data: &[Price]) -> (f64, f64) {
+        let mut data: Vec<_> = data.iter().map(cast_historical_as_price).collect();
         data.pop();
         data.push(self.current_price());
         data = remove_zeros(data);
@@ -337,8 +377,8 @@ impl StockState {
         (min, max)
     }
 
-    pub fn high_low(&self) -> (f64, f64) {
-        let mut data = self.prices().collect::<Vec<_>>();
+    pub fn high_low(&self, data: &[Price]) -> (f64, f64) {
+        let mut data = data.to_vec();
 
         data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
         let mut max = data.last().map(|d| d.high).unwrap_or(0.0);
@@ -358,22 +398,22 @@ impl StockState {
         (max, min)
     }
 
-    pub fn x_bounds(&self, start: i64, end: i64) -> [f64; 2] {
+    pub fn x_bounds(&self, start: i64, end: i64, data: &[Price]) -> [f64; 2] {
         let num_points = ((end - start) / 60) as f64;
 
         match self.time_frame {
             TimeFrame::Day1 => [0.0, num_points],
-            _ => [0.0, (self.prices().count() + 1) as f64],
+            _ => [0.0, (data.len() + 1) as f64],
         }
     }
 
-    pub fn x_labels(&self, width: u16, start: i64, end: i64) -> Vec<String> {
+    pub fn x_labels(&self, width: u16, start: i64, end: i64, data: &[Price]) -> Vec<String> {
         let mut labels = vec![];
 
         let dates = if self.time_frame == TimeFrame::Day1 {
             MarketHours(start, end).collect()
         } else {
-            self.prices().map(|p| p.date).collect::<Vec<_>>()
+            data.iter().map(|p| p.date).collect::<Vec<_>>()
         };
 
         if dates.is_empty() {
@@ -426,8 +466,8 @@ impl StockState {
         }
     }
 
-    pub fn pct_change(&self) -> f64 {
-        if self.prices().filter(|p| p.close > 0.0).count() == 0 {
+    pub fn pct_change(&self, data: &[Price]) -> f64 {
+        if data.iter().filter(|p| p.close > 0.0).count() == 0 {
             return 0.0;
         }
 
@@ -435,13 +475,13 @@ impl StockState {
             if let Some(prev_close) = self.prev_close_price {
                 prev_close
             } else {
-                self.prices()
+                data.iter()
                     .find(|p| p.close > 0.0)
                     .map(|d| d.close)
                     .unwrap()
             }
         } else {
-            self.prices()
+            data.iter()
                 .find(|p| p.close > 0.0)
                 .map(|d| d.close)
                 .unwrap()
@@ -451,7 +491,9 @@ impl StockState {
     }
 
     pub fn loaded(&self) -> bool {
-        self.prices().count() > 0 && self.current_price() > 0.0 && self.profile.is_some()
+        !self.prices[self.time_frame.idx()].is_empty()
+            && self.current_price() > 0.0
+            && self.profile.is_some()
     }
 
     pub fn loading_tick(&mut self) {
@@ -478,14 +520,32 @@ impl StatefulWidget for StockWidget {
 
     #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let pct_change = state.pct_change();
+        if state.use_cache {
+            for (idx, cell) in buf.content.iter_mut().enumerate() {
+                let x = idx as u16 % buf.area.width;
+                let y = idx as u16 / buf.area.width;
+
+                if x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
+                {
+                    if let Some(cached_cell) = state.cached_content.get(idx) {
+                        *cell = cached_cell.clone();
+                    }
+                }
+            }
+
+            state.use_cache = false;
+            return;
+        }
+
+        let data = state.prices().collect::<Vec<_>>();
+
+        let pct_change = state.pct_change(&data);
 
         let show_x_labels = SHOW_X_LABELS.read().map_or(false, |l| *l);
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
         let show_volumes = *SHOW_VOLUMES.read().unwrap();
 
         let loaded = state.loaded();
-        state.loading_tick();
 
         let (company_name, currency) = match state.profile.as_ref() {
             Some(profile) => (
@@ -552,7 +612,7 @@ impl StatefulWidget for StockWidget {
             info_chunks[1].y -= 1;
             info_chunks[1].height += 1;
 
-            let (high, low) = state.high_low();
+            let (high, low) = state.high_low(&data);
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let company_info = [
@@ -670,10 +730,10 @@ impl StatefulWidget for StockWidget {
 
         // Draw graph
         {
-            let (min, max) = state.min_max();
+            let (min, max) = state.min_max(&data);
             let (start, end) = state.start_end();
 
-            let mut prices: Vec<_> = state.prices().map(cast_historical_as_price).collect();
+            let mut prices: Vec<_> = data.iter().map(cast_historical_as_price).collect();
 
             prices.pop();
             prices.push(state.current_price());
@@ -687,15 +747,15 @@ impl StatefulWidget for StockWidget {
             };
 
             let x_labels = if show_x_labels {
-                state.x_labels(chunks[2].width, start, end)
+                state.x_labels(chunks[2].width, start, end, &data)
             } else {
                 vec![]
             };
 
-            let trading_period = state.current_trading_period();
+            let trading_period = state.current_trading_period(&data);
 
             let (reg_prices, pre_prices, post_prices) = if loaded {
-                let (start_idx, end_idx) = state.regular_start_end_idx();
+                let (start_idx, end_idx) = state.regular_start_end_idx(&data);
 
                 if enable_pre_post && state.time_frame == TimeFrame::Day1 {
                     (
@@ -879,12 +939,12 @@ impl StatefulWidget for StockWidget {
                 let width = volume_chunks.width;
                 let num_bars = width as usize;
 
-                let volumes = state.volumes();
+                let volumes = state.volumes(&data);
                 let vol_count = volumes.len();
 
                 if vol_count > 0 {
-                    let volumes = state
-                        .prices()
+                    let volumes = data
+                        .iter()
                         .map(|p| [p.volume].repeat(num_bars))
                         .flatten()
                         .chunks(vol_count)
@@ -917,7 +977,7 @@ impl StatefulWidget for StockWidget {
                         .border_style(Style::default()),
                 )
                 .x_axis({
-                    let axis = Axis::default().bounds(state.x_bounds(start, end));
+                    let axis = Axis::default().bounds(state.x_bounds(start, end, &data));
 
                     if show_x_labels && loaded {
                         axis.labels(&x_labels)
@@ -946,5 +1006,10 @@ impl StatefulWidget for StockWidget {
                 .highlight_style(Style::default().fg(Color::Yellow))
                 .render(chunks[3], buf);
         }
+
+        // Cache current area, buf and reset use_cache flag
+        state.cached_area = area;
+        state.cached_content = buf.content.clone();
+        state.use_cache = false;
     }
 }

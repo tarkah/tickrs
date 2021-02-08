@@ -118,6 +118,11 @@ fn main() {
                 default(Duration::from_millis(500)) => {
                     let mut app = app.lock().unwrap();
 
+                    // Drive animation of loading icon
+                    for stock in app.stocks.iter_mut() {
+                        stock.loading_tick();
+                    }
+
                     draw::draw(&mut terminal, &mut app);
                 }
             }

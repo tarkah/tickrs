@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
 use chrono::NaiveDateTime;
-use tui::buffer::Buffer;
+use tui::buffer::{Buffer, Cell};
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{
@@ -14,13 +15,13 @@ use crate::api::model::{OptionsData, OptionsQuote};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 enum OptionType {
     Call,
     Put,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 pub enum SelectionMode {
     Dates,
     Options,
@@ -35,6 +36,22 @@ pub struct OptionsState {
     pub selection_mode: SelectionMode,
     selected_option: Option<usize>,
     quote: Option<OptionsQuote>,
+    pub prev_hash: u64,
+    pub cached_area: Rect,
+    pub cached_content: Vec<Cell>,
+    pub use_cache: bool,
+}
+
+impl Hash for OptionsState {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.exp_dates.hash(state);
+        self.exp_date.hash(state);
+        self.data().hash(state);
+        self.selected_type.hash(state);
+        self.selection_mode.hash(state);
+        self.selected_option.hash(state);
+        self.quote.hash(state);
+    }
 }
 
 impl OptionsState {
@@ -50,6 +67,10 @@ impl OptionsState {
             selection_mode: SelectionMode::Dates,
             selected_option: None,
             quote: None,
+            prev_hash: Default::default(),
+            cached_area: Default::default(),
+            cached_content: Default::default(),
+            use_cache: false,
         }
     }
 
@@ -220,6 +241,23 @@ impl StatefulWidget for OptionsWidget {
     type State = OptionsState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        if state.use_cache {
+            for (idx, cell) in buf.content.iter_mut().enumerate() {
+                let x = idx as u16 % buf.area.width;
+                let y = idx as u16 / buf.area.width;
+
+                if x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
+                {
+                    if let Some(cached_cell) = state.cached_content.get(idx) {
+                        *cell = cached_cell.clone();
+                    }
+                }
+            }
+
+            state.use_cache = false;
+            return;
+        }
+
         block::new(" Options ", None).render(area, buf);
 
         // chunks[0] - call / put selector
@@ -490,5 +528,10 @@ impl StatefulWidget for OptionsWidget {
                 }
             }
         }
+
+        // Cache current area, buf and reset use_cache flag
+        state.cached_area = area;
+        state.cached_content = buf.content.clone();
+        state.use_cache = false;
     }
 }
