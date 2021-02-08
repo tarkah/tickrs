@@ -1,7 +1,7 @@
 use std::hash::{Hash, Hasher};
 
 use itertools::Itertools;
-use tui::buffer::{Buffer, Cell};
+use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::symbols::{bar, Marker};
@@ -10,7 +10,7 @@ use tui::widgets::{
     Text, Widget,
 };
 
-use super::{block, OptionsState};
+use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
@@ -37,10 +37,7 @@ pub struct StockState {
     pub loading_tick: usize,
     pub prev_state_loaded: bool,
     pub chart_meta: Option<ChartMeta>,
-    pub prev_hash: u64,
-    pub cached_area: Rect,
-    pub cached_content: Vec<Cell>,
-    pub use_cache: bool,
+    pub cache_state: CacheState,
 }
 
 impl Hash for StockState {
@@ -95,10 +92,7 @@ impl StockState {
             loading_tick: NUM_LOADING_TICKS,
             prev_state_loaded: false,
             chart_meta: None,
-            prev_hash: Default::default(),
-            cached_area: Default::default(),
-            cached_content: Default::default(),
-            use_cache: false,
+            cache_state: Default::default(),
         }
     }
 
@@ -520,23 +514,16 @@ impl StatefulWidget for StockWidget {
 
     #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if state.use_cache {
-            for (idx, cell) in buf.content.iter_mut().enumerate() {
-                let x = idx as u16 % buf.area.width;
-                let y = idx as u16 / buf.area.width;
+        self.render_cached(area, buf, state);
+    }
+}
 
-                if x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
-                {
-                    if let Some(cached_cell) = state.cached_content.get(idx) {
-                        *cell = cached_cell.clone();
-                    }
-                }
-            }
+impl CachableWidget<StockState> for StockWidget {
+    fn cache_state_mut(state: &mut StockState) -> &mut CacheState {
+        &mut state.cache_state
+    }
 
-            state.use_cache = false;
-            return;
-        }
-
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
         let data = state.prices().collect::<Vec<_>>();
 
         let pct_change = state.pct_change(&data);
@@ -1006,10 +993,5 @@ impl StatefulWidget for StockWidget {
                 .highlight_style(Style::default().fg(Color::Yellow))
                 .render(chunks[3], buf);
         }
-
-        // Cache current area, buf and reset use_cache flag
-        state.cached_area = area;
-        state.cached_content = buf.content.clone();
-        state.use_cache = false;
     }
 }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use chrono::NaiveDateTime;
-use tui::buffer::{Buffer, Cell};
+use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{
@@ -10,7 +10,7 @@ use tui::widgets::{
     Widget,
 };
 
-use super::block;
+use super::{block, CachableWidget, CacheState};
 use crate::api::model::{OptionsData, OptionsQuote};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
@@ -36,10 +36,7 @@ pub struct OptionsState {
     pub selection_mode: SelectionMode,
     selected_option: Option<usize>,
     quote: Option<OptionsQuote>,
-    pub prev_hash: u64,
-    pub cached_area: Rect,
-    pub cached_content: Vec<Cell>,
-    pub use_cache: bool,
+    cache_state: CacheState,
 }
 
 impl Hash for OptionsState {
@@ -67,10 +64,7 @@ impl OptionsState {
             selection_mode: SelectionMode::Dates,
             selected_option: None,
             quote: None,
-            prev_hash: Default::default(),
-            cached_area: Default::default(),
-            cached_content: Default::default(),
-            use_cache: false,
+            cache_state: Default::default(),
         }
     }
 
@@ -241,23 +235,16 @@ impl StatefulWidget for OptionsWidget {
     type State = OptionsState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if state.use_cache {
-            for (idx, cell) in buf.content.iter_mut().enumerate() {
-                let x = idx as u16 % buf.area.width;
-                let y = idx as u16 / buf.area.width;
+        self.render_cached(area, buf, state);
+    }
+}
 
-                if x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
-                {
-                    if let Some(cached_cell) = state.cached_content.get(idx) {
-                        *cell = cached_cell.clone();
-                    }
-                }
-            }
+impl CachableWidget<OptionsState> for OptionsWidget {
+    fn cache_state_mut(state: &mut OptionsState) -> &mut CacheState {
+        &mut state.cache_state
+    }
 
-            state.use_cache = false;
-            return;
-        }
-
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut OptionsState) {
         block::new(" Options ", None).render(area, buf);
 
         // chunks[0] - call / put selector
@@ -528,10 +515,5 @@ impl StatefulWidget for OptionsWidget {
                 }
             }
         }
-
-        // Cache current area, buf and reset use_cache flag
-        state.cached_area = area;
-        state.cached_content = buf.content.clone();
-        state.use_cache = false;
     }
 }

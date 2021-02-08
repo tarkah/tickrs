@@ -9,6 +9,7 @@ use tui::widgets::{
 };
 
 use super::stock::StockState;
+use super::{CachableWidget, CacheState};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::{ENABLE_PRE_POST, HIDE_PREV_CLOSE, SHOW_VOLUMES};
@@ -19,23 +20,16 @@ impl StatefulWidget for StockSummaryWidget {
     type State = StockState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if state.use_cache {
-            for (idx, cell) in buf.content.iter_mut().enumerate() {
-                let x = idx as u16 % buf.area.width;
-                let y = idx as u16 / buf.area.width;
+        self.render_cached(area, buf, state);
+    }
+}
 
-                if x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
-                {
-                    if let Some(cached_cell) = state.cached_content.get(idx) {
-                        *cell = cached_cell.clone();
-                    }
-                }
-            }
+impl CachableWidget<StockState> for StockSummaryWidget {
+    fn cache_state_mut(state: &mut StockState) -> &mut CacheState {
+        &mut state.cache_state
+    }
 
-            state.use_cache = false;
-            return;
-        }
-
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
         let data = state.prices().collect::<Vec<_>>();
         let pct_change = state.pct_change(&data);
 
@@ -392,10 +386,5 @@ impl StatefulWidget for StockSummaryWidget {
                 .datasets(&datasets)
                 .render(graph_chunks[0], buf);
         }
-
-        // Cache current area, buf and reset use_cache flag
-        state.cached_area = area;
-        state.cached_content = buf.content.clone();
-        state.use_cache = false;
     }
 }
