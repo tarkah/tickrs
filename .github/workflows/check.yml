@@ -1,12 +1,14 @@
 on:
   push:
-    tags-ignore:
-      - "*"
+    branches:
+      - "master"
     paths:
       - "**.rs"
       - "Cargo.toml"
       - "Cargo.lock"
   pull_request:
+    branches:
+      - "master"
     paths:
       - "**.rs"
       - "Cargo.toml"
