@@ -145,6 +145,8 @@ impl StockState {
                     }
                 })
                 .collect::<Vec<_>>()
+        } else if self.is_crypto() {
+            prices
         } else if let Some(default_timestamps) = default_timestamps {
             default_timestamps
                 .into_iter()
@@ -229,11 +231,14 @@ impl StockState {
     }
 
     fn options_enabled(&self) -> bool {
+        !self.is_crypto()
+    }
+
+    fn is_crypto(&self) -> bool {
         self.chart_meta
             .as_ref()
-            .map(|m| m.instrument_type.as_deref())
-            .flatten()
-            != Some("CRYPTOCURRENCY")
+            .and_then(|m| m.instrument_type.as_deref())
+            == Some("CRYPTOCURRENCY")
     }
 
     pub fn toggle_options(&mut self) -> bool {
