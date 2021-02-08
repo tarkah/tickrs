@@ -17,6 +17,8 @@ and `Removed`.
 ### Fixed
 
 - Huge improvements to optimization of program. CPU usage is way down (#54)
+- Fix 1W - 6M time frame graphing for Crypto tickers where not all datapoints
+  were plotted correctly across the x-axis (#55)
 
 ## [0.9.1] - 2021-02-06
 
