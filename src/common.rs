@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -192,6 +193,17 @@ pub struct Price {
     pub date: i64,
 }
 
+impl Hash for Price {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.close.to_bits().hash(state);
+        self.volume.hash(state);
+        self.high.to_bits().hash(state);
+        self.low.to_bits().hash(state);
+        self.open.to_bits().hash(state);
+        self.date.hash(state);
+    }
+}
+
 pub fn chart_data_to_prices(mut chart_data: ChartData) -> Vec<Price> {
     if chart_data.indicators.quote.len() != 1 {
         return vec![];
@@ -223,7 +235,7 @@ pub fn cast_as_dataset(input: (usize, &f64)) -> (f64, f64) {
     ((input.0 + 1) as f64, *input.1)
 }
 
-pub fn cast_historical_as_price(input: Price) -> f64 {
+pub fn cast_historical_as_price(input: &Price) -> f64 {
     input.close
 }
 

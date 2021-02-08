@@ -2,8 +2,9 @@ use std::time::{Duration, Instant};
 
 use async_std::sync::Arc;
 use async_std::task;
-use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver};
 use futures::future::BoxFuture;
+use task::JoinHandle;
 
 pub use self::company::Company;
 pub use self::current_price::CurrentPrice;
@@ -39,14 +40,13 @@ pub trait AsyncTask: 'static {
 
     /// Runs the task on the async runtime and returns a handle to query updates from
     fn connect(&self) -> AsyncTaskHandle<Self::Response> {
-        let (drop_sender, drop_receiver) = bounded::<()>(1);
         let (response_sender, response_receiver) = unbounded::<Self::Response>();
         let data_received = DATA_RECEIVED.0.clone();
 
         let update_interval = self.update_interval();
         let input = Arc::new(self.input());
 
-        task::spawn(async move {
+        let handle = task::spawn(async move {
             let mut last_updated = Instant::now();
 
             // Execute the task initially and request a redraw to display this data
@@ -62,7 +62,7 @@ pub trait AsyncTask: 'static {
                 return;
             };
 
-            // Execute task every update interval and exit if drop signal is received
+            // Execute task every update interval
             loop {
                 if last_updated.elapsed() >= update_interval {
                     if let Some(response) = <Self as AsyncTask>::task(input.clone()).await {
@@ -73,28 +73,21 @@ pub trait AsyncTask: 'static {
                     last_updated = Instant::now();
                 }
 
-                select! {
-                    recv(drop_receiver) -> drop => if let Ok(()) = drop {
-                        break;
-                    },
-                    default() => (),
-                }
-
                 // Free up some cycles
                 task::sleep(Duration::from_secs(1)).await;
             }
         });
 
         AsyncTaskHandle {
-            drop_sender: Some(drop_sender),
             response: response_receiver,
+            handle: Some(handle),
         }
     }
 }
 
 pub struct AsyncTaskHandle<R> {
-    drop_sender: Option<Sender<()>>,
     response: Receiver<R>,
+    handle: Option<JoinHandle<()>>,
 }
 
 impl<R> AsyncTaskHandle<R> {
@@ -105,8 +98,7 @@ impl<R> AsyncTaskHandle<R> {
 
 impl<R> Drop for AsyncTaskHandle<R> {
     fn drop(&mut self) {
-        if let Some(ref drop_sender) = self.drop_sender {
-            let _ = drop_sender.send(());
-        }
+        let handle = self.handle.take().unwrap();
+        task::spawn(async { handle.cancel().await });
     }
 }

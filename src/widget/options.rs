@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
 use chrono::NaiveDateTime;
 use tui::buffer::Buffer;
@@ -9,18 +10,18 @@ use tui::widgets::{
     Widget,
 };
 
-use super::block;
+use super::{block, CachableWidget, CacheState};
 use crate::api::model::{OptionsData, OptionsQuote};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 enum OptionType {
     Call,
     Put,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Hash)]
 pub enum SelectionMode {
     Dates,
     Options,
@@ -35,6 +36,19 @@ pub struct OptionsState {
     pub selection_mode: SelectionMode,
     selected_option: Option<usize>,
     quote: Option<OptionsQuote>,
+    cache_state: CacheState,
+}
+
+impl Hash for OptionsState {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.exp_dates.hash(state);
+        self.exp_date.hash(state);
+        self.data().hash(state);
+        self.selected_type.hash(state);
+        self.selection_mode.hash(state);
+        self.selected_option.hash(state);
+        self.quote.hash(state);
+    }
 }
 
 impl OptionsState {
@@ -50,6 +64,7 @@ impl OptionsState {
             selection_mode: SelectionMode::Dates,
             selected_option: None,
             quote: None,
+            cache_state: Default::default(),
         }
     }
 
@@ -220,6 +235,16 @@ impl StatefulWidget for OptionsWidget {
     type State = OptionsState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        self.render_cached(area, buf, state);
+    }
+}
+
+impl CachableWidget<OptionsState> for OptionsWidget {
+    fn cache_state_mut(state: &mut OptionsState) -> &mut CacheState {
+        &mut state.cache_state
+    }
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut OptionsState) {
         block::new(" Options ", None).render(area, buf);
 
         // chunks[0] - call / put selector

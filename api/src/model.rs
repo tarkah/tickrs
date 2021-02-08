@@ -1,4 +1,5 @@
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
 use anyhow::{bail, Result};
@@ -73,8 +74,17 @@ pub struct ChartMeta {
     pub current_trading_period: Option<ChartCurrentTradingPeriod>,
 }
 
+impl Hash for ChartMeta {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.instrument_type.hash(state);
+        self.regular_market_price.to_bits().hash(state);
+        self.chart_previous_close.to_bits().hash(state);
+        self.current_trading_period.hash(state);
+    }
+}
+
 #[serde(rename_all = "camelCase")]
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct ChartCurrentTradingPeriod {
     pub regular: ChartTradingPeriod,
     pub pre: ChartTradingPeriod,
@@ -82,7 +92,7 @@ pub struct ChartCurrentTradingPeriod {
 }
 
 #[serde(rename_all = "camelCase")]
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct ChartTradingPeriod {
     pub start: i64,
     pub end: i64,
@@ -139,7 +149,7 @@ pub struct CompanyData {
 }
 
 #[serde(rename_all = "camelCase")]
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct CompanyProfile {
     pub website: Option<String>,
     pub industry: Option<String>,
@@ -205,8 +215,14 @@ pub struct OptionsQuote {
     pub regular_market_price: f64,
 }
 
+impl Hash for OptionsQuote {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.regular_market_price.to_bits().hash(state);
+    }
+}
+
 #[serde(rename_all = "camelCase")]
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct OptionsData {
     pub expiration_date: i64,
     pub calls: Vec<OptionsContract>,
@@ -228,6 +244,22 @@ pub struct OptionsContract {
     pub implied_volatility: Option<f64>,
     pub in_the_money: Option<bool>,
     pub currency: Option<String>,
+}
+
+impl Hash for OptionsContract {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.strike.to_bits().hash(state);
+        self.last_price.to_bits().hash(state);
+        self.change.to_bits().hash(state);
+        self.percent_change.to_bits().hash(state);
+        self.volume.hash(state);
+        self.open_interest.hash(state);
+        self.bid.map(|f| f.to_bits()).hash(state);
+        self.ask.map(|f| f.to_bits()).hash(state);
+        self.implied_volatility.map(|f| f.to_bits()).hash(state);
+        self.in_the_money.hash(state);
+        self.currency.hash(state);
+    }
 }
 
 fn deserialize_vec<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
