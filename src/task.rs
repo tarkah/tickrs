@@ -99,6 +99,6 @@ impl<R> AsyncTaskHandle<R> {
 impl<R> Drop for AsyncTaskHandle<R> {
     fn drop(&mut self) {
         let handle = self.handle.take().unwrap();
-        task::block_on(async { handle.cancel().await });
+        task::spawn(async { handle.cancel().await });
     }
 }
