@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.10.0] - 2021-02-08
+
 ### Fixed
 
 - Huge improvements to optimization of program. CPU usage is way down ([#54])
