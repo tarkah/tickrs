@@ -665,10 +665,8 @@ impl CachableWidget<StockState> for StockWidget {
             if !*HIDE_TOGGLE {
                 let toggle_block = block::new(" Toggle ", None);
                 toggle_block.render(info_chunks[1], buf);
-                info_chunks[1].x += 2;
-                info_chunks[1].width -= 2;
-                info_chunks[1].y += 1;
-                info_chunks[1].height -= 1;
+                info_chunks[1] = add_padding(info_chunks[1], 2, PaddingDirection::Left);
+                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Top);
 
                 let mut toggle_info = vec![Text::styled("Summary  's'", Style::default())];
 

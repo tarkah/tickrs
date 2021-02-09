@@ -42,7 +42,7 @@ pub trait CachableWidget<T: Hash>: StatefulWidget<State = T> + Sized {
         } = <Self as CachableWidget<T>>::cache_state_mut(state).clone();
 
         // If current hash and layout matches previous, use cached buffer instead of re-rendering
-        if hash == prev_hash && prev_area.width == area.width && prev_area.height == area.height {
+        if hash == prev_hash && prev_area == area {
             for (idx, cell) in buf.content.iter_mut().enumerate() {
                 let x = idx as u16 % buf.area.width;
                 let y = idx as u16 / buf.area.width;

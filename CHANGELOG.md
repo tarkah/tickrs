@@ -14,6 +14,12 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Options pane now re-renders correctly when resizing terminal window ([#57])
+- Prevent application from crashing when terminal was too small with options pane
+  open ([#57])
+
 ## [0.10.0] - 2021-02-08
 
 ### Fixed
@@ -55,3 +61,4 @@ and `Removed`.
 [#53]: https://github.com/tarkah/tickrs/pull/53
 [#54]: https://github.com/tarkah/tickrs/pull/54
 [#55]: https://github.com/tarkah/tickrs/pull/55
+[#57]: https://github.com/tarkah/tickrs/pull/57
