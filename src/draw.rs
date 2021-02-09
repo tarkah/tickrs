@@ -1,7 +1,7 @@
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, Paragraph, Tabs, Text};
+use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Text};
 use tui::{Frame, Terminal};
 
 use crate::app::{App, Mode};
@@ -148,7 +148,7 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     if let Some(stock) = app.stocks.get_mut(app.current_tab) {
         // main_chunks[0] - Stock widget
         // main_chunks[1] - Options widget (optional)
-        let main_chunks = if app.mode == Mode::DisplayOptions {
+        let mut main_chunks = if app.mode == Mode::DisplayOptions {
             Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Min(0), Constraint::Length(44)].as_ref())
@@ -157,10 +157,32 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             vec![layout[1]]
         };
 
-        frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
+        // If width is too small, don't render stock widget and use entire space
+        // for options widget
+        if main_chunks[0].width >= 19 {
+            frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
+        } else {
+            main_chunks[1] = layout[1];
+        }
 
         if let Some(options) = stock.options.as_mut() {
-            frame.render_stateful_widget(OptionsWidget {}, main_chunks[1], options);
+            if main_chunks[1].width >= 44 && main_chunks[1].height >= 14 {
+                frame.render_stateful_widget(OptionsWidget {}, main_chunks[1], options);
+            } else {
+                main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Left);
+                main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Top);
+
+                frame.render_widget(
+                    Paragraph::new(
+                        [Text::styled(
+                            "Increase screen size to display options",
+                            Style::default(),
+                        )]
+                        .iter(),
+                    ),
+                    main_chunks[1],
+                );
+            }
         }
     }
 }
@@ -240,12 +262,9 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         layout[2] = add_padding(layout[2], 2, PaddingDirection::Right);
 
         // Clear out empty area
-        frame.render_widget(
-            Block::default()
-                .borders(Borders::TOP)
-                .border_style(Style::default().bg(Color::Black).fg(Color::Black)),
-            layout[2],
-        );
+        layout[2].height -= 1;
+        frame.render_widget(Clear, layout[2]);
+        layout[2].height += 1;
 
         let offset = layout[2].height - 3;
         layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
