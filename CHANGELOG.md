@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.10.1] - 2021-02-08
+
 ### Fixed
 
 - Options pane now re-renders correctly when resizing terminal window ([#57])

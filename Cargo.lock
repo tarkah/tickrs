@@ -1275,7 +1275,7 @@ dependencies = [
 
 [[package]]
 name = "tickrs"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "anyhow",
  "async-std",
@@ -1294,7 +1294,7 @@ dependencies = [
 
 [[package]]
 name = "tickrs-api"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "anyhow",
  "async-std",
