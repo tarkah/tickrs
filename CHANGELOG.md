@@ -17,7 +17,7 @@ and `Removed`.
 ### Fixed
 
 - Fixed bug that would deadlock the program between 12am - 4am ET on the intraday
-  1D timeframe
+  1D timeframe ([#59])
 
 ## [0.10.1] - 2021-02-08
 
@@ -69,3 +69,4 @@ and `Removed`.
 [#54]: https://github.com/tarkah/tickrs/pull/54
 [#55]: https://github.com/tarkah/tickrs/pull/55
 [#57]: https://github.com/tarkah/tickrs/pull/57
+[#59]: https://github.com/tarkah/tickrs/pull/59
