@@ -127,7 +127,14 @@ impl StockState {
         };
 
         let prices = if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(start, max_time);
+            let times = MarketHours(
+                start,
+                if max_time < start {
+                    end.max(start)
+                } else {
+                    max_time
+                },
+            );
 
             times
                 .map(|t| {
@@ -177,7 +184,7 @@ impl StockState {
         let (start, end) = self.start_end();
 
         if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(start, end);
+            let times = MarketHours(start, end.max(start));
 
             times
                 .map(|t| {
@@ -410,7 +417,7 @@ impl StockState {
         let mut labels = vec![];
 
         let dates = if self.time_frame == TimeFrame::Day1 {
-            MarketHours(start, end).collect()
+            MarketHours(start, end.max(start)).collect()
         } else {
             data.iter().map(|p| p.date).collect::<Vec<_>>()
         };
