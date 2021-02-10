@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed bug that would deadlock the program between 12am - 4am ET on the intraday
+  1D timeframe
+
 ## [0.10.1] - 2021-02-08
 
 ### Fixed
