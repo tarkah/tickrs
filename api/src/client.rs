@@ -4,8 +4,9 @@ use anyhow::{bail, Context, Result};
 use futures::AsyncReadExt;
 use http::Uri;
 use isahc::HttpClient;
+use serde::de::DeserializeOwned;
 
-use crate::model::{ChartData, CompanyData, OptionsHeader, Response, ResponseType};
+use crate::model::{Chart, ChartData, Company, CompanyData, Options, OptionsHeader};
 use crate::{Interval, Range};
 
 #[derive(Debug)]
@@ -35,7 +36,7 @@ impl Client {
         }
     }
 
-    async fn get(&self, url: Uri, response_type: ResponseType) -> Result<Response> {
+    async fn get<T: DeserializeOwned>(&self, url: Uri) -> Result<T> {
         let res = self
             .client
             .get_async(url)
@@ -46,7 +47,7 @@ impl Client {
         let mut bytes = Vec::new();
         body.read_to_end(&mut bytes).await?;
 
-        let response = response_type.deserialize(&bytes)?;
+        let response = serde_json::from_slice(&bytes)?;
 
         Ok(response)
     }
@@ -72,25 +73,22 @@ impl Client {
             Some(params),
         )?;
 
-        let response_type = ResponseType::Chart;
+        let response: Chart = self.get(url).await?;
 
-        let mut _response = self.get(url, response_type).await?;
+        if let Some(err) = response.chart.error {
+            bail!(
+                "Error getting chart data for {}: {}",
+                symbol,
+                err.description
+            );
+        }
 
-        if let Response::Chart(response) = _response {
-            if let Some(err) = response.chart.error {
-                bail!(
-                    "Error getting chart data for {}: {}",
-                    symbol,
-                    err.description
-                );
-            }
-
-            if let Some(mut result) = response.chart.result {
-                if result.len() == 1 {
-                    return Ok(result.remove(0));
-                }
+        if let Some(mut result) = response.chart.result {
+            if result.len() == 1 {
+                return Ok(result.remove(0));
             }
         }
+
         bail!("Failed to get chart data for {}", symbol);
     }
 
@@ -103,50 +101,46 @@ impl Client {
             &format!("finance/quoteSummary/{}", symbol),
             Some(params),
         )?;
-        let response_type = ResponseType::Company;
 
-        let mut _response = self.get(url, response_type).await?;
+        let response: Company = self.get(url).await?;
 
-        if let Response::Company(response) = _response {
-            if let Some(err) = response.company.error {
-                bail!(
-                    "Error getting company data for {}: {}",
-                    symbol,
-                    err.description
-                );
-            }
+        if let Some(err) = response.company.error {
+            bail!(
+                "Error getting company data for {}: {}",
+                symbol,
+                err.description
+            );
+        }
 
-            if let Some(mut result) = response.company.result {
-                if result.len() == 1 {
-                    return Ok(result.remove(0));
-                }
+        if let Some(mut result) = response.company.result {
+            if result.len() == 1 {
+                return Ok(result.remove(0));
             }
         }
+
         bail!("Failed to get company data for {}", symbol);
     }
 
     pub async fn get_options_expiration_dates(&self, symbol: &str) -> Result<Vec<i64>> {
         let url = self.get_url(Version::V7, &format!("finance/options/{}", symbol), None)?;
-        let response_type = ResponseType::Options;
 
-        let mut _response = self.get(url, response_type).await?;
+        let response: Options = self.get(url).await?;
 
-        if let Response::Options(response) = _response {
-            if let Some(err) = response.option_chain.error {
-                bail!(
-                    "Error getting options data for {}: {}",
-                    symbol,
-                    err.description
-                );
-            }
+        if let Some(err) = response.option_chain.error {
+            bail!(
+                "Error getting options data for {}: {}",
+                symbol,
+                err.description
+            );
+        }
 
-            if let Some(mut result) = response.option_chain.result {
-                if result.len() == 1 {
-                    let options_header = result.remove(0);
-                    return Ok(options_header.expiration_dates);
-                }
+        if let Some(mut result) = response.option_chain.result {
+            if result.len() == 1 {
+                let options_header = result.remove(0);
+                return Ok(options_header.expiration_dates);
             }
         }
+
         bail!("Failed to get options data for {}", symbol);
     }
 
@@ -163,27 +157,25 @@ impl Client {
             &format!("finance/options/{}", symbol),
             Some(params),
         )?;
-        let response_type = ResponseType::Options;
 
-        let mut _response = self.get(url, response_type).await?;
+        let response: Options = self.get(url).await?;
 
-        if let Response::Options(response) = _response {
-            if let Some(err) = response.option_chain.error {
-                bail!(
-                    "Error getting options data for {}: {}",
-                    symbol,
-                    err.description
-                );
-            }
+        if let Some(err) = response.option_chain.error {
+            bail!(
+                "Error getting options data for {}: {}",
+                symbol,
+                err.description
+            );
+        }
 
-            if let Some(mut result) = response.option_chain.result {
-                if result.len() == 1 {
-                    let options_header = result.remove(0);
+        if let Some(mut result) = response.option_chain.result {
+            if result.len() == 1 {
+                let options_header = result.remove(0);
 
-                    return Ok(options_header);
-                }
+                return Ok(options_header);
             }
         }
+
         bail!("Failed to get options data for {}", symbol);
     }
 }

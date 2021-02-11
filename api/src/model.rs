@@ -2,40 +2,9 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
-
-pub(crate) enum ResponseType {
-    Chart,
-    Company,
-    Options,
-}
-
-pub(crate) enum Response {
-    Chart(Chart),
-    Company(Company),
-    Options(Options),
-}
-
-impl ResponseType {
-    pub fn deserialize(&self, body: &[u8]) -> Result<Response> {
-        match self {
-            ResponseType::Chart => match serde_json::from_slice(body) {
-                Ok(deser) => Ok(Response::Chart(deser)),
-                Err(e) => bail!(e),
-            },
-            ResponseType::Company => match serde_json::from_slice(body) {
-                Ok(deser) => Ok(Response::Company(deser)),
-                Err(e) => bail!(e),
-            },
-            ResponseType::Options => match serde_json::from_slice(body) {
-                Ok(deser) => Ok(Response::Options(deser)),
-                Err(e) => bail!(e),
-            },
-        }
-    }
-}
 
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
