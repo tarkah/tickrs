@@ -97,6 +97,7 @@ fn main() {
         },
         summary_time_frame: opts.time_frame,
         default_timestamp_service,
+        summary_scroll_state: Default::default(),
     }));
 
     let move_app = app.clone();

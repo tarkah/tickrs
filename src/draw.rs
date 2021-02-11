@@ -4,7 +4,7 @@ use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Text};
 use tui::{Frame, Terminal};
 
-use crate::app::{App, Mode};
+use crate::app::{App, Mode, ScrollDirection};
 use crate::common::TimeFrame;
 use crate::widget::{
     block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
@@ -201,6 +201,35 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     let height = area.height;
     let num_to_render = (((height - 5) / stock_widget_height) as usize).min(app.stocks.len());
 
+    // If the user queued an up / down scroll, calculate the new offset, store it in
+    // state and use it for this render. Otherwise use stored offset from state.
+    let mut scroll_offset = if let Some(direction) = app.summary_scroll_state.queued_scroll.take() {
+        let new_offset = match direction {
+            ScrollDirection::Up => {
+                if app.summary_scroll_state.offset == 0 {
+                    0
+                } else {
+                    (app.summary_scroll_state.offset - 1).min(app.stocks.len())
+                }
+            }
+            ScrollDirection::Down => {
+                (app.summary_scroll_state.offset + 1).min(app.stocks.len() - num_to_render)
+            }
+        };
+
+        app.summary_scroll_state.offset = new_offset;
+
+        new_offset
+    } else {
+        app.summary_scroll_state.offset
+    };
+
+    // If we resize the app up, adj the offset
+    if num_to_render + scroll_offset > app.stocks.len() {
+        scroll_offset -= (num_to_render + scroll_offset) - app.stocks.len();
+        app.summary_scroll_state.offset = scroll_offset;
+    }
+
     // layouy[0] - Header
     // layouy[1] - Summary window
     // layouy[2] - Empty
@@ -245,18 +274,21 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     layout[1] = add_padding(layout[1], 1, PaddingDirection::Left);
     layout[1] = add_padding(layout[1], 2, PaddingDirection::Right);
 
-    let contraints = app.stocks[..num_to_render]
+    let contraints = app.stocks[scroll_offset..num_to_render + scroll_offset]
         .iter()
         .map(|_| Constraint::Length(stock_widget_height))
         .collect::<Vec<_>>();
 
     let stock_layout = Layout::default().constraints(contraints).split(layout[1]);
 
-    for (idx, stock) in app.stocks[..num_to_render].iter_mut().enumerate() {
+    for (idx, stock) in app.stocks[scroll_offset..num_to_render + scroll_offset]
+        .iter_mut()
+        .enumerate()
+    {
         frame.render_stateful_widget(StockSummaryWidget {}, stock_layout[idx], stock);
     }
 
-    // Draw time frame
+    // Draw time frame & paging
     {
         layout[2] = add_padding(layout[2], 2, PaddingDirection::Left);
         layout[2] = add_padding(layout[2], 2, PaddingDirection::Right);
@@ -273,6 +305,13 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 
         layout[2] = add_padding(layout[2], 1, PaddingDirection::Top);
 
+        // botton_layout[0] - time frame
+        // botton_layout[1] - paging indicator
+        let bottom_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
+            .split(layout[2]);
+
         let time_frames = TimeFrame::tab_names();
 
         let tabs = Tabs::default()
@@ -282,7 +321,32 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             .style(Style::default().fg(Color::Cyan))
             .highlight_style(Style::default().fg(Color::Yellow));
 
-        frame.render_widget(tabs, layout[2]);
+        frame.render_widget(tabs, bottom_layout[0]);
+
+        let more_up = scroll_offset > 0;
+        let more_down = scroll_offset + num_to_render < app.stocks.len();
+
+        let up_arrow = Text::styled(
+            "ᐱ",
+            Style::default().fg(if more_up {
+                Color::White
+            } else {
+                Color::DarkGray
+            }),
+        );
+        let down_arrow = Text::styled(
+            "ᐯ",
+            Style::default().fg(if more_down {
+                Color::White
+            } else {
+                Color::DarkGray
+            }),
+        );
+
+        frame.render_widget(
+            Paragraph::new([up_arrow, Text::styled(" ", Style::default()), down_arrow].iter()),
+            bottom_layout[1],
+        );
     }
 }
 

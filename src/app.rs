@@ -25,6 +25,7 @@ pub struct App {
     pub previous_mode: Mode,
     pub summary_time_frame: TimeFrame,
     pub default_timestamp_service: DefaultTimestampService,
+    pub summary_scroll_state: SummaryScrollState,
 }
 
 impl App {
@@ -44,4 +45,16 @@ pub struct DebugInfo {
     pub cursor_location: Option<(u16, u16)>,
     pub last_event: Option<Event>,
     pub mode: Mode,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct SummaryScrollState {
+    pub offset: usize,
+    pub queued_scroll: Option<ScrollDirection>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ScrollDirection {
+    Up,
+    Down,
 }
