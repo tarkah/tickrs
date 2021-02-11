@@ -6,36 +6,35 @@ use anyhow::Result;
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Chart {
     pub chart: ChartStatus,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartStatus {
     pub result: Option<Vec<ChartData>>,
     pub error: Option<Error>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Error {
     pub code: String,
     pub description: String,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartData {
     pub meta: ChartMeta,
     pub timestamp: Vec<i64>,
     pub indicators: ChartIndicators,
 }
-
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartMeta {
     pub instrument_type: Option<String>,
     pub regular_market_price: f64,
@@ -52,36 +51,37 @@ impl Hash for ChartMeta {
     }
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartCurrentTradingPeriod {
     pub regular: ChartTradingPeriod,
     pub pre: ChartTradingPeriod,
     pub post: ChartTradingPeriod,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartTradingPeriod {
     pub start: i64,
     pub end: i64,
 }
-#[serde(rename_all = "camelCase")]
+
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartIndicators {
     pub quote: Vec<ChartQuote>,
     pub adjclose: Option<Vec<ChartAdjClose>>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartAdjClose {
     #[serde(deserialize_with = "deserialize_vec")]
     pub adjclose: Vec<f64>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ChartQuote {
     #[serde(deserialize_with = "deserialize_vec")]
     pub close: Vec<f64>,
@@ -95,30 +95,30 @@ pub struct ChartQuote {
     pub open: Vec<f64>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Company {
     #[serde(rename = "quoteSummary")]
     pub company: CompanyStatus,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CompanyStatus {
     pub result: Option<Vec<CompanyData>>,
     pub error: Option<Error>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CompanyData {
     #[serde(rename = "assetProfile")]
     pub profile: Option<CompanyProfile>,
     pub price: CompanyPrice,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
 pub struct CompanyProfile {
     pub website: Option<String>,
     pub industry: Option<String>,
@@ -129,8 +129,8 @@ pub struct CompanyProfile {
     pub employees: Option<u64>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CompanyPrice {
     pub symbol: String,
     pub short_name: String,
@@ -142,44 +142,44 @@ pub struct CompanyPrice {
     pub currency: Option<String>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CompanyMarketPrice {
     #[serde(rename = "raw")]
     pub price: f64,
     pub fmt: String,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CompanyPostMarketPrice {
     #[serde(rename = "raw")]
     pub price: Option<f64>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Options {
     pub option_chain: OptionsStatus,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct OptionsStatus {
     pub result: Option<Vec<OptionsHeader>>,
     pub error: Option<Error>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct OptionsHeader {
     pub quote: OptionsQuote,
     pub expiration_dates: Vec<i64>,
     pub options: Vec<OptionsData>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct OptionsQuote {
     pub regular_market_price: f64,
 }
@@ -190,16 +190,16 @@ impl Hash for OptionsQuote {
     }
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
 pub struct OptionsData {
     pub expiration_date: i64,
     pub calls: Vec<OptionsContract>,
     pub puts: Vec<OptionsContract>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct OptionsContract {
     pub strike: f64,
     pub last_price: f64,
