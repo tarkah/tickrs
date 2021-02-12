@@ -18,6 +18,9 @@ Remove Stock:
 Change Tab:
   - <Tab>: next stock
   - <Shift+Tab>: previous stock
+Reorder Current Tab:
+  - <Ctrl+Left>: move 1 tab left
+  - <Ctrl+Right>: move 1 tab right
 Change Time Frame:
   - <Right>: next time frame
   - <Left>: previous time frame
@@ -36,8 +39,8 @@ Graphing Display:
   - x: toggle labels
 "#;
 
-pub const HELP_WIDTH: u16 = 36;
-pub const HELP_HEIGHT: u16 = 30;
+pub const HELP_WIDTH: u16 = 37;
+pub const HELP_HEIGHT: u16 = 33;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
