@@ -23,6 +23,7 @@ and `Removed`.
   - Linux: `$HOME/.config/tickrs/config.yml`
   - macOS: `$HOME/Library/Application Support/tickrs/config.yml`
   - Windows: `%APPDATA%\tickrs\config.yml`
+- Current tab can be reordered by using `Ctrl + Left / Right`
 
 ## [0.10.2] - 2021-02-10
 

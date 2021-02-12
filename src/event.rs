@@ -98,9 +98,28 @@ pub fn handle_keys_display_stock(
             _ => {}
         }
     } else if key_event.modifiers == KeyModifiers::CONTROL {
-        if let KeyCode::Char('c') = key_event.code {
-            cleanup_terminal();
-            std::process::exit(0);
+        match key_event.code {
+            KeyCode::Left => {
+                let new_idx = if app.current_tab == 0 {
+                    app.stocks.len() - 1
+                } else {
+                    app.current_tab - 1
+                };
+                app.stocks.swap(app.current_tab, new_idx);
+                app.current_tab = new_idx;
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::Right => {
+                let new_idx = (app.current_tab + 1) % app.stocks.len();
+                app.stocks.swap(app.current_tab, new_idx);
+                app.current_tab = new_idx;
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::Char('c') => {
+                cleanup_terminal();
+                std::process::exit(0);
+            }
+            _ => {}
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
         if let KeyCode::Char('?') = key_event.code {
