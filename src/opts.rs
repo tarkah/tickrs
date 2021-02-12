@@ -1,6 +1,7 @@
 use std::fs;
+use std::process::exit;
 
-use anyhow::{format_err, Error};
+use anyhow::{bail, format_err, Error};
 use serde::Deserialize;
 use structopt::StructOpt;
 
@@ -40,9 +41,23 @@ fn get_config_opts() -> Result<Opts, Error> {
 
     let config_path = config_dir.join("config.yml");
 
+    if !config_path.exists() {
+        let _ = fs::write(&config_path, DEFAULT_CONFIG);
+    }
+
     let config = fs::read_to_string(&config_path)?;
 
-    let opts = serde_yaml::from_str(&config)?;
+    let opts = match serde_yaml::from_str::<Option<Opts>>(&config) {
+        Ok(Some(opts)) => opts,
+        Ok(None) => bail!("Empty config file"),
+        Err(e) => {
+            println!(
+                "Error parsing config file, make sure format is valid\n\n  {}",
+                e
+            );
+            exit(1);
+        }
+    };
 
     Ok(opts)
 }
@@ -94,3 +109,43 @@ pub struct Opts {
     /// Truncate pre market graphing to only 30 minutes prior to markets opening
     pub trunc_pre: bool,
 }
+
+const DEFAULT_CONFIG: &str = "---
+# List of ticker symbols to start app with
+#symbols:
+#  - SPY
+#  - AMD
+
+# Use specified time frame when starting program and when new stocks are added
+# Default is 1D
+# Possible values: 1D, 1W, 1M, 3M, 6M, 1Y, 5Y
+#time_frame: 1D
+
+# Interval to update data from API (seconds)
+# Default is 1
+#update_interval: 1
+
+# Enable pre / post market hours for graphs
+#enable_pre_post: true
+
+# Hide help icon in top right
+#hide_help: true
+
+# Hide previous close line on 1D chart
+#hide_prev_close: true
+
+# Hide toggle block
+#hide_toggle: true
+
+# Show volumes graph
+#show_volumes: true
+
+# Show x-axis labels
+#show_x_labels: true
+
+# Start in summary mode
+#summary: true
+
+# Truncate pre market graphing to only 30 minutes prior to markets opening
+#trunc_pre: true
+";

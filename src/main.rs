@@ -43,9 +43,9 @@ lazy_static! {
 }
 
 fn main() {
-    let opts = OPTS.clone();
-
     better_panic::install();
+
+    let opts = OPTS.clone();
 
     let backend = CrosstermBackend::new(io::stdout());
     let mut terminal = Terminal::new(backend).unwrap();
