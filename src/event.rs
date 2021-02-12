@@ -1,3 +1,4 @@
+use app::ScrollDirection;
 use crossbeam_channel::Sender;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -177,6 +178,16 @@ pub fn handle_keys_display_summary(
                 for stock in app.stocks.iter_mut() {
                     stock.set_time_frame(app.summary_time_frame);
                 }
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::Up => {
+                app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Up);
+
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::Down => {
+                app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Down);
+
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('p') => {

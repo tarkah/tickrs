@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Added
+
+- Summary pane can be scrolled with Up / Down arrows if more tickers are present
+  than are able to be shown in the terminal
+
 ## [0.10.2] - 2021-02-10
 
 ### Fixed

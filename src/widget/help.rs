@@ -29,6 +29,7 @@ Toggle Options Pane:
   - Cryptocurrency not supported
 Toggle Summary Pane:
   - s: toggle pane
+  - <Up / Down>: scroll pane
 Graphing Display:
   - p: toggle pre / post market
   - v: toggle volumes graph
@@ -36,7 +37,7 @@ Graphing Display:
 "#;
 
 pub const HELP_WIDTH: u16 = 36;
-pub const HELP_HEIGHT: u16 = 29;
+pub const HELP_HEIGHT: u16 = 30;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
