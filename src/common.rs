@@ -4,12 +4,13 @@ use std::time::Duration;
 
 use chrono::{Local, TimeZone, Utc};
 use itertools::izip;
+use serde::Deserialize;
 use tickrs_api::Interval;
 
 use crate::api::model::ChartData;
 use crate::api::Range;
 
-#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize)]
 pub enum TimeFrame {
     Day1,
     Week1,

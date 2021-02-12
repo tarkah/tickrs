@@ -18,19 +18,19 @@ use crate::app::DebugInfo;
 use crate::common::TimeFrame;
 
 mod app;
-mod cli;
 mod common;
 mod draw;
 mod event;
+mod opts;
 mod service;
 mod task;
 mod widget;
 
 lazy_static! {
     static ref CLIENT: api::Client = api::Client::new();
-    pub static ref OPTS: cli::Opt = cli::get_opts();
-    pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval;
-    pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame;
+    pub static ref OPTS: opts::Opts = opts::resolve_opts();
+    pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval.unwrap_or(1);
+    pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame.unwrap_or(TimeFrame::Day1);
     pub static ref HIDE_TOGGLE: bool = OPTS.hide_toggle;
     pub static ref HIDE_PREV_CLOSE: bool = OPTS.hide_prev_close;
     pub static ref REDRAW_REQUEST: (Sender<()>, Receiver<()>) = bounded(1);
@@ -59,6 +59,7 @@ fn main() {
 
     let starting_stocks: Vec<_> = opts
         .symbols
+        .unwrap_or_default()
         .into_iter()
         .map(widget::StockState::new)
         .collect();
@@ -95,7 +96,7 @@ fn main() {
         } else {
             app::Mode::DisplayStock
         },
-        summary_time_frame: opts.time_frame,
+        summary_time_frame: opts.time_frame.unwrap_or(TimeFrame::Day1),
         default_timestamp_service,
         summary_scroll_state: Default::default(),
     }));
