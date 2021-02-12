@@ -17,13 +17,13 @@ and `Removed`.
 ### Added
 
 - Summary pane can be scrolled with Up / Down arrows if more tickers are present
-  than are able to be shown in the terminal
+  than are able to be shown in the terminal ([#63])
 - A config file can now be used to change program behavior. A default file will
-  be created / can be updated at the following locations:
+  be created / can be updated at the following locations ([#66])
   - Linux: `$HOME/.config/tickrs/config.yml`
   - macOS: `$HOME/Library/Application Support/tickrs/config.yml`
   - Windows: `%APPDATA%\tickrs\config.yml`
-- Current tab can be reordered by using `Ctrl + Left / Right`
+- Current tab can be reordered by using `Ctrl + Left / Right` ([#67])
 
 ## [0.10.2] - 2021-02-10
 
@@ -83,3 +83,6 @@ and `Removed`.
 [#55]: https://github.com/tarkah/tickrs/pull/55
 [#57]: https://github.com/tarkah/tickrs/pull/57
 [#59]: https://github.com/tarkah/tickrs/pull/59
+[#63]: https://github.com/tarkah/tickrs/pull/63
+[#66]: https://github.com/tarkah/tickrs/pull/66
+[#67]: https://github.com/tarkah/tickrs/pull/67
