@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.11.0] - 2021-02-12
+
 ### Added
 
 - Summary pane can be scrolled with Up / Down arrows if more tickers are present
