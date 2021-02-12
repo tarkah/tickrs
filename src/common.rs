@@ -4,19 +4,27 @@ use std::time::Duration;
 
 use chrono::{Local, TimeZone, Utc};
 use itertools::izip;
+use serde::Deserialize;
 use tickrs_api::Interval;
 
 use crate::api::model::ChartData;
 use crate::api::Range;
 
-#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize)]
 pub enum TimeFrame {
+    #[serde(alias = "1D")]
     Day1,
+    #[serde(alias = "1W")]
     Week1,
+    #[serde(alias = "1M")]
     Month1,
+    #[serde(alias = "3M")]
     Month3,
+    #[serde(alias = "6M")]
     Month6,
+    #[serde(alias = "1Y")]
     Year1,
+    #[serde(alias = "5Y")]
     Year5,
 }
 

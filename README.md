@@ -4,7 +4,8 @@
 Realtime ticker data in your terminal 📈 Built with Rust. Data sourced from Yahoo! Finance.
 
   - [Installation](#installation)
-  - [Usage](#usage)
+  - [Config File](#config-file)
+  - [CLI Usage](#cli-usage)
     - [Windows](#windows)
   - [Acknowledgments](#acknowledgments)
 
@@ -28,7 +29,11 @@ cargo install tickrs
 yay -S tickrs-git
 ```
 
-## Usage
+## Config File
+
+See [wiki entry](https://github.com/tarkah/tickrs/wiki/Config-file)
+
+## CLI Usage
 
 ```
 tickrs
