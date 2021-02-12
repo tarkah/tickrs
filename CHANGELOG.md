@@ -18,6 +18,11 @@ and `Removed`.
 
 - Summary pane can be scrolled with Up / Down arrows if more tickers are present
   than are able to be shown in the terminal
+- A config file can now be used to change program behavior. A default file will
+  be created / can be updated at the following locations:
+  - Linux: `$HOME/.config/tickrs/config.yml`
+  - macOS: `$HOME/Library/Application Support/tickrs/config.yml`
+  - Windows: `%APPDATA%\tickrs\config.yml`
 
 ## [0.10.2] - 2021-02-10
 
