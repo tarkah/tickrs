@@ -1,5 +1,4 @@
-use std::fs;
-use std::process::exit;
+use std::{fs, process};
 
 use anyhow::{bail, format_err, Error};
 use serde::Deserialize;
@@ -55,7 +54,7 @@ fn get_config_opts() -> Result<Opts, Error> {
                 "Error parsing config file, make sure format is valid\n\n  {}",
                 e
             );
-            exit(1);
+            process::exit(1);
         }
     };
 
