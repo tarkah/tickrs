@@ -38,6 +38,10 @@ fn get_config_opts() -> Result<Opts, Error> {
         .ok_or_else(|| format_err!("Could not get config directory"))?
         .join("tickrs");
 
+    if !config_dir.exists() {
+        let _ = fs::create_dir_all(&config_dir);
+    }
+
     let config_path = config_dir.join("config.yml");
 
     if !config_path.exists() {
