@@ -667,7 +667,7 @@ impl CachableWidget<StockState> for StockWidget {
             ];
 
             Paragraph::new(company_info)
-                .style(Style::default().fg(Color::White))
+                .style(Style::reset())
                 .alignment(Alignment::Left)
                 .wrap(Wrap { trim: true })
                 .render(info_chunks[0], buf);
@@ -724,7 +724,7 @@ impl CachableWidget<StockState> for StockWidget {
                 }
 
                 Paragraph::new(toggle_info)
-                    .style(Style::default().fg(Color::White))
+                    .style(Style::reset())
                     .alignment(Alignment::Left)
                     .render(info_chunks[1], buf);
             }
@@ -1008,7 +1008,7 @@ impl CachableWidget<StockState> for StockWidget {
                 .block(
                     Block::default()
                         .borders(Borders::TOP)
-                        .border_style(Style::default().fg(Color::White)),
+                        .border_style(Style::reset()),
                 )
                 .select(state.time_frame.idx())
                 .style(Style::default().fg(Color::Cyan))

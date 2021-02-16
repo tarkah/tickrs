@@ -131,7 +131,7 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         if !app.hide_help {
             frame.render_widget(
                 Paragraph::new(Text::styled("Help '?'", Style::default()))
-                    .style(Style::default().fg(Color::White))
+                    .style(Style::reset())
                     .alignment(Alignment::Center),
                 header[1],
             );
@@ -255,7 +255,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     if !app.hide_help {
         frame.render_widget(
             Paragraph::new(Text::styled("Help '?'", Style::default()))
-                .style(Style::default().fg(Color::White))
+                .style(Style::reset())
                 .alignment(Alignment::Center),
             header[1],
         );
@@ -285,7 +285,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         frame.render_widget(
             Block::default()
                 .borders(Borders::TOP)
-                .border_style(Style::default().fg(Color::White)),
+                .border_style(Style::reset()),
             layout[2],
         );
 
@@ -316,7 +316,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         let up_arrow = Span::styled(
             "ᐱ",
             Style::default().fg(if more_up {
-                Color::White
+                Color::Reset
             } else {
                 Color::DarkGray
             }),
@@ -324,7 +324,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         let down_arrow = Span::styled(
             "ᐯ",
             Style::default().fg(if more_down {
-                Color::White
+                Color::Reset
             } else {
                 Color::DarkGray
             }),

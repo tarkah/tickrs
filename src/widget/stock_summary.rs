@@ -68,7 +68,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 }
             ))
             .borders(Borders::TOP)
-            .border_style(Style::default().fg(Color::White))
+            .border_style(Style::reset())
             .render(area, buf);
         area = add_padding(area, 1, PaddingDirection::Top);
 

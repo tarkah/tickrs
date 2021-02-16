@@ -293,7 +293,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Right);
 
             Paragraph::new(Spans::from(call_put_selector))
-                .style(Style::default().fg(Color::White))
+                .style(Style::reset())
                 .alignment(Alignment::Center)
                 .render(chunks[0], buf);
 
@@ -331,7 +331,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 .collect::<Vec<_>>();
 
             let list = List::new(dates)
-                .style(Style::default().fg(Color::White))
+                .style(Style::reset())
                 .highlight_style(Style::default().bg(
                     if state.selection_mode == SelectionMode::Dates {
                         Color::LightBlue
@@ -387,7 +387,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                             .style(Style::default().fg(Color::Cyan))
                             .bottom_margin(1),
                     )
-                    .style(Style::default().fg(Color::White))
+                    .style(Style::reset())
                     .highlight_style(
                         Style::default()
                             .bg(if state.selection_mode == SelectionMode::Options {
@@ -395,7 +395,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                             } else {
                                 Color::DarkGray
                             })
-                            .fg(Color::White),
+                            .fg(Color::Reset),
                     )
                     .widths(&[
                         Constraint::Length(8),

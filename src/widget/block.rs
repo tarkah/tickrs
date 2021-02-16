@@ -6,5 +6,5 @@ pub fn new(title: &str, border_color: Option<Color>) -> Block {
     Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(border_color.unwrap_or(Color::Blue)))
-        .title(Span::styled(title, Style::default().fg(Color::White)))
+        .title(Span::styled(title, Style::reset()))
 }
