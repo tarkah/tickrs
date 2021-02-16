@@ -156,33 +156,40 @@ fn main() {
                     }
                 }
 
-                if let Ok(Event::Key(key_event)) = message {
-                    match app.mode {
-                        app::Mode::AddStock => {
-                            event::handle_keys_add_stock(key_event, &mut app, &request_redraw);
-                        }
-                        app::Mode::DisplayStock => {
-                            event::handle_keys_display_stock(key_event,&mut app, &request_redraw);
-                        }
-                        app::Mode::DisplaySummary => {
-                            event::handle_keys_display_summary(key_event, &mut app, &request_redraw);
-                        }
-                        app::Mode::Help => {
-                            event::handle_keys_help(key_event, &mut app, &request_redraw);
-                        }
-                        app::Mode::DisplayOptions => {
-                            event::handle_keys_display_options(key_event, &mut app, &request_redraw);
-                        }
-                    }
-                } else if let Ok(Event::Mouse(MouseEvent { kind, row, column,.. })) = message {
-                    if app.debug.enabled {
-                        match kind {
-                            MouseEventKind::Down(_) => app.debug.cursor_location = Some((row, column)),
-                            MouseEventKind::Up(_) => app.debug.cursor_location = Some((row, column)),
-                            MouseEventKind::Drag(_) => app.debug.cursor_location = Some((row, column)),
-                            _ => {}
+                match message {
+                    Ok(Event::Key(key_event)) => {
+                        match app.mode {
+                            app::Mode::AddStock => {
+                                event::handle_keys_add_stock(key_event, &mut app, &request_redraw);
+                            }
+                            app::Mode::DisplayStock => {
+                                event::handle_keys_display_stock(key_event,&mut app, &request_redraw);
+                            }
+                            app::Mode::DisplaySummary => {
+                                event::handle_keys_display_summary(key_event, &mut app, &request_redraw);
+                            }
+                            app::Mode::Help => {
+                                event::handle_keys_help(key_event, &mut app, &request_redraw);
+                            }
+                            app::Mode::DisplayOptions => {
+                                event::handle_keys_display_options(key_event, &mut app, &request_redraw);
+                            }
                         }
                     }
+                    Ok(Event::Mouse(MouseEvent { kind, row, column,.. })) => {
+                        if app.debug.enabled {
+                            match kind {
+                                MouseEventKind::Down(_) => app.debug.cursor_location = Some((row, column)),
+                                MouseEventKind::Up(_) => app.debug.cursor_location = Some((row, column)),
+                                MouseEventKind::Drag(_) => app.debug.cursor_location = Some((row, column)),
+                                _ => {}
+                            }
+                        }
+                    }
+                    Ok(Event::Resize(..)) => {
+                        let _ = request_redraw.try_send(());
+                    }
+                    _ => {}
                 }
             }
         }
