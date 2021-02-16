@@ -5,9 +5,10 @@ use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::symbols::{bar, Marker};
+use tui::text::{Span, Spans};
 use tui::widgets::{
     Axis, BarChart, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs,
-    Text, Widget,
+    Widget, Wrap,
 };
 
 use super::{block, CachableWidget, CacheState, OptionsState};
@@ -413,7 +414,7 @@ impl StockState {
         }
     }
 
-    pub fn x_labels(&self, width: u16, start: i64, end: i64, data: &[Price]) -> Vec<String> {
+    pub fn x_labels(&self, width: u16, start: i64, end: i64, data: &[Price]) -> Vec<Span> {
         let mut labels = vec![];
 
         let dates = if self.time_frame == TimeFrame::Day1 {
@@ -435,17 +436,17 @@ impl StockState {
 
         for (idx, chunk) in dates.chunks(chunk_size).enumerate() {
             if idx == 0 {
-                labels.push(
-                    chunk
-                        .get(0)
-                        .map_or("".to_string(), |d| self.time_frame.format_time(*d)),
-                );
+                labels.push(chunk.get(0).map_or(Span::raw("".to_string()), |d| {
+                    Span::raw(self.time_frame.format_time(*d))
+                }));
             }
 
             labels.push(
                 chunk
                     .get(chunk.len() - 1)
-                    .map_or("".to_string(), |d| self.time_frame.format_time(*d)),
+                    .map_or(Span::raw("".to_string()), |d| {
+                        Span::raw(self.time_frame.format_time(*d))
+                    }),
             );
         }
 
@@ -456,18 +457,18 @@ impl StockState {
         [(min - 0.05), (max + 0.05)]
     }
 
-    pub fn y_labels(&self, min: f64, max: f64) -> Vec<String> {
+    pub fn y_labels(&self, min: f64, max: f64) -> Vec<Span> {
         if self.loaded() {
             vec![
-                format!("{:>8.2}", (min - 0.05)),
-                format!("{:>8.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
-                format!("{:>8.2}", max + 0.05),
+                Span::raw(format!("{:>8.2}", (min - 0.05))),
+                Span::raw(format!("{:>8.2}", ((min - 0.05) + (max + 0.05)) / 2.0)),
+                Span::raw(format!("{:>8.2}", max + 0.05)),
             ]
         } else {
             vec![
-                "       ".to_string(),
-                "       ".to_string(),
-                "       ".to_string(),
+                Span::raw("       ".to_string()),
+                Span::raw("       ".to_string()),
+                Span::raw("       ".to_string()),
             ]
         }
     }
@@ -535,7 +536,7 @@ impl CachableWidget<StockState> for StockWidget {
         &mut state.cache_state
     }
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
+    fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
         let data = state.prices().collect::<Vec<_>>();
 
         let pct_change = state.pct_change(&data);
@@ -573,100 +574,102 @@ impl CachableWidget<StockState> for StockWidget {
                 None,
             )
             .render(area, buf);
+            area = add_padding(area, 1, PaddingDirection::All);
+            area = add_padding(area, 1, PaddingDirection::Left);
+            area = add_padding(area, 1, PaddingDirection::Right);
         }
 
-        // chunks[0] - Top Padding
-        // chunks[1] - Company Info
-        // chunks[2] - Graph - fill remaining space
-        // chunks[3] - Time Frame Tabs
-        // chunks[4] - Bottom Padding
-        let mut chunks = Layout::default()
+        // chunks[0] - Company Info
+        // chunks[1] - Graph - fill remaining space
+        // chunks[2] - Time Frame Tabs
+        let chunks = Layout::default()
             .constraints(
                 [
-                    Constraint::Length(2),
-                    Constraint::Length(6),
+                    Constraint::Length(7),
                     Constraint::Min(0),
                     Constraint::Length(2),
-                    Constraint::Length(1),
                 ]
                 .as_ref(),
             )
             .split(area);
 
-        chunks[1] = add_padding(chunks[1], 2, PaddingDirection::Left);
-        chunks[1] = add_padding(chunks[1], 2, PaddingDirection::Right);
-
-        chunks[2] = add_padding(chunks[2], 2, PaddingDirection::Left);
-        chunks[2] = add_padding(chunks[2], 2, PaddingDirection::Right);
-
-        chunks[3] = add_padding(chunks[3], 2, PaddingDirection::Left);
-        chunks[3] = add_padding(chunks[3], 2, PaddingDirection::Right);
-
         // Draw company info
         {
+            // info_chunks[0] - Prices / volumes
+            // info_chunks[1] - Toggle block
             let mut info_chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Min(0), Constraint::Length(15)].as_ref())
-                .split(chunks[1]);
-            info_chunks[1].y -= 1;
-            info_chunks[1].height += 1;
+                .split(chunks[0]);
+            info_chunks[0] = add_padding(info_chunks[0], 1, PaddingDirection::Top);
 
             let (high, low) = state.high_low(&data);
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
-            let company_info = [
-                Text::styled("c: ", Style::default()),
-                Text::styled(
-                    if loaded {
-                        format!("{:.2} {}", state.current_price(), currency)
-                    } else {
-                        "".to_string()
-                    },
-                    Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
-                ),
-                Text::styled(
-                    if loaded {
-                        format!("  {:.2}%\n", pct_change * 100.0)
-                    } else {
-                        "\n".to_string()
-                    },
-                    Style::default()
-                        .modifier(Modifier::BOLD)
-                        .fg(if pct_change >= 0.0 {
-                            Color::Green
+            let company_info = vec![
+                Spans::from(vec![
+                    Span::styled("c: ", Style::default()),
+                    Span::styled(
+                        if loaded {
+                            format!("{:.2} {}", state.current_price(), currency)
                         } else {
-                            Color::Red
-                        }),
-                ),
-                Text::styled("h: ", Style::default()),
-                Text::styled(
-                    if loaded {
-                        format!("{:.2}\n", high)
-                    } else {
-                        "\n".to_string()
-                    },
-                    Style::default().fg(Color::LightCyan),
-                ),
-                Text::styled("l: ", Style::default()),
-                Text::styled(
-                    if loaded {
-                        format!("{:.2}\n\n", low)
-                    } else {
-                        "\n\n".to_string()
-                    },
-                    Style::default().fg(Color::LightCyan),
-                ),
-                Text::styled("v: ", Style::default()),
-                Text::styled(
-                    if loaded { vol } else { "".to_string() },
-                    Style::default().fg(Color::LightCyan),
-                ),
+                            "".to_string()
+                        },
+                        Style::default()
+                            .add_modifier(Modifier::BOLD)
+                            .fg(Color::Yellow),
+                    ),
+                    Span::styled(
+                        if loaded {
+                            format!("  {:.2}%", pct_change * 100.0)
+                        } else {
+                            "".to_string()
+                        },
+                        Style::default()
+                            .add_modifier(Modifier::BOLD)
+                            .fg(if pct_change >= 0.0 {
+                                Color::Green
+                            } else {
+                                Color::Red
+                            }),
+                    ),
+                ]),
+                Spans::from(vec![
+                    Span::styled("h: ", Style::default()),
+                    Span::styled(
+                        if loaded {
+                            format!("{:.2}", high)
+                        } else {
+                            "".to_string()
+                        },
+                        Style::default().fg(Color::LightCyan),
+                    ),
+                ]),
+                Spans::from(vec![
+                    Span::styled("l: ", Style::default()),
+                    Span::styled(
+                        if loaded {
+                            format!("{:.2}", low)
+                        } else {
+                            "".to_string()
+                        },
+                        Style::default().fg(Color::LightCyan),
+                    ),
+                ]),
+                Spans::default(),
+                Spans::from(vec![
+                    Span::styled("v: ", Style::default()),
+                    Span::styled(
+                        if loaded { vol } else { "".to_string() },
+                        Style::default().fg(Color::LightCyan),
+                    ),
+                ]),
             ];
 
-            Paragraph::new(company_info.iter())
+            Paragraph::new(company_info)
                 .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Left)
-                .wrap(true)
+                .wrap(Wrap { trim: true })
                 .render(info_chunks[0], buf);
 
             if !*HIDE_TOGGLE {
@@ -674,53 +677,55 @@ impl CachableWidget<StockState> for StockWidget {
                 toggle_block.render(info_chunks[1], buf);
                 info_chunks[1] = add_padding(info_chunks[1], 2, PaddingDirection::Left);
                 info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Top);
+                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Right);
+                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Bottom);
 
-                let mut toggle_info = vec![Text::styled("Summary  's'", Style::default())];
+                let mut toggle_info =
+                    vec![Spans::from(Span::styled("Summary  's'", Style::default()))];
 
                 if loaded {
-                    toggle_info.push(Text::styled(
-                        "\nVolumes  'v'",
+                    toggle_info.push(Spans::from(Span::styled(
+                        "Volumes  'v'",
                         Style::default().bg(if show_volumes {
                             Color::DarkGray
                         } else {
                             Color::Reset
                         }),
-                    ));
+                    )));
 
-                    toggle_info.push(Text::styled(
-                        "\nX Labels 'x'",
+                    toggle_info.push(Spans::from(Span::styled(
+                        "X Labels 'x'",
                         Style::default().bg(if show_x_labels {
                             Color::DarkGray
                         } else {
                             Color::Reset
                         }),
-                    ));
+                    )));
 
-                    toggle_info.push(Text::styled(
-                        "\nPre Post 'p'",
+                    toggle_info.push(Spans::from(Span::styled(
+                        "Pre Post 'p'",
                         Style::default().bg(if enable_pre_post {
                             Color::DarkGray
                         } else {
                             Color::Reset
                         }),
-                    ));
+                    )));
                 }
 
                 if state.options_enabled() && loaded {
-                    toggle_info.push(Text::styled(
-                        "\nOptions  'o'",
+                    toggle_info.push(Spans::from(Span::styled(
+                        "Options  'o'",
                         Style::default().bg(if state.show_options {
                             Color::DarkGray
                         } else {
                             Color::Reset
                         }),
-                    ));
+                    )));
                 }
 
-                Paragraph::new(toggle_info.iter())
+                Paragraph::new(toggle_info)
                     .style(Style::default().fg(Color::White))
                     .alignment(Alignment::Left)
-                    .wrap(false)
                     .render(info_chunks[1], buf);
             }
         }
@@ -744,7 +749,7 @@ impl CachableWidget<StockState> for StockWidget {
             };
 
             let x_labels = if show_x_labels {
-                state.x_labels(chunks[2].width, start, end, &data)
+                state.x_labels(chunks[1].width, start, end, &data)
             } else {
                 vec![]
             };
@@ -908,11 +913,11 @@ impl CachableWidget<StockState> for StockWidget {
             let graph_chunks = if show_volumes {
                 Layout::default()
                     .constraints([Constraint::Min(6), Constraint::Length(5)].as_ref())
-                    .split(chunks[2])
+                    .split(chunks[1])
             } else {
                 Layout::default()
                     .constraints([Constraint::Min(0)].as_ref())
-                    .split(chunks[2])
+                    .split(chunks[1])
             };
 
             if show_volumes {
@@ -967,7 +972,7 @@ impl CachableWidget<StockState> for StockWidget {
                 }
             }
 
-            Chart::<String, String>::default()
+            Chart::new(datasets)
                 .block(
                     Block::default()
                         .borders(Borders::TOP)
@@ -977,7 +982,7 @@ impl CachableWidget<StockState> for StockWidget {
                     let axis = Axis::default().bounds(state.x_bounds(start, end, &data));
 
                     if show_x_labels && loaded {
-                        axis.labels(&x_labels)
+                        axis.labels(x_labels)
                             .style(Style::default().fg(Color::LightBlue))
                     } else {
                         axis
@@ -986,22 +991,29 @@ impl CachableWidget<StockState> for StockWidget {
                 .y_axis(
                     Axis::default()
                         .bounds(state.y_bounds(min, max))
-                        .labels(&state.y_labels(min, max))
+                        .labels(state.y_labels(min, max))
                         .style(Style::default().fg(Color::LightBlue)),
                 )
-                .datasets(&datasets)
                 .render(graph_chunks[0], buf);
         }
 
         // Draw time frame tabs
         {
-            Tabs::default()
-                .block(Block::default().borders(Borders::TOP))
-                .titles(&TimeFrame::tab_names())
+            let tab_names = TimeFrame::tab_names()
+                .iter()
+                .map(|s| Spans::from(*s))
+                .collect();
+
+            Tabs::new(tab_names)
+                .block(
+                    Block::default()
+                        .borders(Borders::TOP)
+                        .border_style(Style::default().fg(Color::White)),
+                )
                 .select(state.time_frame.idx())
                 .style(Style::default().fg(Color::Cyan))
                 .highlight_style(Style::default().fg(Color::Yellow))
-                .render(chunks[3], buf);
+                .render(chunks[2], buf);
         }
     }
 }

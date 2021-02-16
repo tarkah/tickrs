@@ -3,9 +3,9 @@ use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
 use tui::symbols::{bar, Marker};
+use tui::text::{Span, Spans};
 use tui::widgets::{
-    Axis, BarChart, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Text,
-    Widget,
+    Axis, BarChart, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Widget,
 };
 
 use super::stock::StockState;
@@ -29,7 +29,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
         &mut state.cache_state
     }
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
+    fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
         let data = state.prices().collect::<Vec<_>>();
         let pct_change = state.pct_change(&data);
 
@@ -58,7 +58,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             }
         );
         Block::default()
-            .title(&format!(
+            .title(format!(
                 " {}{} ",
                 &title[..24.min(title.len())],
                 if loaded {
@@ -68,7 +68,9 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 }
             ))
             .borders(Borders::TOP)
+            .border_style(Style::default().fg(Color::White))
             .render(area, buf);
+        area = add_padding(area, 1, PaddingDirection::Top);
 
         let mut layout = Layout::default()
             .direction(Direction::Horizontal)
@@ -76,56 +78,66 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             .split(area);
 
         {
-            layout[0] = add_padding(layout[0], 1, PaddingDirection::Top);
             layout[0] = add_padding(layout[0], 1, PaddingDirection::Left);
             layout[0] = add_padding(layout[0], 2, PaddingDirection::Right);
 
             let (high, low) = state.high_low(&data);
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
-            let prices = [
-                Text::styled("c: ", Style::default()),
-                Text::styled(
-                    if loaded {
-                        format!("{:.2} {}\n", state.current_price(), currency)
-                    } else {
-                        "\n".to_string()
-                    },
-                    Style::default().modifier(Modifier::BOLD).fg(Color::Yellow),
-                ),
-                Text::styled("h: ", Style::default()),
-                Text::styled(
-                    if loaded {
-                        format!("{:.2}\n", high)
-                    } else {
-                        "\n".to_string()
-                    },
-                    Style::default().fg(Color::LightCyan),
-                ),
-                Text::styled("l: ", Style::default()),
-                Text::styled(
-                    if loaded {
-                        format!("{:.2}\n\n", low)
-                    } else {
-                        "\n\n".to_string()
-                    },
-                    Style::default().fg(Color::LightCyan),
-                ),
-                Text::styled("v: ", Style::default()),
-                Text::styled(
-                    if loaded { vol } else { "".to_string() },
-                    Style::default().fg(Color::LightCyan),
-                ),
+            let prices = vec![
+                Spans::from(vec![
+                    Span::styled("c: ", Style::default()),
+                    Span::styled(
+                        if loaded {
+                            format!("{:.2} {}", state.current_price(), currency)
+                        } else {
+                            "".to_string()
+                        },
+                        Style::default()
+                            .add_modifier(Modifier::BOLD)
+                            .fg(Color::Yellow),
+                    ),
+                ]),
+                Spans::from(vec![
+                    Span::styled("h: ", Style::default()),
+                    Span::styled(
+                        if loaded {
+                            format!("{:.2}", high)
+                        } else {
+                            "".to_string()
+                        },
+                        Style::default().fg(Color::LightCyan),
+                    ),
+                ]),
+                Spans::from(vec![
+                    Span::styled("l: ", Style::default()),
+                    Span::styled(
+                        if loaded {
+                            format!("{:.2}", low)
+                        } else {
+                            "".to_string()
+                        },
+                        Style::default().fg(Color::LightCyan),
+                    ),
+                ]),
+                Spans::default(),
+                Spans::from(vec![
+                    Span::styled("v: ", Style::default()),
+                    Span::styled(
+                        if loaded { vol } else { "".to_string() },
+                        Style::default().fg(Color::LightCyan),
+                    ),
+                ]),
             ];
 
-            let pct = [Text::styled(
+            let pct = vec![Span::styled(
                 if loaded {
                     format!("  {:.2}%", pct_change * 100.0)
                 } else {
                     "".to_string()
                 },
                 Style::default()
-                    .modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::BOLD)
                     .fg(if pct_change >= 0.0 {
                         Color::Green
                     } else {
@@ -133,13 +145,11 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     }),
             )];
 
-            Paragraph::new(prices.iter())
-                .style(Style::default().fg(Color::White))
+            Paragraph::new(prices)
                 .alignment(Alignment::Left)
                 .render(layout[0], buf);
 
-            Paragraph::new(pct.iter())
-                .style(Style::default().fg(Color::White))
+            Paragraph::new(Spans::from(pct))
                 .alignment(Alignment::Right)
                 .render(layout[0], buf);
         }
@@ -147,7 +157,6 @@ impl CachableWidget<StockState> for StockSummaryWidget {
         // Draw graph
         {
             layout[1] = add_padding(layout[1], 1, PaddingDirection::Left);
-            layout[1] = add_padding(layout[1], 1, PaddingDirection::Top);
 
             let (min, max) = state.min_max(&data);
             let (start, end) = state.start_end();
@@ -374,16 +383,15 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 }
             }
 
-            Chart::<String, String>::default()
+            Chart::new(datasets)
                 .block(Block::default().border_style(Style::default()))
                 .x_axis(Axis::default().bounds(state.x_bounds(start, end, &data)))
                 .y_axis(
                     Axis::default()
                         .bounds(state.y_bounds(min, max))
-                        .labels(&state.y_labels(min, max))
+                        .labels(state.y_labels(min, max))
                         .style(Style::default().fg(Color::LightBlue)),
                 )
-                .datasets(&datasets)
                 .render(graph_chunks[0], buf);
         }
     }

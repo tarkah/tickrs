@@ -5,9 +5,10 @@ use chrono::NaiveDateTime;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
 use tui::widgets::{
-    Block, Borders, List, ListState, Paragraph, Row, StatefulWidget, Table, TableState, Text,
-    Widget,
+    Block, Borders, Cell, List, ListItem, ListState, Paragraph, Row, StatefulWidget, Table,
+    TableState, Widget,
 };
 
 use super::{block, CachableWidget, CacheState};
@@ -244,8 +245,9 @@ impl CachableWidget<OptionsState> for OptionsWidget {
         &mut state.cache_state
     }
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut OptionsState) {
+    fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut OptionsState) {
         block::new(" Options ", None).render(area, buf);
+        area = add_padding(area, 1, PaddingDirection::All);
 
         // chunks[0] - call / put selector
         // chunks[1] - option info
@@ -253,7 +255,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
         let mut chunks = Layout::default()
             .constraints(
                 [
-                    Constraint::Length(3),
+                    Constraint::Length(2),
                     Constraint::Length(8),
                     Constraint::Min(0),
                 ]
@@ -263,10 +265,10 @@ impl CachableWidget<OptionsState> for OptionsWidget {
 
         // Draw call / put selector
         {
-            let call_put_selector = [
-                Text::styled(
+            let call_put_selector = vec![
+                Span::styled(
                     "Call",
-                    Style::default().fg(Color::Green).modifier(
+                    Style::default().fg(Color::Green).add_modifier(
                         if state.selected_type == OptionType::Call {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -274,10 +276,10 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         },
                     ),
                 ),
-                Text::styled(" | ", Style::default()),
-                Text::styled(
+                Span::styled(" | ", Style::default()),
+                Span::styled(
                     "Put",
-                    Style::default().fg(Color::Red).modifier(
+                    Style::default().fg(Color::Red).add_modifier(
                         if state.selected_type == OptionType::Put {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -287,14 +289,12 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 ),
             ];
 
-            chunks[0] = add_padding(chunks[0], 2, PaddingDirection::Left);
-            chunks[0] = add_padding(chunks[0], 2, PaddingDirection::Right);
-            chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Top);
+            chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Left);
+            chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Right);
 
-            Paragraph::new(call_put_selector.iter())
+            Paragraph::new(Spans::from(call_put_selector))
                 .style(Style::default().fg(Color::White))
                 .alignment(Alignment::Center)
-                .wrap(false)
                 .render(chunks[0], buf);
 
             Block::default()
@@ -306,22 +306,29 @@ impl CachableWidget<OptionsState> for OptionsWidget {
         // selector_chunks[1] - option selector
         let mut selector_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(13), Constraint::Min(0)].as_ref())
+            .constraints([Constraint::Length(12), Constraint::Min(0)].as_ref())
             .split(chunks[2]);
 
         // Draw date selector
         {
-            selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Left);
-            selector_chunks[0] = add_padding(selector_chunks[0], 1, PaddingDirection::Bottom);
+            selector_chunks[0] = add_padding(selector_chunks[0], 1, PaddingDirection::Left);
 
             Block::default()
                 .borders(Borders::RIGHT)
                 .render(selector_chunks[0], buf);
+            selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Right);
 
-            let dates = state.exp_dates.iter().map(|d| {
-                let date = NaiveDateTime::from_timestamp(*d, 0).date();
-                Text::styled(date.format("%b-%d-%y").to_string(), Style::default())
-            });
+            let dates = state
+                .exp_dates
+                .iter()
+                .map(|d| {
+                    let date = NaiveDateTime::from_timestamp(*d, 0).date();
+                    ListItem::new(Span::styled(
+                        date.format("%b-%d-%y").to_string(),
+                        Style::default(),
+                    ))
+                })
+                .collect::<Vec<_>>();
 
             let list = List::new(dates)
                 .style(Style::default().fg(Color::White))
@@ -342,18 +349,17 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 list_state.select(Some(idx));
             }
 
-            Paragraph::new([Text::styled("Date", Style::default().fg(Color::Cyan))].iter())
+            Paragraph::new(Span::styled("Date", Style::default().fg(Color::Cyan)))
                 .render(selector_chunks[0], buf);
 
             selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Top);
 
-            <List<_> as StatefulWidget>::render(list, selector_chunks[0], buf, &mut list_state);
+            <List as StatefulWidget>::render(list, selector_chunks[0], buf, &mut list_state);
         }
 
         // Draw options data
         {
             selector_chunks[1] = add_padding(selector_chunks[1], 1, PaddingDirection::Left);
-            selector_chunks[1] = add_padding(selector_chunks[1], 1, PaddingDirection::Bottom);
 
             if let Some(data) = state.data() {
                 let selected_data = if state.selected_type == OptionType::Call {
@@ -363,31 +369,34 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 };
 
                 let rows = selected_data.iter().map(|d| {
-                    Row::StyledData(
-                        vec![
-                            format!("{: <7.2}", d.strike),
-                            format!("{: <7.2}", d.last_price),
-                            format!("{: >7.2}%", d.percent_change),
-                        ]
-                        .into_iter(),
-                        Style::default().fg(if d.percent_change >= 0.0 {
-                            Color::Green
-                        } else {
-                            Color::Red
-                        }),
-                    )
+                    Row::new(vec![
+                        Cell::from(format!("{: <7.2}", d.strike)),
+                        Cell::from(format!("{: <7.2}", d.last_price)),
+                        Cell::from(format!("{: >7.2}%", d.percent_change)),
+                    ])
+                    .style(Style::default().fg(if d.percent_change >= 0.0 {
+                        Color::Green
+                    } else {
+                        Color::Red
+                    }))
                 });
 
-                let table = Table::new(["Strike", "Price", "% Change"].iter(), rows)
+                let table = Table::new(rows)
+                    .header(
+                        Row::new(vec!["Strike", "Price", "% Change"])
+                            .style(Style::default().fg(Color::Cyan))
+                            .bottom_margin(1),
+                    )
                     .style(Style::default().fg(Color::White))
-                    .header_style(Style::default().fg(Color::Cyan))
-                    .highlight_style(Style::default().bg(
-                        if state.selection_mode == SelectionMode::Options {
-                            Color::LightBlue
-                        } else {
-                            Color::DarkGray
-                        },
-                    ))
+                    .highlight_style(
+                        Style::default()
+                            .bg(if state.selection_mode == SelectionMode::Options {
+                                Color::LightBlue
+                            } else {
+                                Color::DarkGray
+                            })
+                            .fg(Color::White),
+                    )
                     .widths(&[
                         Constraint::Length(8),
                         Constraint::Length(8),
@@ -400,19 +409,16 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                     table_state.select(Some(idx));
                 }
 
-                <Table<_, _> as StatefulWidget>::render(
-                    table,
-                    selector_chunks[1],
-                    buf,
-                    &mut table_state,
-                );
+                selector_chunks[1] = add_padding(selector_chunks[1], 1, PaddingDirection::Right);
+
+                <Table as StatefulWidget>::render(table, selector_chunks[1], buf, &mut table_state);
             }
         }
 
         // Draw selected option info
         {
-            chunks[1] = add_padding(chunks[1], 2, PaddingDirection::Left);
-            chunks[1] = add_padding(chunks[1], 2, PaddingDirection::Right);
+            chunks[1] = add_padding(chunks[1], 1, PaddingDirection::Left);
+            chunks[1] = add_padding(chunks[1], 1, PaddingDirection::Right);
 
             Block::default()
                 .borders(Borders::BOTTOM)
@@ -451,67 +457,72 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         .len()
                             + 11);
 
-                    let column_0 = [
-                        Text::styled(
+                    let column_0 = vec![
+                        Spans::from(Span::styled(
                             format!(
-                                "strike:{}{:.2} {}\n\n",
+                                "strike:{}{:.2} {}",
                                 " ".repeat(gap_strike),
                                 option.strike,
                                 currency
                             ),
                             Style::default(),
-                        ),
-                        Text::styled(
-                            format!("price:{}{:.2}\n\n", " ".repeat(gap_last), option.last_price,),
+                        )),
+                        Spans::default(),
+                        Spans::from(Span::styled(
+                            format!("price:{}{:.2}", " ".repeat(gap_last), option.last_price,),
                             Style::default(),
-                        ),
-                        Text::styled(
+                        )),
+                        Spans::default(),
+                        Spans::from(Span::styled(
                             format!(
-                                "bid:{}{:.2}\n\n",
+                                "bid:{}{:.2}",
                                 " ".repeat(gap_ask),
                                 option.bid.unwrap_or_default(),
                             ),
                             Style::default(),
-                        ),
-                        Text::styled(
+                        )),
+                        Spans::default(),
+                        Spans::from(Span::styled(
                             format!(
                                 "ask:{}{:.2}",
                                 " ".repeat(gap_bid),
                                 option.ask.unwrap_or_default(),
                             ),
                             Style::default(),
-                        ),
+                        )),
                     ];
 
-                    let column_1 = [
-                        Text::styled(
+                    let column_1 = vec![
+                        Spans::from(Span::styled(
                             format!(
-                                "volume:{}{}\n\n",
+                                "volume:{}{}",
                                 " ".repeat(gap_volume),
                                 option.volume.unwrap_or_default(),
                             ),
                             Style::default(),
-                        ),
-                        Text::styled(
+                        )),
+                        Spans::default(),
+                        Spans::from(Span::styled(
                             format!(
-                                "interest:{}{}\n\n",
+                                "interest:{}{}",
                                 " ".repeat(gap_open_int),
                                 option.open_interest.unwrap_or_default()
                             ),
                             Style::default(),
-                        ),
-                        Text::styled(
+                        )),
+                        Spans::default(),
+                        Spans::from(Span::styled(
                             format!(
                                 "volatility:{}{:.0}%",
                                 " ".repeat(gap_impl_vol),
                                 option.implied_volatility.unwrap_or_default() * 100.0
                             ),
                             Style::default(),
-                        ),
+                        )),
                     ];
 
-                    Paragraph::new(column_0.iter()).render(columns[0], buf);
-                    Paragraph::new(column_1.iter()).render(columns[1], buf);
+                    Paragraph::new(column_0).render(columns[0], buf);
+                    Paragraph::new(column_1).render(columns[1], buf);
                 }
             }
         }

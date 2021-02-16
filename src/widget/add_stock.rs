@@ -1,7 +1,8 @@
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Paragraph, StatefulWidget, Text, Widget};
+use tui::text::{Span, Spans};
+use tui::widgets::{Paragraph, StatefulWidget, Widget, Wrap};
 
 use super::block;
 
@@ -46,29 +47,31 @@ impl StatefulWidget for AddStockWidget {
     type State = AddStockState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let text = if !state.has_user_input && state.error_msg.is_some() {
-            [
-                Text::styled("> ", Style::default()),
-                Text::styled(
+        let spans = if !state.has_user_input && state.error_msg.is_some() {
+            Spans::from(vec![
+                Span::styled("> ", Style::default()),
+                Span::styled(
                     state.error_msg.as_ref().unwrap(),
-                    Style::default().modifier(Modifier::BOLD).fg(Color::Red),
+                    Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
                 ),
-            ]
+            ])
         } else {
-            [
-                Text::styled("> ", Style::default()),
-                Text::styled(
+            Spans::from(vec![
+                Span::styled("> ", Style::default()),
+                Span::styled(
                     &state.search_string,
-                    Style::default().modifier(Modifier::BOLD).fg(Color::Cyan),
+                    Style::default()
+                        .add_modifier(Modifier::BOLD)
+                        .fg(Color::Cyan),
                 ),
-            ]
+            ])
         };
 
-        Paragraph::new(text.iter())
+        Paragraph::new(spans)
             .block(block::new(" Add Ticker ", None))
             .style(Style::default())
             .alignment(Alignment::Left)
-            .wrap(true)
+            .wrap(Wrap { trim: true })
             .render(area, buf);
     }
 }

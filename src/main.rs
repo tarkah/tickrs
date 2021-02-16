@@ -1,14 +1,13 @@
 extern crate tickrs_api as api;
 
 use std::collections::HashMap;
-use std::io::{self, Write};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
-use std::{panic, thread};
+use std::{io, panic, thread};
 
 use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
-use crossterm::event::{Event, MouseEvent};
-use crossterm::{cursor, execute, terminal, write_ansi_code};
+use crossterm::event::{Event, MouseEvent, MouseEventKind};
+use crossterm::{cursor, execute, terminal};
 use lazy_static::lazy_static;
 use service::default_timestamps::DefaultTimestampService;
 use tui::backend::CrosstermBackend;
@@ -175,12 +174,12 @@ fn main() {
                             event::handle_keys_display_options(key_event, &mut app, &request_redraw);
                         }
                     }
-                } else if let Ok(Event::Mouse(event)) = message {
+                } else if let Ok(Event::Mouse(MouseEvent { kind, row, column,.. })) = message {
                     if app.debug.enabled {
-                        match event {
-                            MouseEvent::Down(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
-                            MouseEvent::Up(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
-                            MouseEvent::Drag(_, row, column, ..) => app.debug.cursor_location = Some((row, column)),
+                        match kind {
+                            MouseEventKind::Down(_) => app.debug.cursor_location = Some((row, column)),
+                            MouseEventKind::Up(_) => app.debug.cursor_location = Some((row, column)),
+                            MouseEventKind::Drag(_) => app.debug.cursor_location = Some((row, column)),
                             _ => {}
                         }
                     }

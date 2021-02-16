@@ -1,7 +1,8 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::Style;
-use tui::widgets::{Paragraph, Text, Widget};
+use tui::text::{Span, Spans};
+use tui::widgets::{Paragraph, Widget};
 
 use super::block;
 use crate::draw::{add_padding, PaddingDirection};
@@ -57,18 +58,16 @@ impl HelpWidget {
 }
 
 impl Widget for HelpWidget {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, mut area: Rect, buf: &mut Buffer) {
         block::new(" Help - <ESC> to go back ", None).render(area, buf);
+        area = add_padding(area, 1, PaddingDirection::All);
+        area = add_padding(area, 1, PaddingDirection::Left);
 
         let text: Vec<_> = TEXT
             .lines()
-            .map(|line| Text::styled(format!("{}\n", line), Style::default()))
+            .map(|line| Spans::from(Span::styled(format!("{}\n", line), Style::default())))
             .collect();
 
-        let mut help_area = area;
-        help_area = add_padding(help_area, 2, PaddingDirection::Left);
-        help_area = add_padding(help_area, 1, PaddingDirection::Top);
-
-        Paragraph::new(text.iter()).render(help_area, buf);
+        Paragraph::new(text).render(area, buf);
     }
 }
