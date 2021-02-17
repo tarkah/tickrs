@@ -1,6 +1,6 @@
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Style};
+use tui::style::Style;
 use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, Paragraph, Tabs, Wrap};
 use tui::{Frame, Terminal};
@@ -10,7 +10,7 @@ use crate::common::TimeFrame;
 use crate::widget::{
     block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
 };
-use crate::SHOW_VOLUMES;
+use crate::{SHOW_VOLUMES, THEME};
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     let current_size = terminal.size().unwrap_or_default();
@@ -25,6 +25,12 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
 
     terminal
         .draw(|mut frame| {
+            // Set background color
+            frame.render_widget(
+                Block::default().style(Style::default().bg(THEME.background())),
+                frame.size(),
+            );
+
             if app.debug.enabled && app.mode == Mode::AddStock {
                 // layout[0] - Main window
                 // layout[1] - Add Stock window
@@ -100,7 +106,7 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         .split(area);
 
     if !app.stocks.is_empty() {
-        frame.render_widget(crate::widget::block::new(" Tabs ", None), layout[0]);
+        frame.render_widget(crate::widget::block::new(" Tabs "), layout[0]);
         layout[0] = add_padding(layout[0], 1, PaddingDirection::All);
 
         // header[0] - Stock symbol tabs
@@ -121,8 +127,8 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             frame.render_widget(
                 Tabs::new(tabs)
                     .select(app.current_tab)
-                    .style(Style::default().fg(Color::Cyan))
-                    .highlight_style(Style::default().fg(Color::Yellow)),
+                    .style(Style::default().fg(THEME.text_secondary))
+                    .highlight_style(Style::default().fg(THEME.text_primary)),
                 header[0],
             );
         }
@@ -131,7 +137,11 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         if !app.hide_help {
             frame.render_widget(
                 Paragraph::new(Text::styled("Help '?'", Style::default()))
-                    .style(Style::reset())
+                    .style(
+                        Style::default()
+                            .fg(THEME.text_normal)
+                            .bg(THEME.background()),
+                    )
                     .alignment(Alignment::Center),
                 header[1],
             );
@@ -183,7 +193,7 @@ fn draw_add_stock<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 }
 
 fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect) {
-    let border = block::new(" Summary ", None);
+    let border = block::new(" Summary ");
     frame.render_widget(border, area);
     area = add_padding(area, 1, PaddingDirection::All);
     area = add_padding(area, 1, PaddingDirection::Right);
@@ -255,7 +265,11 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     if !app.hide_help {
         frame.render_widget(
             Paragraph::new(Text::styled("Help '?'", Style::default()))
-                .style(Style::reset())
+                .style(
+                    Style::default()
+                        .fg(THEME.text_normal)
+                        .bg(THEME.background()),
+                )
                 .alignment(Alignment::Center),
             header[1],
         );
@@ -283,9 +297,11 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
 
         frame.render_widget(
-            Block::default()
-                .borders(Borders::TOP)
-                .border_style(Style::reset()),
+            Block::default().borders(Borders::TOP).border_style(
+                Style::default()
+                    .fg(THEME.border_secondary)
+                    .bg(THEME.background()),
+            ),
             layout[2],
         );
 
@@ -305,8 +321,8 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
 
         let tabs = Tabs::new(time_frames)
             .select(app.summary_time_frame.idx())
-            .style(Style::default().fg(Color::Cyan))
-            .highlight_style(Style::default().fg(Color::Yellow));
+            .style(Style::default().fg(THEME.text_secondary))
+            .highlight_style(Style::default().fg(THEME.text_primary));
 
         frame.render_widget(tabs, bottom_layout[0]);
 
@@ -316,17 +332,17 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         let up_arrow = Span::styled(
             "ᐱ",
             Style::default().fg(if more_up {
-                Color::Reset
+                THEME.text_normal
             } else {
-                Color::DarkGray
+                THEME.gray
             }),
         );
         let down_arrow = Span::styled(
             "ᐯ",
             Style::default().fg(if more_down {
-                Color::Reset
+                THEME.text_normal
             } else {
-                Color::DarkGray
+                THEME.gray
             }),
         );
 

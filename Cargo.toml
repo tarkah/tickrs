@@ -35,4 +35,4 @@ futures = "0.3"
 
 better-panic = "0.2"
 crossterm = "0.19"
-tui = { version = "0.14", default-features = false, features = ["crossterm"] }
+tui = { version = "0.14", default-features = false, features = ["crossterm","serde"] }

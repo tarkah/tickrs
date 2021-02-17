@@ -5,6 +5,7 @@ use serde::Deserialize;
 use structopt::StructOpt;
 
 use crate::common::TimeFrame;
+use crate::theme::Theme;
 
 pub fn resolve_opts() -> Opts {
     let mut opts = get_cli_opts();
@@ -24,6 +25,9 @@ pub fn resolve_opts() -> Opts {
         opts.show_x_labels = opts.show_x_labels || config_opts.show_x_labels;
         opts.summary = opts.summary || config_opts.summary;
         opts.trunc_pre = opts.trunc_pre || config_opts.trunc_pre;
+
+        // Theme
+        opts.theme = config_opts.theme;
     }
 
     opts
@@ -111,6 +115,9 @@ pub struct Opts {
     #[structopt(long)]
     /// Truncate pre market graphing to only 30 minutes prior to markets opening
     pub trunc_pre: bool,
+
+    #[structopt(skip)]
+    pub theme: Option<Theme>,
 }
 
 const DEFAULT_CONFIG: &str = "---
@@ -151,4 +158,20 @@ const DEFAULT_CONFIG: &str = "---
 
 # Truncate pre market graphing to only 30 minutes prior to markets opening
 #trunc_pre: true
+
+# Apply a custom theme
+#theme:
+#  # Background is optional, otherwise it'll use your terminals background color
+#  #background: '#403E41'
+#  gray: '#727072'
+#  profit: '#ADD977'
+#  loss: '#FA648A'
+#  text_normal: '#FCFCFA'
+#  text_primary: '#FFDA65'
+#  text_secondary: '#79DBEA'
+#  border_primary: '#FC9766'
+#  border_secondary: '#FCFCFA'
+#  border_axis: '#FC9766'
+#  highlight_focused: '#FC9766'
+#  highlight_unfocused: '#727072'
 ";

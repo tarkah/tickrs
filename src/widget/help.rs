@@ -6,6 +6,7 @@ use tui::widgets::{Paragraph, Widget};
 
 use super::block;
 use crate::draw::{add_padding, PaddingDirection};
+use crate::THEME;
 
 const TEXT: &str = r#"
 Quit: q or <Ctrl+c>
@@ -59,13 +60,18 @@ impl HelpWidget {
 
 impl Widget for HelpWidget {
     fn render(self, mut area: Rect, buf: &mut Buffer) {
-        block::new(" Help - <ESC> to go back ", None).render(area, buf);
+        block::new(" Help - <ESC> to go back ").render(area, buf);
         area = add_padding(area, 1, PaddingDirection::All);
         area = add_padding(area, 1, PaddingDirection::Left);
 
         let text: Vec<_> = TEXT
             .lines()
-            .map(|line| Spans::from(Span::styled(format!("{}\n", line), Style::default())))
+            .map(|line| {
+                Spans::from(Span::styled(
+                    format!("{}\n", line),
+                    Style::default().fg(THEME.text_normal),
+                ))
+            })
             .collect();
 
         Paragraph::new(text).render(area, buf);

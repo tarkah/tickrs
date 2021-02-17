@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Added
+
+- Custom themes can now be applied. See the [themes wiki] entry for more
+  information ([#69])
+
 ## [0.11.0] - 2021-02-12
 
 ### Added
@@ -88,3 +93,5 @@ and `Removed`.
 [#63]: https://github.com/tarkah/tickrs/pull/63
 [#66]: https://github.com/tarkah/tickrs/pull/66
 [#67]: https://github.com/tarkah/tickrs/pull/67
+[#69]: https://github.com/tarkah/tickrs/pull/69
+[themes wiki]: https://github.com/tarkah/tickrs/wiki/Themes

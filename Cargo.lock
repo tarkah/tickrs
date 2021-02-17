@@ -1425,6 +1425,7 @@ dependencies = [
  "bitflags",
  "cassowary",
  "crossterm 0.18.2",
+ "serde",
  "unicode-segmentation",
  "unicode-width",
 ]

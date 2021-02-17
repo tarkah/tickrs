@@ -23,6 +23,7 @@ mod event;
 mod opts;
 mod service;
 mod task;
+mod theme;
 mod widget;
 
 lazy_static! {
@@ -40,6 +41,7 @@ lazy_static! {
     pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
     pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
+    pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
 }
 
 fn main() {
