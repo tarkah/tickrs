@@ -38,6 +38,25 @@ impl App {
     }
 }
 
+pub struct EnvConfig {
+    pub show_debug: bool,
+    pub debug_mouse: bool,
+}
+
+impl EnvConfig {
+    #[inline]
+    fn env_match(key: &str, default: &str, expected: &str) -> bool {
+        std::env::var(key).ok().unwrap_or_else(|| default.into()) == expected
+    }
+
+    pub fn load() -> Self {
+        Self {
+            show_debug: Self::env_match("SHOW_DEBUG", "0", "1"),
+            debug_mouse: Self::env_match("DEBUG_MOUSE", "0", "1"),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct DebugInfo {
     pub enabled: bool,
