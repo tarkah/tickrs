@@ -28,6 +28,7 @@ mod widget;
 
 lazy_static! {
     static ref CLIENT: api::Client = api::Client::new();
+    static ref DEBUG_LEVEL: app::EnvConfig = app::EnvConfig::load();
     pub static ref OPTS: opts::Opts = opts::resolve_opts();
     pub static ref UPDATE_INTERVAL: u64 = OPTS.update_interval.unwrap_or(1);
     pub static ref TIME_FRAME: TimeFrame = OPTS.time_frame.unwrap_or(TimeFrame::Day1);
@@ -83,10 +84,7 @@ fn main() {
         current_tab: 0,
         hide_help: opts.hide_help,
         debug: DebugInfo {
-            enabled: std::env::var("SHOW_DEBUG")
-                .ok()
-                .unwrap_or_else(|| String::from("0"))
-                == "1",
+            enabled: DEBUG_LEVEL.show_debug,
             dimensions: (0, 0),
             cursor_location: None,
             last_event: None,
@@ -206,7 +204,9 @@ fn setup_terminal() {
 
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
 
-    execute!(stdout, crossterm::event::EnableMouseCapture).unwrap();
+    if DEBUG_LEVEL.debug_mouse {
+        execute!(stdout, crossterm::event::EnableMouseCapture).unwrap();
+    }
 
     terminal::enable_raw_mode().unwrap();
 }
@@ -214,7 +214,9 @@ fn setup_terminal() {
 fn cleanup_terminal() {
     let mut stdout = io::stdout();
 
-    execute!(stdout, crossterm::event::DisableMouseCapture).unwrap();
+    if DEBUG_LEVEL.debug_mouse {
+        execute!(stdout, crossterm::event::DisableMouseCapture).unwrap();
+    }
 
     execute!(stdout, cursor::MoveTo(0, 0)).unwrap();
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
