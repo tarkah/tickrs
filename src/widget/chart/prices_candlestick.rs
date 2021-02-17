@@ -18,6 +18,7 @@ use crate::common::{
 use crate::widget::StockState;
 use crate::{HIDE_PREV_CLOSE, THEME};
 
+#[derive(Debug)]
 struct Candle {
     open: f64,
     close: f64,
@@ -35,11 +36,13 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
 
     #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let (min, max) = state.min_max(&self.data);
+        let (start, end) = state.start_end();
+        let x_bounds = state.x_bounds(start, end, self.data);
+
         let width = area.width;
         let num_candles = width / 2;
-        let chunk_size = (self.data.len() as f32 / num_candles as f32).ceil() as usize;
-
-        let (min, max) = state.min_max(&self.data);
+        let chunk_size = (x_bounds[1] / num_candles as f64).ceil() as usize;
 
         let candles = self
             .data
@@ -47,8 +50,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
             .chunks(chunk_size)
             .into_iter()
             .map(|c| {
-                let prices = c.cloned().collect::<Vec<_>>();
-                let prices = remove_zeros_lows(prices);
+                let prices = c.filter(|p| p.close.gt(&0.0)).collect::<Vec<_>>();
 
                 if prices.is_empty() {
                     return None;
@@ -83,7 +85,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
                     .borders(Borders::TOP)
                     .border_style(Style::default()),
             )
-            .x_bounds([0.0, candles.len() as f64 * 4.0 + 1.0])
+            .x_bounds([0.0, num_candles as f64 * 4.0])
             .y_bounds(state.y_bounds(min, max))
             .paint(move |ctx| {
                 for (idx, candle) in candles.iter().enumerate() {
