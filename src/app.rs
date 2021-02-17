@@ -42,7 +42,6 @@ impl App {
 pub struct DebugInfo {
     pub enabled: bool,
     pub dimensions: (u16, u16),
-    pub cursor_location: Option<(u16, u16)>,
     pub last_event: Option<Event>,
     pub mode: Mode,
 }

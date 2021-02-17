@@ -6,7 +6,7 @@ use std::time::Duration;
 use std::{io, panic, thread};
 
 use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
-use crossterm::event::{Event, MouseEvent, MouseEventKind};
+use crossterm::event::Event;
 use crossterm::{cursor, execute, terminal};
 use lazy_static::lazy_static;
 use service::default_timestamps::DefaultTimestampService;
@@ -86,7 +86,6 @@ fn main() {
                 .unwrap_or_else(|| String::from("0"))
                 == "1",
             dimensions: (0, 0),
-            cursor_location: None,
             last_event: None,
             mode: starting_mode,
         },
@@ -176,16 +175,6 @@ fn main() {
                             }
                         }
                     }
-                    Ok(Event::Mouse(MouseEvent { kind, row, column,.. })) => {
-                        if app.debug.enabled {
-                            match kind {
-                                MouseEventKind::Down(_) => app.debug.cursor_location = Some((row, column)),
-                                MouseEventKind::Up(_) => app.debug.cursor_location = Some((row, column)),
-                                MouseEventKind::Drag(_) => app.debug.cursor_location = Some((row, column)),
-                                _ => {}
-                            }
-                        }
-                    }
                     Ok(Event::Resize(..)) => {
                         let _ = request_redraw.try_send(());
                     }
@@ -204,15 +193,11 @@ fn setup_terminal() {
 
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
 
-    execute!(stdout, crossterm::event::EnableMouseCapture).unwrap();
-
     terminal::enable_raw_mode().unwrap();
 }
 
 fn cleanup_terminal() {
     let mut stdout = io::stdout();
-
-    execute!(stdout, crossterm::event::DisableMouseCapture).unwrap();
 
     execute!(stdout, cursor::MoveTo(0, 0)).unwrap();
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
