@@ -13,6 +13,7 @@ pub use self::stock_summary::StockSummaryWidget;
 
 mod add_stock;
 pub mod block;
+mod chart;
 mod help;
 pub mod options;
 mod stock;
