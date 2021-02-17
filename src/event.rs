@@ -87,14 +87,6 @@ pub fn handle_keys_display_stock(
                 }
                 let _ = request_redraw.try_send(());
             }
-            KeyCode::BackTab => {
-                if app.current_tab == 0 {
-                    app.current_tab = app.stocks.len() - 1;
-                } else {
-                    app.current_tab -= 1;
-                }
-                let _ = request_redraw.try_send(());
-            }
             _ => {}
         }
     } else if key_event.modifiers == KeyModifiers::CONTROL {
@@ -122,10 +114,21 @@ pub fn handle_keys_display_stock(
             _ => {}
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
-        if let KeyCode::Char('?') = key_event.code {
-            app.previous_mode = app.mode;
-            app.mode = app::Mode::Help;
-            let _ = request_redraw.try_send(());
+        match key_event.code {
+            KeyCode::Char('?') => {
+                app.previous_mode = app.mode;
+                app.mode = app::Mode::Help;
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::BackTab => {
+                if app.current_tab == 0 {
+                    app.current_tab = app.stocks.len() - 1;
+                } else {
+                    app.current_tab -= 1;
+                }
+                let _ = request_redraw.try_send(());
+            }
+            _ => {}
         }
     }
 }
