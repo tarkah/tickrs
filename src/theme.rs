@@ -7,9 +7,9 @@ use self::de::{deserialize_color_hex_string, deserialize_option_color_hex_string
 pub struct Theme {
     #[serde(deserialize_with = "deserialize_option_color_hex_string")]
     #[serde(default)]
-    pub background: Option<Color>,
+    background: Option<Color>,
     #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub foreground_inactive: Color,
+    pub gray: Color,
     #[serde(deserialize_with = "deserialize_color_hex_string")]
     pub profit: Color,
     #[serde(deserialize_with = "deserialize_color_hex_string")]
@@ -42,7 +42,7 @@ impl Default for Theme {
     fn default() -> Self {
         Theme {
             background: None,
-            foreground_inactive: Color::DarkGray,
+            gray: Color::DarkGray,
             profit: Color::Green,
             loss: Color::Red,
             text_normal: Color::Reset,

@@ -334,7 +334,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
             Style::default().fg(if more_up {
                 THEME.text_normal
             } else {
-                THEME.foreground_inactive
+                THEME.gray
             }),
         );
         let down_arrow = Span::styled(
@@ -342,7 +342,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
             Style::default().fg(if more_down {
                 THEME.text_normal
             } else {
-                THEME.foreground_inactive
+                THEME.gray
             }),
         );
 

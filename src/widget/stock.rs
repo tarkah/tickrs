@@ -872,7 +872,7 @@ impl CachableWidget<StockState> for StockWidget {
                     Style::default()
                         .fg(
                             if trading_period != TradingPeriod::Regular && enable_pre_post {
-                                THEME.foreground_inactive
+                                THEME.gray
                             } else if pct_change >= 0.0 {
                                 THEME.profit
                             } else {
@@ -891,7 +891,7 @@ impl CachableWidget<StockState> for StockWidget {
                         .style(
                             Style::default()
                                 .fg(if trading_period != TradingPeriod::Post {
-                                    THEME.foreground_inactive
+                                    THEME.gray
                                 } else if pct_change >= 0.0 {
                                     THEME.profit
                                 } else {
@@ -912,7 +912,7 @@ impl CachableWidget<StockState> for StockWidget {
                         .style(
                             Style::default()
                                 .fg(if trading_period != TradingPeriod::Pre {
-                                    THEME.foreground_inactive
+                                    THEME.gray
                                 } else if pct_change >= 0.0 {
                                     THEME.profit
                                 } else {
@@ -930,11 +930,7 @@ impl CachableWidget<StockState> for StockWidget {
                     0,
                     Dataset::default()
                         .marker(Marker::Braille)
-                        .style(
-                            Style::default()
-                                .fg(THEME.foreground_inactive)
-                                .bg(THEME.background()),
-                        )
+                        .style(Style::default().fg(THEME.gray).bg(THEME.background()))
                         .graph_type(GraphType::Line)
                         .data(&data),
                 );
@@ -998,11 +994,7 @@ impl CachableWidget<StockState> for StockWidget {
                     BarChart::default()
                         .bar_gap(0)
                         .bar_set(bar::NINE_LEVELS)
-                        .style(
-                            Style::default()
-                                .fg(THEME.foreground_inactive)
-                                .bg(THEME.background()),
-                        )
+                        .style(Style::default().fg(THEME.gray).bg(THEME.background()))
                         .data(&volumes)
                         .render(volume_chunks, buf);
                 }
