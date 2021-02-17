@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 use chrono::NaiveDateTime;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{
     Block, Borders, Cell, List, ListItem, ListState, Paragraph, Row, StatefulWidget, Table,
@@ -15,6 +15,7 @@ use super::{block, CachableWidget, CacheState};
 use crate::api::model::{OptionsData, OptionsQuote};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
+use crate::THEME;
 
 #[derive(Clone, Copy, PartialEq, Hash)]
 enum OptionType {
@@ -246,7 +247,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
     }
 
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut OptionsState) {
-        block::new(" Options ", None).render(area, buf);
+        block::new(" Options ").render(area, buf);
         area = add_padding(area, 1, PaddingDirection::All);
 
         // chunks[0] - call / put selector
@@ -268,7 +269,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             let call_put_selector = vec![
                 Span::styled(
                     "Call",
-                    Style::default().fg(Color::Green).add_modifier(
+                    Style::default().fg(THEME.profit).add_modifier(
                         if state.selected_type == OptionType::Call {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -279,7 +280,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 Span::styled(" | ", Style::default()),
                 Span::styled(
                     "Put",
-                    Style::default().fg(Color::Red).add_modifier(
+                    Style::default().fg(THEME.loss).add_modifier(
                         if state.selected_type == OptionType::Put {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -292,13 +293,20 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Left);
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Right);
 
-            Paragraph::new(Spans::from(call_put_selector))
-                .style(Style::reset())
-                .alignment(Alignment::Center)
+            Block::default()
+                .style(Style::default().fg(THEME.border_secondary))
+                .borders(Borders::BOTTOM)
                 .render(chunks[0], buf);
 
-            Block::default()
-                .borders(Borders::BOTTOM)
+            chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Bottom);
+
+            Paragraph::new(Spans::from(call_put_selector))
+                .style(
+                    Style::default()
+                        .fg(THEME.text_normal)
+                        .bg(THEME.background()),
+                )
+                .alignment(Alignment::Center)
                 .render(chunks[0], buf);
         }
 
@@ -314,6 +322,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             selector_chunks[0] = add_padding(selector_chunks[0], 1, PaddingDirection::Left);
 
             Block::default()
+                .style(Style::default().fg(THEME.border_secondary))
                 .borders(Borders::RIGHT)
                 .render(selector_chunks[0], buf);
             selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Right);
@@ -331,12 +340,16 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 .collect::<Vec<_>>();
 
             let list = List::new(dates)
-                .style(Style::reset())
+                .style(
+                    Style::default()
+                        .fg(THEME.text_normal)
+                        .bg(THEME.background()),
+                )
                 .highlight_style(Style::default().bg(
                     if state.selection_mode == SelectionMode::Dates {
-                        Color::LightBlue
+                        THEME.highlight_focused
                     } else {
-                        Color::DarkGray
+                        THEME.highlight_unfocused
                     },
                 ));
 
@@ -349,8 +362,11 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 list_state.select(Some(idx));
             }
 
-            Paragraph::new(Span::styled("Date", Style::default().fg(Color::Cyan)))
-                .render(selector_chunks[0], buf);
+            Paragraph::new(Span::styled(
+                "Date",
+                Style::default().fg(THEME.text_secondary),
+            ))
+            .render(selector_chunks[0], buf);
 
             selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Top);
 
@@ -375,27 +391,31 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         Cell::from(format!("{: >7.2}%", d.percent_change)),
                     ])
                     .style(Style::default().fg(if d.percent_change >= 0.0 {
-                        Color::Green
+                        THEME.profit
                     } else {
-                        Color::Red
+                        THEME.loss
                     }))
                 });
 
                 let table = Table::new(rows)
                     .header(
                         Row::new(vec!["Strike", "Price", "% Change"])
-                            .style(Style::default().fg(Color::Cyan))
+                            .style(Style::default().fg(THEME.text_secondary))
                             .bottom_margin(1),
                     )
-                    .style(Style::reset())
+                    .style(
+                        Style::default()
+                            .fg(THEME.text_normal)
+                            .bg(THEME.background()),
+                    )
                     .highlight_style(
                         Style::default()
                             .bg(if state.selection_mode == SelectionMode::Options {
-                                Color::LightBlue
+                                THEME.highlight_focused
                             } else {
-                                Color::DarkGray
+                                THEME.highlight_unfocused
                             })
-                            .fg(Color::Reset),
+                            .fg(THEME.text_normal),
                     )
                     .widths(&[
                         Constraint::Length(8),
@@ -421,8 +441,11 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             chunks[1] = add_padding(chunks[1], 1, PaddingDirection::Right);
 
             Block::default()
+                .style(Style::default().fg(THEME.border_secondary))
                 .borders(Borders::BOTTOM)
                 .render(chunks[1], buf);
+
+            chunks[1] = add_padding(chunks[1], 1, PaddingDirection::Bottom);
 
             if let Some(idx) = state.selected_option {
                 let option_range = if state.selected_type == OptionType::Call {
@@ -521,8 +544,20 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         )),
                     ];
 
-                    Paragraph::new(column_0).render(columns[0], buf);
-                    Paragraph::new(column_1).render(columns[1], buf);
+                    Paragraph::new(column_0)
+                        .style(
+                            Style::default()
+                                .fg(THEME.text_normal)
+                                .bg(THEME.background()),
+                        )
+                        .render(columns[0], buf);
+                    Paragraph::new(column_1)
+                        .style(
+                            Style::default()
+                                .fg(THEME.text_normal)
+                                .bg(THEME.background()),
+                        )
+                        .render(columns[1], buf);
                 }
             }
         }

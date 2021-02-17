@@ -1,10 +1,11 @@
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Rect};
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Paragraph, StatefulWidget, Widget, Wrap};
 
 use super::block;
+use crate::THEME;
 
 pub struct AddStockState {
     search_string: String,
@@ -49,26 +50,26 @@ impl StatefulWidget for AddStockWidget {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let spans = if !state.has_user_input && state.error_msg.is_some() {
             Spans::from(vec![
-                Span::styled("> ", Style::default()),
+                Span::styled("> ", Style::default().fg(THEME.text_normal)),
                 Span::styled(
                     state.error_msg.as_ref().unwrap(),
-                    Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+                    Style::default().add_modifier(Modifier::BOLD).fg(THEME.loss),
                 ),
             ])
         } else {
             Spans::from(vec![
-                Span::styled("> ", Style::default()),
+                Span::styled("> ", Style::default().fg(THEME.text_normal)),
                 Span::styled(
                     &state.search_string,
                     Style::default()
                         .add_modifier(Modifier::BOLD)
-                        .fg(Color::Cyan),
+                        .fg(THEME.text_secondary),
                 ),
             ])
         };
 
         Paragraph::new(spans)
-            .block(block::new(" Add Ticker ", None))
+            .block(block::new(" Add Ticker "))
             .style(Style::default())
             .alignment(Alignment::Left)
             .wrap(Wrap { trim: true })

@@ -5,6 +5,7 @@ use serde::Deserialize;
 use structopt::StructOpt;
 
 use crate::common::TimeFrame;
+use crate::theme::Theme;
 
 pub fn resolve_opts() -> Opts {
     let mut opts = get_cli_opts();
@@ -24,6 +25,9 @@ pub fn resolve_opts() -> Opts {
         opts.show_x_labels = opts.show_x_labels || config_opts.show_x_labels;
         opts.summary = opts.summary || config_opts.summary;
         opts.trunc_pre = opts.trunc_pre || config_opts.trunc_pre;
+
+        // Theme
+        opts.theme = config_opts.theme;
     }
 
     opts
@@ -111,6 +115,9 @@ pub struct Opts {
     #[structopt(long)]
     /// Truncate pre market graphing to only 30 minutes prior to markets opening
     pub trunc_pre: bool,
+
+    #[structopt(skip)]
+    pub theme: Option<Theme>,
 }
 
 const DEFAULT_CONFIG: &str = "---
