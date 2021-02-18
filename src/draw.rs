@@ -10,7 +10,7 @@ use crate::common::TimeFrame;
 use crate::widget::{
     block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
 };
-use crate::{SHOW_VOLUMES, THEME};
+use crate::{DEBUG_LEVEL, SHOW_VOLUMES, THEME};
 
 pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     let current_size = terminal.size().unwrap_or_default();
@@ -374,7 +374,18 @@ fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 fn draw_debug<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     app.debug.mode = app.mode;
 
-    let debug_text = Text::styled(format!("{:?}", app.debug), Style::default());
+    let debug_text = Text::styled(
+        format!(
+            "> {:?}{}",
+            app.debug,
+            if DEBUG_LEVEL.debug_theme {
+                format!("\n> {:?}", *THEME)
+            } else {
+                "".to_string()
+            }
+        ),
+        Style::default(),
+    );
     let debug_paragraph = Paragraph::new(debug_text).wrap(Wrap { trim: true });
 
     frame.render_widget(debug_paragraph, area);

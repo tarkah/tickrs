@@ -41,6 +41,7 @@ impl App {
 pub struct EnvConfig {
     pub show_debug: bool,
     pub debug_mouse: bool,
+    pub debug_theme: bool,
 }
 
 impl EnvConfig {
@@ -53,6 +54,7 @@ impl EnvConfig {
         Self {
             show_debug: Self::env_match("SHOW_DEBUG", "0", "1"),
             debug_mouse: Self::env_match("DEBUG_MOUSE", "0", "1"),
+            debug_theme: Self::env_match("DEBUG_THEME", "0", "1"),
         }
     }
 }
