@@ -34,6 +34,7 @@ struct Candle {
 pub struct PricesCandlestickChart<'a> {
     pub loaded: bool,
     pub data: &'a [Price],
+    pub is_summary: bool,
     pub show_x_labels: bool,
 }
 
@@ -42,11 +43,13 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
 
     #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        Block::default()
-            .borders(Borders::TOP)
-            .border_style(Style::default().fg(THEME.border_secondary))
-            .render(area, buf);
-        area = add_padding(area, 1, PaddingDirection::Top);
+        if !self.is_summary {
+            Block::default()
+                .borders(Borders::TOP)
+                .border_style(Style::default().fg(THEME.border_secondary))
+                .render(area, buf);
+            area = add_padding(area, 1, PaddingDirection::Top);
+        }
 
         let mut data = self.data.to_vec();
         data.push(Price {

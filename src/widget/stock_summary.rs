@@ -4,7 +4,7 @@ use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 
-use super::chart::{PricesLineChart, VolumeBarChart};
+use super::chart::{PricesCandlestickChart, VolumeBarChart};
 use super::stock::StockState;
 use super::{CachableWidget, CacheState};
 use crate::draw::{add_padding, PaddingDirection};
@@ -172,13 +172,21 @@ impl CachableWidget<StockState> for StockSummaryWidget {
         };
 
         // Draw prices line chart
-        PricesLineChart {
+        // PricesLineChart {
+        //     data: &data,
+        //     enable_pre_post,
+        //     is_profit: pct_change >= 0.0,
+        //     is_summary: true,
+        //     loaded,
+        //     show_x_labels: false,
+        // }
+        // .render(graph_chunks[0], buf, state);
+
+        PricesCandlestickChart {
             data: &data,
-            enable_pre_post,
-            is_profit: pct_change >= 0.0,
-            is_summary: true,
             loaded,
             show_x_labels: false,
+            is_summary: true,
         }
         .render(graph_chunks[0], buf, state);
 

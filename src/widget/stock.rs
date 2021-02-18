@@ -347,23 +347,7 @@ impl StockState {
     }
 
     pub fn min_max(&self, data: &[Price]) -> (f64, f64) {
-        let mut data: Vec<_> = data.iter().map(cast_historical_as_price).collect();
-        data.pop();
-        data.push(self.current_price());
-        data = remove_zeros(data);
-
-        data.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-        let mut min = data.first().cloned().unwrap_or(0.0);
-        let mut max = data.last().cloned().unwrap_or(1.0);
-
-        if self.current_price().le(&min) {
-            min = self.current_price();
-        }
-
-        if self.current_price().gt(&max) {
-            max = self.current_price();
-        }
+        let (mut max, mut min) = self.high_low(data);
 
         if self.time_frame == TimeFrame::Day1 && !*HIDE_PREV_CLOSE {
             if let Some(prev_close) = self.prev_close_price {
@@ -382,23 +366,27 @@ impl StockState {
 
     pub fn high_low(&self, data: &[Price]) -> (f64, f64) {
         let mut data = data.to_vec();
+        data.push(Price {
+            close: self.current_price(),
+            open: self.current_price(),
+            high: self.current_price(),
+            low: self.current_price(),
+            ..Default::default()
+        });
+        data.retain(|p| p.close.gt(&0.0));
 
-        data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
-        let mut max = data.last().map(|d| d.high).unwrap_or(0.0);
+        let high = data
+            .iter()
+            .max_by(|a, b| a.high.partial_cmp(&b.high).unwrap())
+            .map(|p| p.high)
+            .unwrap_or(1.0);
+        let low = data
+            .iter()
+            .min_by(|a, b| a.low.partial_cmp(&b.low).unwrap())
+            .map(|p| p.low)
+            .unwrap_or(0.0);
 
-        data = remove_zeros_lows(data);
-        data.sort_by(|a, b| a.low.partial_cmp(&b.low).unwrap());
-        let mut min = data.first().map(|d| d.low).unwrap_or(0.0);
-
-        if self.current_price().le(&min) {
-            min = self.current_price();
-        }
-
-        if self.current_price().gt(&max) {
-            max = self.current_price();
-        }
-
-        (max, min)
+        (high, low)
     }
 
     pub fn x_bounds(&self, start: i64, end: i64, data: &[Price]) -> [f64; 2] {
@@ -463,15 +451,15 @@ impl StockState {
         if self.loaded() {
             vec![
                 Span::styled(
-                    format!("{:>8.2}", (min - 0.05)),
+                    format!("{:>8.2}", min),
                     Style::default().fg(THEME.text_normal),
                 ),
                 Span::styled(
-                    format!("{:>8.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
+                    format!("{:>8.2}", (min + max) / 2.0),
                     Style::default().fg(THEME.text_normal),
                 ),
                 Span::styled(
-                    format!("{:>8.2}", max + 0.05),
+                    format!("{:>8.2}", max),
                     Style::default().fg(THEME.text_normal),
                 ),
             ]
@@ -773,6 +761,7 @@ impl CachableWidget<StockState> for StockWidget {
             data: &data,
             loaded,
             show_x_labels,
+            is_summary: false,
         }
         .render(graph_chunks[0], buf, state);
 
