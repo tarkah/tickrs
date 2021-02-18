@@ -14,7 +14,7 @@ use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
 use crate::app::DebugInfo;
-use crate::common::TimeFrame;
+use crate::common::{ChartType, TimeFrame};
 
 mod app;
 mod common;
@@ -42,7 +42,11 @@ lazy_static! {
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
     pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
-    pub static ref CHART_TYPE: RwLock<common::ChartType> = RwLock::new(common::ChartType::Line);
+    pub static ref CHART_TYPE: RwLock<ChartType> = RwLock::new(if OPTS.candle {
+        ChartType::Candlestick
+    } else {
+        ChartType::Line
+    });
 }
 
 fn main() {
