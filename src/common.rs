@@ -10,6 +10,21 @@ use tickrs_api::Interval;
 use crate::api::model::ChartData;
 use crate::api::Range;
 
+#[derive(PartialEq, Clone, Copy, Debug, Hash)]
+pub enum ChartType {
+    Line,
+    Candlestick,
+}
+
+impl ChartType {
+    pub fn toggle(self) -> Self {
+        match self {
+            ChartType::Line => ChartType::Candlestick,
+            ChartType::Candlestick => ChartType::Line,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize)]
 pub enum TimeFrame {
     #[serde(alias = "1D")]

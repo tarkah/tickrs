@@ -3,7 +3,7 @@ use crossbeam_channel::Sender;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::widget::options;
-use crate::{app, cleanup_terminal, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
+use crate::{app, cleanup_terminal, CHART_TYPE, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
 
 pub fn handle_keys_display_stock(
     key_event: KeyEvent,
@@ -24,6 +24,11 @@ pub fn handle_keys_display_stock(
             KeyCode::Char('/') => {
                 app.previous_mode = app.mode;
                 app.mode = app::Mode::AddStock;
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::Char('c') => {
+                let mut chart_type = CHART_TYPE.write().unwrap();
+                *chart_type = chart_type.toggle();
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('k') => {
@@ -210,6 +215,11 @@ pub fn handle_keys_display_summary(
             KeyCode::Down => {
                 app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Down);
 
+                let _ = request_redraw.try_send(());
+            }
+            KeyCode::Char('c') => {
+                let mut chart_type = CHART_TYPE.write().unwrap();
+                *chart_type = chart_type.toggle();
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('p') => {

@@ -6,15 +6,15 @@ use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap};
 
-use super::chart::{PricesCandlestickChart, VolumeBarChart};
+use super::chart::{PricesCandlestickChart, PricesLineChart, VolumeBarChart};
 use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::{
-    DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS,
-    THEME, TIME_FRAME, TRUNC_PRE,
+    CHART_TYPE, DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES,
+    SHOW_X_LABELS, THEME, TIME_FRAME, TRUNC_PRE,
 };
 
 const NUM_LOADING_TICKS: usize = 4;
@@ -65,6 +65,7 @@ impl Hash for StockState {
         SHOW_VOLUMES.read().unwrap().hash(state);
         SHOW_X_LABELS.read().unwrap().hash(state);
         TRUNC_PRE.hash(state);
+        CHART_TYPE.read().unwrap().hash(state);
     }
 }
 
@@ -540,6 +541,7 @@ impl CachableWidget<StockState> for StockWidget {
 
         let pct_change = state.pct_change(&data);
 
+        let chart_type = *CHART_TYPE.read().unwrap();
         let show_x_labels = SHOW_X_LABELS.read().map_or(false, |l| *l);
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
         let show_volumes = *SHOW_VOLUMES.read().unwrap();
@@ -747,23 +749,28 @@ impl CachableWidget<StockState> for StockWidget {
         };
 
         // Draw prices line chart
-        // PricesLineChart {
-        //     data: &data,
-        //     enable_pre_post,
-        //     is_profit: pct_change >= 0.0,
-        //     is_summary: false,
-        //     loaded,
-        //     show_x_labels,
-        // }
-        // .render(graph_chunks[0], buf, state);
-
-        PricesCandlestickChart {
-            data: &data,
-            loaded,
-            show_x_labels,
-            is_summary: false,
+        match chart_type {
+            ChartType::Line => {
+                PricesLineChart {
+                    data: &data,
+                    enable_pre_post,
+                    is_profit: pct_change >= 0.0,
+                    is_summary: false,
+                    loaded,
+                    show_x_labels,
+                }
+                .render(graph_chunks[0], buf, state);
+            }
+            ChartType::Candlestick => {
+                PricesCandlestickChart {
+                    data: &data,
+                    loaded,
+                    show_x_labels,
+                    is_summary: false,
+                }
+                .render(graph_chunks[0], buf, state);
+            }
         }
-        .render(graph_chunks[0], buf, state);
 
         // Draw volumes bar chart
         if show_volumes {
