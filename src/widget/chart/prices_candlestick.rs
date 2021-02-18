@@ -97,6 +97,24 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
             .x_bounds([0.0, num_candles as f64 * 4.0])
             .y_bounds(state.y_bounds(min, max))
             .paint(move |ctx| {
+                if state.time_frame == TimeFrame::Day1
+                    && self.loaded
+                    && !*HIDE_PREV_CLOSE
+                    && state.prev_close_price.is_some()
+                {
+                    let num_points = (end - start) / 60 + 1;
+
+                    ctx.draw(&Line {
+                        x1: 0.0,
+                        x2: num_candles as f64 * 4.0,
+                        y1: state.prev_close_price.unwrap(),
+                        y2: state.prev_close_price.unwrap(),
+                        color: THEME.gray,
+                    })
+                }
+
+                ctx.layer();
+
                 for (idx, candle) in candles.iter().enumerate() {
                     if let Some(candle) = candle {
                         let color = if candle.close.gt(&candle.open) {
