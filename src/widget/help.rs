@@ -1,5 +1,5 @@
 use tui::buffer::Buffer;
-use tui::layout::Rect;
+use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::{Paragraph, Widget};
@@ -8,7 +8,7 @@ use super::block;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::THEME;
 
-const TEXT: &str = r#"
+const LEFT_TEXT: &str = r#"
 Quit: q or <Ctrl+c>
 Add Stock:
   - /: open prompt
@@ -26,6 +26,14 @@ Reorder Current Tab:
 Change Time Frame:
   - <Right>: next time frame
   - <Left>: previous time frame
+Graphing Display:
+  - c: toggle candlestick chart
+  - p: toggle pre / post market
+  - v: toggle volumes graph
+  - x: toggle labels
+"#;
+
+const RIGHT_TEXT: &str = r#"
 Toggle Options Pane:
   - o: toggle pane
   - <Escape>: close pane
@@ -35,14 +43,12 @@ Toggle Options Pane:
 Toggle Summary Pane:
   - s: toggle pane
   - <Up / Down>: scroll pane
-Graphing Display:
-  - p: toggle pre / post market
-  - v: toggle volumes graph
-  - x: toggle labels
 "#;
 
-pub const HELP_WIDTH: u16 = 37;
-pub const HELP_HEIGHT: u16 = 33;
+const LEFT_WIDTH: usize = 34;
+const RIGHT_WIDTH: usize = 33;
+pub const HELP_WIDTH: usize = LEFT_WIDTH + RIGHT_WIDTH + 4;
+pub const HELP_HEIGHT: usize = 23 + 2;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
@@ -50,10 +56,10 @@ pub struct HelpWidget {}
 impl HelpWidget {
     pub fn get_rect(self, area: Rect) -> Rect {
         Rect {
-            x: (area.width - HELP_WIDTH) / 2,
-            y: (area.height - HELP_HEIGHT) / 2,
-            width: HELP_WIDTH,
-            height: HELP_HEIGHT,
+            x: (area.width - HELP_WIDTH as u16) / 2,
+            y: (area.height - HELP_HEIGHT as u16) / 2,
+            width: HELP_WIDTH as u16,
+            height: HELP_HEIGHT as u16,
         }
     }
 }
@@ -64,7 +70,16 @@ impl Widget for HelpWidget {
         area = add_padding(area, 1, PaddingDirection::All);
         area = add_padding(area, 1, PaddingDirection::Left);
 
-        let text: Vec<_> = TEXT
+        let layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Length(LEFT_WIDTH as u16),
+                Constraint::Length(2),
+                Constraint::Length(RIGHT_WIDTH as u16),
+            ])
+            .split(area);
+
+        let left_text: Vec<_> = LEFT_TEXT
             .lines()
             .map(|line| {
                 Spans::from(Span::styled(
@@ -74,6 +89,17 @@ impl Widget for HelpWidget {
             })
             .collect();
 
-        Paragraph::new(text).render(area, buf);
+        let right_text: Vec<_> = RIGHT_TEXT
+            .lines()
+            .map(|line| {
+                Spans::from(Span::styled(
+                    format!("{}\n", line),
+                    Style::default().fg(THEME.text_normal),
+                ))
+            })
+            .collect();
+
+        Paragraph::new(left_text).render(layout[0], buf);
+        Paragraph::new(right_text).render(layout[2], buf);
     }
 }
