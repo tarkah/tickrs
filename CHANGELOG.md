@@ -21,6 +21,10 @@ and `Removed`.
   - You can also pass the `--candle` flag on startup, or specify `candle: true`
     in the config file to launch with candlestick charting enabled
 
+### Fixed
+
+- Fixed panic when width of terminal was too small on main stock screen [4cc00d0](https://github.com/tarkah/tickrs/commit/4cc00d052c4bfff993587f1342086498ee8b2766)
+
 ## [0.12.0] - 2021-02-17
 
 ### Added
