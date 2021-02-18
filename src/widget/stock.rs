@@ -6,7 +6,7 @@ use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap};
 
-use super::chart::{PricesCandlestickChart, PricesLineChart, VolumeBarChart};
+use super::chart::{PricesCandlestickChart, VolumeBarChart};
 use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
