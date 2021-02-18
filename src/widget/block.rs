@@ -8,5 +8,8 @@ pub fn new(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(THEME.border_primary()))
-        .title(Span::styled(title, Style::default().fg(THEME.text_normal())))
+        .title(Span::styled(
+            title,
+            Style::default().fg(THEME.text_normal()),
+        ))
 }
