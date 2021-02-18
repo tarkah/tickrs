@@ -772,6 +772,7 @@ impl CachableWidget<StockState> for StockWidget {
         PricesCandlestickChart {
             data: &data,
             loaded,
+            show_x_labels,
         }
         .render(graph_chunks[0], buf, state);
 
