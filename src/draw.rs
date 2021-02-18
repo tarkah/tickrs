@@ -161,14 +161,20 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             vec![layout[1]]
         };
 
-        // If width is too small, don't render stock widget and use entire space
-        // for options widget
-        if app.mode == Mode::DisplayStock {
-            frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
-        } else if main_chunks[0].width >= 19 {
-            frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
-        } else {
-            main_chunks[1] = layout[1];
+        match app.mode {
+            Mode::DisplayStock => {
+                frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
+            }
+            // If width is too small, don't render stock widget and use entire space
+            // for options widget
+            Mode::DisplayOptions => {
+                if main_chunks[0].width >= 19 {
+                    frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
+                } else {
+                    main_chunks[1] = layout[1];
+                }
+            }
+            _ => {}
         }
 
         if let Some(options) = stock.options.as_mut() {
