@@ -14,6 +14,13 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Added
+
+- Candestick chart support has been added. You can press 'c' to toggle between
+  line and candlestick charts ([#75])
+  - You can also pass the `--candle` flag on startup, or specify `candle: true`
+    in the config file to launch with candlestick charting enabled
+
 ## [0.12.0] - 2021-02-17
 
 ### Added
@@ -96,3 +103,4 @@ and `Removed`.
 [#66]: https://github.com/tarkah/tickrs/pull/66
 [#67]: https://github.com/tarkah/tickrs/pull/67
 [#69]: https://github.com/tarkah/tickrs/pull/69
+[#75]: https://github.com/tarkah/tickrs/pull/75
