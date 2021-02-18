@@ -20,6 +20,11 @@ macro_rules! def_theme_struct_with_defaults {
                     self.$name.unwrap_or($color)
                 }
             )+
+            pub fn zip(self) -> Self {
+                Self {
+                    $( $name: self.$name.or(Some($color)), )+
+                }
+            }
         }
         impl Default for Theme {
             fn default() -> Theme {
