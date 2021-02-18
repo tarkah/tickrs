@@ -16,8 +16,7 @@ use tui::widgets::{
 };
 
 use crate::common::{
-    cast_as_dataset, cast_historical_as_price, remove_zeros_lows, zeros_as_pre, Price, TimeFrame,
-    TradingPeriod,
+    cast_as_dataset, cast_historical_as_price, zeros_as_pre, Price, TimeFrame, TradingPeriod,
 };
 use crate::draw::{add_padding, PaddingDirection};
 use crate::widget::StockState;

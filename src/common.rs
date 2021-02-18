@@ -281,11 +281,3 @@ pub fn zeros_as_pre(prices: &mut [f64]) {
         }
     }
 }
-
-pub fn remove_zeros(prices: Vec<f64>) -> Vec<f64> {
-    prices.into_iter().filter(|x| x.ne(&0.0)).collect()
-}
-
-pub fn remove_zeros_lows(prices: Vec<Price>) -> Vec<Price> {
-    prices.into_iter().filter(|x| x.low.ne(&0.0)).collect()
-}
