@@ -1,23 +1,12 @@
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-
-use std::convert::identity;
-use std::fmt::LowerExp;
-
 use itertools::Itertools;
 use tui::buffer::Buffer;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::Style;
-use tui::symbols::Marker;
-use tui::text::{Span, Spans};
+use tui::text::Span;
 use tui::widgets::canvas::{Canvas, Line, Rectangle};
-use tui::widgets::{
-    Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Widget,
-};
+use tui::widgets::{Block, Borders, StatefulWidget, Widget};
 
-use crate::common::{
-    cast_as_dataset, cast_historical_as_price, zeros_as_pre, Price, TimeFrame, TradingPeriod,
-};
+use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::widget::StockState;
 use crate::{HIDE_PREV_CLOSE, THEME};
@@ -65,7 +54,16 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
 
         let (min, max) = state.min_max(&data);
         let (start, end) = state.start_end();
-        let x_bounds = state.x_bounds(start, end, &data);
+
+        // x_layout[0] - chart + y labels
+        // x_layout[1] - (x labels)
+        let x_layout = Layout::default()
+            .constraints(if self.show_x_labels {
+                &[Constraint::Min(0), Constraint::Length(1)][..]
+            } else {
+                &[Constraint::Min(0)][..]
+            })
+            .split(area);
 
         // layout[0] - Y lables
         // layout[1] - chart
@@ -85,44 +83,64 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
                 }),
                 Constraint::Min(0),
             ])
-            .split(area);
+            .split(x_layout[0]);
 
-        // Draw labels
-        {
-            Block::default()
-                .borders(Borders::RIGHT)
-                .border_style(Style::default().fg(THEME.border_axis))
-                .render(layout[0], buf);
-            layout[0] = add_padding(layout[0], 1, PaddingDirection::Right);
+        // Fix for border render
+        layout[1].x -= 1;
+        layout[1].width += 1;
 
-            let mut y_labels = state.y_labels(min, max);
+        // Draw x labels
+        if self.show_x_labels {
+            // Fix for y label render
+            layout[0] = add_padding(layout[0], 1, PaddingDirection::Bottom);
 
-            let height = layout[0].height as usize;
-            let top = 0;
-            let mid = (height - 1) / 2;
-            let bottom = height - 1;
+            let mut x_area = x_layout[1];
+            x_area.x = layout[1].x + 1;
+            x_area.width = layout[1].width - 1;
 
-            let mut labels = vec![Spans::default(); height];
-            if let Some(label) = labels.get_mut(top) {
-                *label = Spans::from(y_labels.pop().unwrap());
+            let labels = state.x_labels(area.width, start, end, &data);
+            let total_width = labels.iter().map(Span::width).sum::<usize>() as u16;
+            let labels_len = labels.len() as u16;
+            if total_width < x_area.width && labels_len > 1 {
+                for (i, label) in labels.iter().enumerate() {
+                    buf.set_span(
+                        x_area.left() + i as u16 * (x_area.width - 1) / (labels_len - 1)
+                            - label.width() as u16,
+                        x_area.top(),
+                        label,
+                        label.width() as u16,
+                    );
+                }
             }
-            if let Some(label) = labels.get_mut(mid) {
-                *label = Spans::from(y_labels.pop().unwrap());
-            }
-            if let Some(label) = labels.get_mut(bottom) {
-                *label = Spans::from(y_labels.pop().unwrap());
-            }
-
-            Paragraph::new(labels).render(layout[0], buf);
         }
 
-        let width = area.width;
+        // Draw y labels
+        {
+            let y_area = layout[0];
+
+            let labels = state.y_labels(min, max);
+            let labels_len = labels.len() as u16;
+            for (i, label) in labels.iter().enumerate() {
+                let dy = i as u16 * (y_area.height - 1) / (labels_len - 1);
+                if dy < y_area.bottom() {
+                    buf.set_span(
+                        y_area.left(),
+                        y_area.bottom() - 1 - dy,
+                        label,
+                        label.width() as u16,
+                    );
+                }
+            }
+        }
+
+        let width = layout[1].width - 1;
         let num_candles = width / 2;
-        let chunk_size = (x_bounds[1] / num_candles as f64).ceil() as usize;
 
         let candles = data
             .iter()
-            .chunks(chunk_size)
+            .map(|p| vec![*p; num_candles as usize])
+            .flatten()
+            .chunks(data.len())
             .into_iter()
             .map(|c| {
                 let prices = c.filter(|p| p.close.gt(&0.0)).collect::<Vec<_>>();
@@ -154,6 +172,15 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
             .collect::<Vec<_>>();
 
         Canvas::default()
+            .block(
+                Block::default()
+                    .borders(if self.show_x_labels {
+                        Borders::LEFT | Borders::BOTTOM
+                    } else {
+                        Borders::LEFT
+                    })
+                    .border_style(Style::default().fg(THEME.border_axis)),
+            )
             .x_bounds([0.0, num_candles as f64 * 4.0])
             .y_bounds(state.y_bounds(min, max))
             .paint(move |ctx| {
@@ -162,8 +189,6 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
                     && !*HIDE_PREV_CLOSE
                     && state.prev_close_price.is_some()
                 {
-                    let num_points = (end - start) / 60 + 1;
-
                     ctx.draw(&Line {
                         x1: 0.0,
                         x2: num_candles as f64 * 4.0,
