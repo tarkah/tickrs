@@ -54,6 +54,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
 
         let (min, max) = state.min_max(&data);
         let (start, end) = state.start_end();
+        let x_bounds = state.x_bounds(start, end, &data);
 
         // x_layout[0] - chart + y labels
         // x_layout[1] - (x labels)
@@ -140,7 +141,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
             .iter()
             .map(|p| vec![*p; num_candles as usize])
             .flatten()
-            .chunks(data.len())
+            .chunks(x_bounds[1] as usize)
             .into_iter()
             .map(|c| {
                 let prices = c.filter(|p| p.close.gt(&0.0)).collect::<Vec<_>>();

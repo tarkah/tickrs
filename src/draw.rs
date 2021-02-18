@@ -2,7 +2,7 @@ use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans, Text};
-use tui::widgets::{Block, Borders, Paragraph, Tabs, Wrap};
+use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 use tui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
@@ -300,6 +300,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     // Draw time frame & paging
     {
         layout[2] = add_padding(layout[2], 1, PaddingDirection::Left);
+        frame.render_widget(Clear, layout[2]);
 
         let offset = layout[2].height - 2;
         layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
