@@ -583,7 +583,7 @@ impl CachableWidget<StockState> for StockWidget {
         let chunks = Layout::default()
             .constraints(
                 [
-                    Constraint::Length(7),
+                    Constraint::Length(6),
                     Constraint::Min(0),
                     Constraint::Length(2),
                 ]
@@ -597,7 +597,7 @@ impl CachableWidget<StockState> for StockWidget {
             // info_chunks[1] - Toggle block
             let mut info_chunks = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Constraint::Min(0), Constraint::Length(15)].as_ref())
+                .constraints([Constraint::Min(23), Constraint::Length(29)].as_ref())
                 .split(chunks[0]);
             info_chunks[0] = add_padding(info_chunks[0], 1, PaddingDirection::Top);
 
@@ -677,16 +677,37 @@ impl CachableWidget<StockState> for StockWidget {
             if !*HIDE_TOGGLE {
                 let toggle_block = block::new(" Toggle ");
                 toggle_block.render(info_chunks[1], buf);
-                info_chunks[1] = add_padding(info_chunks[1], 2, PaddingDirection::Left);
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Top);
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Right);
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Bottom);
 
-                let mut toggle_info =
+                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::All);
+                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Left);
+
+                let toggle_chunks = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([
+                        Constraint::Length(12),
+                        Constraint::Length(2),
+                        Constraint::Length(12),
+                    ])
+                    .split(info_chunks[1]);
+
+                let mut left_info =
                     vec![Spans::from(Span::styled("Summary  's'", Style::default()))];
+                let mut right_info = vec![];
 
                 if loaded {
-                    toggle_info.push(Spans::from(Span::styled(
+                    left_info.push(Spans::from(Span::styled(
+                        format!(
+                            "{: <8} 'c'",
+                            if chart_type == ChartType::Line {
+                                "Candle"
+                            } else {
+                                "Line"
+                            }
+                        ),
+                        Style::default(),
+                    )));
+
+                    left_info.push(Spans::from(Span::styled(
                         "Volumes  'v'",
                         Style::default().bg(if show_volumes {
                             THEME.highlight_unfocused
@@ -695,7 +716,7 @@ impl CachableWidget<StockState> for StockWidget {
                         }),
                     )));
 
-                    toggle_info.push(Spans::from(Span::styled(
+                    left_info.push(Spans::from(Span::styled(
                         "X Labels 'x'",
                         Style::default().bg(if show_x_labels {
                             THEME.highlight_unfocused
@@ -704,7 +725,7 @@ impl CachableWidget<StockState> for StockWidget {
                         }),
                     )));
 
-                    toggle_info.push(Spans::from(Span::styled(
+                    right_info.push(Spans::from(Span::styled(
                         "Pre Post 'p'",
                         Style::default().bg(if enable_pre_post {
                             THEME.highlight_unfocused
@@ -715,7 +736,7 @@ impl CachableWidget<StockState> for StockWidget {
                 }
 
                 if state.options_enabled() && loaded {
-                    toggle_info.push(Spans::from(Span::styled(
+                    right_info.push(Spans::from(Span::styled(
                         "Options  'o'",
                         Style::default().bg(if state.show_options {
                             THEME.highlight_unfocused
@@ -725,14 +746,23 @@ impl CachableWidget<StockState> for StockWidget {
                     )));
                 }
 
-                Paragraph::new(toggle_info)
+                Paragraph::new(left_info)
                     .style(
                         Style::default()
                             .fg(THEME.text_normal)
                             .bg(THEME.background()),
                     )
                     .alignment(Alignment::Left)
-                    .render(info_chunks[1], buf);
+                    .render(toggle_chunks[0], buf);
+
+                Paragraph::new(right_info)
+                    .style(
+                        Style::default()
+                            .fg(THEME.text_normal)
+                            .bg(THEME.background()),
+                    )
+                    .alignment(Alignment::Left)
+                    .render(toggle_chunks[2], buf);
             }
         }
 
