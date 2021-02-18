@@ -130,7 +130,7 @@ impl StockState {
                 if max_time < start {
                     end.max(start)
                 } else {
-                    max_time
+                    max_time.min(end)
                 },
             );
 
