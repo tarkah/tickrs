@@ -68,12 +68,12 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         format!("{:<4}", loading_indicator)
                     }
                 ),
-                Style::default().fg(THEME.text_normal),
+                Style::default().fg(THEME.text_normal()),
             ))
             .borders(Borders::TOP)
             .border_style(
                 Style::default()
-                    .fg(THEME.border_secondary)
+                    .fg(THEME.border_secondary())
                     .bg(THEME.background()),
             )
             .render(area, buf);
@@ -93,7 +93,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
             let prices = vec![
                 Spans::from(vec![
-                    Span::styled("c: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("c: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2} {}", state.current_price(), currency)
@@ -102,37 +102,37 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         },
                         Style::default()
                             .add_modifier(Modifier::BOLD)
-                            .fg(THEME.text_primary),
+                            .fg(THEME.text_primary()),
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("h: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("h: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", high)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary),
+                        Style::default().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("l: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("l: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", low)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary),
+                        Style::default().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::default(),
                 Spans::from(vec![
-                    Span::styled("v: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("v: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
-                        Style::default().fg(THEME.text_secondary),
+                        Style::default().fg(THEME.text_secondary()),
                     ),
                 ]),
             ];
@@ -146,9 +146,9 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 Style::default()
                     .add_modifier(Modifier::BOLD)
                     .fg(if pct_change >= 0.0 {
-                        THEME.profit
+                        THEME.profit()
                     } else {
-                        THEME.loss
+                        THEME.loss()
                     }),
             )];
 
@@ -279,11 +279,11 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 .marker(Marker::Braille)
                 .style(Style::default().fg(
                     if trading_period != TradingPeriod::Regular && enable_pre_post {
-                        THEME.gray
+                        THEME.gray()
                     } else if pct_change >= 0.0 {
-                        THEME.profit
+                        THEME.profit()
                     } else {
-                        THEME.loss
+                        THEME.loss()
                     },
                 ))
                 .graph_type(graph_type)
@@ -295,11 +295,11 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         .marker(Marker::Braille)
                         .style(
                             Style::default().fg(if trading_period != TradingPeriod::Post {
-                                THEME.gray
+                                THEME.gray()
                             } else if pct_change >= 0.0 {
-                                THEME.profit
+                                THEME.profit()
                             } else {
-                                THEME.loss
+                                THEME.loss()
                             }),
                         )
                         .graph_type(GraphType::Line)
@@ -314,11 +314,11 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         .marker(Marker::Braille)
                         .style(
                             Style::default().fg(if trading_period != TradingPeriod::Pre {
-                                THEME.gray
+                                THEME.gray()
                             } else if pct_change >= 0.0 {
-                                THEME.profit
+                                THEME.profit()
                             } else {
-                                THEME.loss
+                                THEME.loss()
                             }),
                         )
                         .graph_type(GraphType::Line)
@@ -331,7 +331,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     0,
                     Dataset::default()
                         .marker(Marker::Braille)
-                        .style(Style::default().fg(THEME.gray))
+                        .style(Style::default().fg(THEME.gray()))
                         .graph_type(GraphType::Line)
                         .data(&data),
                 );
@@ -377,7 +377,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
                         Block::default()
                             .borders(Borders::LEFT)
-                            .border_style(Style::default().fg(THEME.border_axis))
+                            .border_style(Style::default().fg(THEME.border_axis()))
                             .render(volume_chunks, buf);
 
                         volume_chunks.x += 1;
@@ -385,7 +385,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         BarChart::default()
                             .bar_gap(0)
                             .bar_set(bar::NINE_LEVELS)
-                            .style(Style::default().fg(THEME.gray))
+                            .style(Style::default().fg(THEME.gray()))
                             .data(&volumes)
                             .render(volume_chunks, buf);
                     }
@@ -400,7 +400,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     Axis::default()
                         .bounds(state.y_bounds(min, max))
                         .labels(state.y_labels(min, max))
-                        .style(Style::default().fg(THEME.border_axis)),
+                        .style(Style::default().fg(THEME.border_axis())),
                 )
                 .render(graph_chunks[0], buf);
         }
