@@ -5,7 +5,7 @@ use self::de::deserialize_option_color_hex_string;
 
 macro_rules! def_theme_struct_with_defaults {
     ($($name:ident => $color:expr),+) => {
-        #[derive(Debug, Clone, Copy, Deserialize)]
+        #[derive(Clone, Copy, Deserialize)]
         pub struct Theme {
             $(
                 #[serde(deserialize_with = "deserialize_option_color_hex_string")]
@@ -20,7 +20,7 @@ macro_rules! def_theme_struct_with_defaults {
                     self.$name.unwrap_or($color)
                 }
             )+
-            pub fn zip(self) -> Self {
+            pub fn zip(&self) -> Self {
                 Self {
                     $( $name: self.$name.or(Some($color)), )+
                 }
@@ -31,6 +31,14 @@ macro_rules! def_theme_struct_with_defaults {
                 Self {
                     $( $name: Some($color), )+
                 }
+            }
+        }
+        impl std::fmt::Debug for Theme {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let me = self.zip();
+                f.debug_struct("Theme")
+                    $(.field(stringify!($name), &me.$name.ok_or(std::fmt::Error)?))+
+                    .finish()
             }
         }
     };
