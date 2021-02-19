@@ -42,7 +42,7 @@ def_theme_struct_with_defaults!(
     border_primary => Color::Blue,
     border_secondary => Color::Reset,
     border_axis => Color::Blue,
-    highlight_focused => Color::Yellow,
+    highlight_focused => Color::LightBlue,
     highlight_unfocused => Color::DarkGray
 );
 
