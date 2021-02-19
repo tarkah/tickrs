@@ -29,6 +29,7 @@ and `Removed`.
 ### Fixed
 
 - Fixed panic when width of terminal was too small on main stock screen ([4cc00d0](https://github.com/tarkah/tickrs/commit/4cc00d052c4bfff993587f1342086498ee8b2766))
+- Fix bug where cursor icon still shows in some terminals such as WSL2 on Windows with Alacritty ([#79])
 
 ## [0.12.0] - 2021-02-17
 
@@ -114,3 +115,4 @@ and `Removed`.
 [#69]: https://github.com/tarkah/tickrs/pull/69
 [#75]: https://github.com/tarkah/tickrs/pull/75
 [#76]: https://github.com/tarkah/tickrs/pull/76
+[#79]: https://github.com/tarkah/tickrs/pull/79

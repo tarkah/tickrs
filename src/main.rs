@@ -204,8 +204,8 @@ fn main() {
 fn setup_terminal() {
     let mut stdout = io::stdout();
 
-    execute!(stdout, terminal::EnterAlternateScreen).unwrap();
     execute!(stdout, cursor::Hide).unwrap();
+    execute!(stdout, terminal::EnterAlternateScreen).unwrap();
 
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
 
