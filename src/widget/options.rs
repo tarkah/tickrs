@@ -269,7 +269,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             let call_put_selector = vec![
                 Span::styled(
                     "Call",
-                    Style::default().fg(THEME.profit).add_modifier(
+                    Style::default().fg(THEME.profit()).add_modifier(
                         if state.selected_type == OptionType::Call {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -280,7 +280,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 Span::styled(" | ", Style::default()),
                 Span::styled(
                     "Put",
-                    Style::default().fg(THEME.loss).add_modifier(
+                    Style::default().fg(THEME.loss()).add_modifier(
                         if state.selected_type == OptionType::Put {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -294,7 +294,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Right);
 
             Block::default()
-                .style(Style::default().fg(THEME.border_secondary))
+                .style(Style::default().fg(THEME.border_secondary()))
                 .borders(Borders::BOTTOM)
                 .render(chunks[0], buf);
 
@@ -303,7 +303,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             Paragraph::new(Spans::from(call_put_selector))
                 .style(
                     Style::default()
-                        .fg(THEME.text_normal)
+                        .fg(THEME.text_normal())
                         .bg(THEME.background()),
                 )
                 .alignment(Alignment::Center)
@@ -322,7 +322,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             selector_chunks[0] = add_padding(selector_chunks[0], 1, PaddingDirection::Left);
 
             Block::default()
-                .style(Style::default().fg(THEME.border_secondary))
+                .style(Style::default().fg(THEME.border_secondary()))
                 .borders(Borders::RIGHT)
                 .render(selector_chunks[0], buf);
             selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Right);
@@ -342,14 +342,14 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             let list = List::new(dates)
                 .style(
                     Style::default()
-                        .fg(THEME.text_normal)
+                        .fg(THEME.text_normal())
                         .bg(THEME.background()),
                 )
                 .highlight_style(Style::default().bg(
                     if state.selection_mode == SelectionMode::Dates {
-                        THEME.highlight_focused
+                        THEME.highlight_focused()
                     } else {
-                        THEME.highlight_unfocused
+                        THEME.highlight_unfocused()
                     },
                 ));
 
@@ -364,7 +364,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
 
             Paragraph::new(Span::styled(
                 "Date",
-                Style::default().fg(THEME.text_secondary),
+                Style::default().fg(THEME.text_secondary()),
             ))
             .render(selector_chunks[0], buf);
 
@@ -391,31 +391,31 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         Cell::from(format!("{: >7.2}%", d.percent_change)),
                     ])
                     .style(Style::default().fg(if d.percent_change >= 0.0 {
-                        THEME.profit
+                        THEME.profit()
                     } else {
-                        THEME.loss
+                        THEME.loss()
                     }))
                 });
 
                 let table = Table::new(rows)
                     .header(
                         Row::new(vec!["Strike", "Price", "% Change"])
-                            .style(Style::default().fg(THEME.text_secondary))
+                            .style(Style::default().fg(THEME.text_secondary()))
                             .bottom_margin(1),
                     )
                     .style(
                         Style::default()
-                            .fg(THEME.text_normal)
+                            .fg(THEME.text_normal())
                             .bg(THEME.background()),
                     )
                     .highlight_style(
                         Style::default()
                             .bg(if state.selection_mode == SelectionMode::Options {
-                                THEME.highlight_focused
+                                THEME.highlight_focused()
                             } else {
-                                THEME.highlight_unfocused
+                                THEME.highlight_unfocused()
                             })
-                            .fg(THEME.text_normal),
+                            .fg(THEME.text_normal()),
                     )
                     .widths(&[
                         Constraint::Length(8),
@@ -441,7 +441,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             chunks[1] = add_padding(chunks[1], 1, PaddingDirection::Right);
 
             Block::default()
-                .style(Style::default().fg(THEME.border_secondary))
+                .style(Style::default().fg(THEME.border_secondary()))
                 .borders(Borders::BOTTOM)
                 .render(chunks[1], buf);
 
@@ -547,14 +547,14 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                     Paragraph::new(column_0)
                         .style(
                             Style::default()
-                                .fg(THEME.text_normal)
+                                .fg(THEME.text_normal())
                                 .bg(THEME.background()),
                         )
                         .render(columns[0], buf);
                     Paragraph::new(column_1)
                         .style(
                             Style::default()
-                                .fg(THEME.text_normal)
+                                .fg(THEME.text_normal())
                                 .bg(THEME.background()),
                         )
                         .render(columns[1], buf);

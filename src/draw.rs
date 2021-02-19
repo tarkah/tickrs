@@ -127,8 +127,8 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             frame.render_widget(
                 Tabs::new(tabs)
                     .select(app.current_tab)
-                    .style(Style::default().fg(THEME.text_secondary))
-                    .highlight_style(Style::default().fg(THEME.text_primary)),
+                    .style(Style::default().fg(THEME.text_secondary()))
+                    .highlight_style(Style::default().fg(THEME.text_primary())),
                 header[0],
             );
         }
@@ -139,7 +139,7 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
                 Paragraph::new(Text::styled("Help '?'", Style::default()))
                     .style(
                         Style::default()
-                            .fg(THEME.text_normal)
+                            .fg(THEME.text_normal())
                             .bg(THEME.background()),
                     )
                     .alignment(Alignment::Center),
@@ -275,7 +275,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
             Paragraph::new(Text::styled("Help '?'", Style::default()))
                 .style(
                     Style::default()
-                        .fg(THEME.text_normal)
+                        .fg(THEME.text_normal())
                         .bg(THEME.background()),
                 )
                 .alignment(Alignment::Center),
@@ -308,7 +308,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         frame.render_widget(
             Block::default().borders(Borders::TOP).border_style(
                 Style::default()
-                    .fg(THEME.border_secondary)
+                    .fg(THEME.border_secondary())
                     .bg(THEME.background()),
             ),
             layout[2],
@@ -330,8 +330,8 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
 
         let tabs = Tabs::new(time_frames)
             .select(app.summary_time_frame.idx())
-            .style(Style::default().fg(THEME.text_secondary))
-            .highlight_style(Style::default().fg(THEME.text_primary));
+            .style(Style::default().fg(THEME.text_secondary()))
+            .highlight_style(Style::default().fg(THEME.text_primary()));
 
         frame.render_widget(tabs, bottom_layout[0]);
 
@@ -341,17 +341,17 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         let up_arrow = Span::styled(
             "ᐱ",
             Style::default().fg(if more_up {
-                THEME.text_normal
+                THEME.text_normal()
             } else {
-                THEME.gray
+                THEME.gray()
             }),
         );
         let down_arrow = Span::styled(
             "ᐯ",
             Style::default().fg(if more_down {
-                THEME.text_normal
+                THEME.text_normal()
             } else {
-                THEME.gray
+                THEME.gray()
             }),
         );
 

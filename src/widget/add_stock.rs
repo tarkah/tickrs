@@ -50,20 +50,22 @@ impl StatefulWidget for AddStockWidget {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let spans = if !state.has_user_input && state.error_msg.is_some() {
             Spans::from(vec![
-                Span::styled("> ", Style::default().fg(THEME.text_normal)),
+                Span::styled("> ", Style::default().fg(THEME.text_normal())),
                 Span::styled(
                     state.error_msg.as_ref().unwrap(),
-                    Style::default().add_modifier(Modifier::BOLD).fg(THEME.loss),
+                    Style::default()
+                        .add_modifier(Modifier::BOLD)
+                        .fg(THEME.loss()),
                 ),
             ])
         } else {
             Spans::from(vec![
-                Span::styled("> ", Style::default().fg(THEME.text_normal)),
+                Span::styled("> ", Style::default().fg(THEME.text_normal())),
                 Span::styled(
                     &state.search_string,
                     Style::default()
                         .add_modifier(Modifier::BOLD)
-                        .fg(THEME.text_secondary),
+                        .fg(THEME.text_secondary()),
                 ),
             ])
         };

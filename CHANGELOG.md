@@ -21,6 +21,11 @@ and `Removed`.
   - You can also pass the `--candle` flag on startup, or specify `candle: true`
     in the config file to launch with candlestick charting enabled
 
+### Changed
+
+- All theme colors are now optional and can be selectively included / omitted from
+  the theme config ([#76])
+
 ### Fixed
 
 - Fixed panic when width of terminal was too small on main stock screen ([4cc00d0](https://github.com/tarkah/tickrs/commit/4cc00d052c4bfff993587f1342086498ee8b2766))
@@ -108,3 +113,4 @@ and `Removed`.
 [#67]: https://github.com/tarkah/tickrs/pull/67
 [#69]: https://github.com/tarkah/tickrs/pull/69
 [#75]: https://github.com/tarkah/tickrs/pull/75
+[#76]: https://github.com/tarkah/tickrs/pull/76

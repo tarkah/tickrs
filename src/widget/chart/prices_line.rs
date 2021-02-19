@@ -144,11 +144,11 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                 Style::default()
                     .fg(
                         if trading_period != TradingPeriod::Regular && self.enable_pre_post {
-                            THEME.gray
+                            THEME.gray()
                         } else if self.is_profit {
-                            THEME.profit
+                            THEME.profit()
                         } else {
-                            THEME.loss
+                            THEME.loss()
                         },
                     )
                     .bg(THEME.background()),
@@ -163,11 +163,11 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                     .style(
                         Style::default()
                             .fg(if trading_period != TradingPeriod::Post {
-                                THEME.gray
+                                THEME.gray()
                             } else if self.is_profit {
-                                THEME.profit
+                                THEME.profit()
                             } else {
-                                THEME.loss
+                                THEME.loss()
                             })
                             .bg(THEME.background()),
                     )
@@ -184,11 +184,11 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                     .style(
                         Style::default()
                             .fg(if trading_period != TradingPeriod::Pre {
-                                THEME.gray
+                                THEME.gray()
                             } else if self.is_profit {
-                                THEME.profit
+                                THEME.profit()
                             } else {
-                                THEME.loss
+                                THEME.loss()
                             })
                             .bg(THEME.background()),
                     )
@@ -202,7 +202,7 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                 0,
                 Dataset::default()
                     .marker(Marker::Braille)
-                    .style(Style::default().fg(THEME.gray).bg(THEME.background()))
+                    .style(Style::default().fg(THEME.gray()).bg(THEME.background()))
                     .graph_type(GraphType::Line)
                     .data(&data),
             );
@@ -215,7 +215,7 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
 
                 if self.show_x_labels && self.loaded && !self.is_summary {
                     axis.labels(x_labels)
-                        .style(Style::default().fg(THEME.border_axis))
+                        .style(Style::default().fg(THEME.border_axis()))
                 } else {
                     axis
                 }
@@ -224,13 +224,13 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                 Axis::default()
                     .bounds(state.y_bounds(min, max))
                     .labels(state.y_labels(min, max))
-                    .style(Style::default().fg(THEME.border_axis)),
+                    .style(Style::default().fg(THEME.border_axis())),
             );
 
         if !self.is_summary {
             chart = chart.block(
                 Block::default()
-                    .style(Style::default().fg(THEME.border_secondary))
+                    .style(Style::default().fg(THEME.border_secondary()))
                     .borders(Borders::TOP)
                     .border_style(Style::default()),
             );

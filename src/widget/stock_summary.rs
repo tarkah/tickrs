@@ -66,12 +66,12 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         format!("{:<4}", loading_indicator)
                     }
                 ),
-                Style::default().fg(THEME.text_normal),
+                Style::default().fg(THEME.text_normal()),
             ))
             .borders(Borders::TOP)
             .border_style(
                 Style::default()
-                    .fg(THEME.border_secondary)
+                    .fg(THEME.border_secondary())
                     .bg(THEME.background()),
             )
             .render(area, buf);
@@ -91,7 +91,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
             let prices = vec![
                 Spans::from(vec![
-                    Span::styled("c: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("c: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2} {}", state.current_price(), currency)
@@ -100,37 +100,37 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         },
                         Style::default()
                             .add_modifier(Modifier::BOLD)
-                            .fg(THEME.text_primary),
+                            .fg(THEME.text_primary()),
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("h: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("h: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", high)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary),
+                        Style::default().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("l: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("l: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", low)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary),
+                        Style::default().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::default(),
                 Spans::from(vec![
-                    Span::styled("v: ", Style::default().fg(THEME.text_normal)),
+                    Span::styled("v: ", Style::default().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
-                        Style::default().fg(THEME.text_secondary),
+                        Style::default().fg(THEME.text_secondary()),
                     ),
                 ]),
             ];
@@ -144,9 +144,9 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 Style::default()
                     .add_modifier(Modifier::BOLD)
                     .fg(if pct_change >= 0.0 {
-                        THEME.profit
+                        THEME.profit()
                     } else {
-                        THEME.loss
+                        THEME.loss()
                     }),
             )];
 

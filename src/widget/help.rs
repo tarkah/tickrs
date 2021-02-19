@@ -84,7 +84,7 @@ impl Widget for HelpWidget {
             .map(|line| {
                 Spans::from(Span::styled(
                     format!("{}\n", line),
-                    Style::default().fg(THEME.text_normal),
+                    Style::default().fg(THEME.text_normal()),
                 ))
             })
             .collect();
@@ -94,7 +94,7 @@ impl Widget for HelpWidget {
             .map(|line| {
                 Spans::from(Span::styled(
                     format!("{}\n", line),
-                    Style::default().fg(THEME.text_normal),
+                    Style::default().fg(THEME.text_normal()),
                 ))
             })
             .collect();
