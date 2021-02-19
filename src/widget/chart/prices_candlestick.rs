@@ -31,7 +31,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
 
     #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        if area.width <= 9 || area.height <= 3 || !self.loaded {
+        if area.width <= 9 || area.height <= 3 {
             return;
         }
 
@@ -87,11 +87,11 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
             .split(x_layout[0]);
 
         // Fix for border render
-        layout[1].x -= 1;
+        layout[1].x = layout[1].x.saturating_sub(1);
         layout[1].width += 1;
 
         // Draw x labels
-        if self.show_x_labels {
+        if self.show_x_labels && self.loaded {
             // Fix for y label render
             layout[0] = add_padding(layout[0], 1, PaddingDirection::Bottom);
 
@@ -116,7 +116,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
         }
 
         // Draw y labels
-        {
+        if self.loaded {
             let y_area = layout[0];
 
             let labels = state.y_labels(min, max);

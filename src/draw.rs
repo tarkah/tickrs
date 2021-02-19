@@ -393,28 +393,28 @@ pub fn add_padding(mut rect: Rect, n: u16, direction: PaddingDirection) -> Rect 
     match direction {
         PaddingDirection::Top => {
             rect.y += n;
-            rect.height -= n;
+            rect.height = rect.height.saturating_sub(n);
             rect
         }
         PaddingDirection::Bottom => {
-            rect.height -= n;
+            rect.height = rect.height.saturating_sub(n);
             rect
         }
         PaddingDirection::Left => {
             rect.x += n;
-            rect.width -= n;
+            rect.width = rect.width.saturating_sub(n);
             rect
         }
         PaddingDirection::Right => {
-            rect.width -= n;
+            rect.width = rect.width.saturating_sub(n);
             rect
         }
         PaddingDirection::All => {
             rect.y += n;
-            rect.height -= n * 2;
+            rect.height = rect.height.saturating_sub(n * 2);
 
             rect.x += n;
-            rect.width -= n * 2;
+            rect.width = rect.width.saturating_sub(n * 2);
 
             rect
         }

@@ -35,7 +35,7 @@ impl<'a> StatefulWidget for VolumeBarChart<'a> {
             9
         };
         volume_chunks.x += x_offset;
-        volume_chunks.width -= x_offset + 1;
+        volume_chunks.width = volume_chunks.width.saturating_sub(x_offset + 1);
 
         let width = volume_chunks.width;
         let num_bars = width as usize;
@@ -54,7 +54,7 @@ impl<'a> StatefulWidget for VolumeBarChart<'a> {
                 .map(|c| ("", c.sum::<u64>() / vol_count as u64))
                 .collect::<Vec<_>>();
 
-            volume_chunks.x -= 1;
+            volume_chunks.x = volume_chunks.x.saturating_sub(1);
 
             Block::default()
                 .borders(Borders::LEFT)
