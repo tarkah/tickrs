@@ -162,7 +162,7 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         };
 
         match app.mode {
-            Mode::DisplayStock => {
+            Mode::DisplayStock | Mode::AddStock => {
                 frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
             }
             // If width is too small, don't render stock widget and use entire space
