@@ -1,61 +1,50 @@
 use serde::Deserialize;
 use tui::style::Color;
 
-use self::de::{deserialize_color_hex_string, deserialize_option_color_hex_string};
+use self::de::deserialize_option_color_hex_string;
 
-#[derive(Debug, Clone, Copy, Deserialize)]
-pub struct Theme {
-    #[serde(deserialize_with = "deserialize_option_color_hex_string")]
-    #[serde(default)]
-    background: Option<Color>,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub gray: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub profit: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub loss: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub text_normal: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub text_primary: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub text_secondary: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub border_primary: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub border_secondary: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub border_axis: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub highlight_focused: Color,
-    #[serde(deserialize_with = "deserialize_color_hex_string")]
-    pub highlight_unfocused: Color,
-}
-
-impl Theme {
-    pub fn background(self) -> Color {
-        self.background.unwrap_or(Color::Reset)
-    }
-}
-
-impl Default for Theme {
-    fn default() -> Self {
-        Theme {
-            background: None,
-            gray: Color::DarkGray,
-            profit: Color::Green,
-            loss: Color::Red,
-            text_normal: Color::Reset,
-            text_primary: Color::Yellow,
-            text_secondary: Color::Cyan,
-            border_primary: Color::Blue,
-            border_secondary: Color::Reset,
-            border_axis: Color::Blue,
-            highlight_focused: Color::Yellow,
-            highlight_unfocused: Color::DarkGray,
+macro_rules! def_theme_struct_with_defaults {
+    ($($name:ident => $color:expr),+) => {
+        #[derive(Debug, Clone, Copy, Deserialize)]
+        pub struct Theme {
+            $(
+                #[serde(deserialize_with = "deserialize_option_color_hex_string")]
+                #[serde(default)]
+                $name: Option<Color>,
+            )+
         }
-    }
+        impl Theme {
+            $(
+                #[inline]
+                pub fn $name(self) -> Color {
+                    self.$name.unwrap_or($color)
+                }
+            )+
+        }
+        impl Default for Theme {
+            fn default() -> Theme {
+                Self {
+                    $( $name: Some($color), )+
+                }
+            }
+        }
+    };
 }
+
+def_theme_struct_with_defaults!(
+    background => Color::Reset,
+    gray => Color::DarkGray,
+    profit => Color::Green,
+    loss => Color::Red,
+    text_normal => Color::Reset,
+    text_primary => Color::Yellow,
+    text_secondary => Color::Cyan,
+    border_primary => Color::Blue,
+    border_secondary => Color::Reset,
+    border_axis => Color::Blue,
+    highlight_focused => Color::Yellow,
+    highlight_unfocused => Color::DarkGray
+);
 
 fn hex_to_color(hex: &str) -> Option<Color> {
     if hex.len() == 7 {
@@ -79,35 +68,6 @@ mod de {
     use serde::de::{self, Error, Unexpected, Visitor};
 
     use super::{hex_to_color, Color};
-
-    pub(crate) fn deserialize_color_hex_string<'de, D>(deserializer: D) -> Result<Color, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        struct ColorVisitor;
-
-        impl<'de> Visitor<'de> for ColorVisitor {
-            type Value = Color;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a hex string in the format of '#09ACDF'")
-            }
-
-            #[allow(clippy::unnecessary_unwrap)]
-            fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                if let Some(color) = hex_to_color(s) {
-                    return Ok(color);
-                }
-
-                Err(de::Error::invalid_value(Unexpected::Str(s), &self))
-            }
-        }
-
-        deserializer.deserialize_any(ColorVisitor)
-    }
 
     pub(crate) fn deserialize_option_color_hex_string<'de, D>(
         deserializer: D,
