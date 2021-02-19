@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Changed
+
+- All theme colors are now optional and can be selectively included / omitted from
+  the theme config ([#76])
+
 ## [0.12.0] - 2021-02-17
 
 ### Added
@@ -96,3 +101,4 @@ and `Removed`.
 [#66]: https://github.com/tarkah/tickrs/pull/66
 [#67]: https://github.com/tarkah/tickrs/pull/67
 [#69]: https://github.com/tarkah/tickrs/pull/69
+[#76]: https://github.com/tarkah/tickrs/pull/76

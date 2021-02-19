@@ -160,9 +160,11 @@ const DEFAULT_CONFIG: &str = "---
 #trunc_pre: true
 
 # Apply a custom theme
+#
+# All colors are optional. If commented out / omitted, the color will get sourced
+# from your terminal color scheme
 #theme:
-#  # Background is optional, otherwise it'll use your terminals background color
-#  #background: '#403E41'
+#  background: '#403E41'
 #  gray: '#727072'
 #  profit: '#ADD977'
 #  loss: '#FA648A'
