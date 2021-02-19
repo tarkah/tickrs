@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.13.0] - 2021-02-19
+
 ### Added
 
 - Candestick chart support has been added. You can press 'c' to toggle between
