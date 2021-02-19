@@ -172,69 +172,81 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
             })
             .collect::<Vec<_>>();
 
-        Canvas::default()
-            .block(
-                Block::default()
-                    .borders(if self.show_x_labels {
-                        Borders::LEFT | Borders::BOTTOM
-                    } else {
-                        Borders::LEFT
-                    })
-                    .border_style(Style::default().fg(THEME.border_axis())),
-            )
-            .x_bounds([0.0, num_candles as f64 * 4.0])
-            .y_bounds(state.y_bounds(min, max))
-            .paint(move |ctx| {
-                if state.time_frame == TimeFrame::Day1
-                    && self.loaded
-                    && !*HIDE_PREV_CLOSE
-                    && state.prev_close_price.is_some()
-                {
-                    ctx.draw(&Line {
-                        x1: 0.0,
-                        x2: num_candles as f64 * 4.0,
-                        y1: state.prev_close_price.unwrap(),
-                        y2: state.prev_close_price.unwrap(),
-                        color: THEME.gray(),
-                    })
-                }
-
-                ctx.layer();
-
-                for (idx, candle) in candles.iter().enumerate() {
-                    if let Some(candle) = candle {
-                        let color = if candle.close.gt(&candle.open) {
-                            THEME.profit()
+        if self.loaded {
+            Canvas::default()
+                .block(
+                    Block::default()
+                        .borders(if self.show_x_labels {
+                            Borders::LEFT | Borders::BOTTOM
                         } else {
-                            THEME.loss()
-                        };
-
-                        ctx.draw(&Rectangle {
-                            x: idx as f64 * 4.0 + 1.0,
-                            y: candle.open.min(candle.close),
-                            width: 2.0,
-                            height: candle.open.max(candle.close) - candle.open.min(candle.close),
-                            color,
-                        });
-
+                            Borders::LEFT
+                        })
+                        .border_style(Style::default().fg(THEME.border_axis())),
+                )
+                .x_bounds([0.0, num_candles as f64 * 4.0])
+                .y_bounds(state.y_bounds(min, max))
+                .paint(move |ctx| {
+                    if state.time_frame == TimeFrame::Day1
+                        && self.loaded
+                        && !*HIDE_PREV_CLOSE
+                        && state.prev_close_price.is_some()
+                    {
                         ctx.draw(&Line {
-                            x1: idx as f64 * 4.0 + 2.0,
-                            x2: idx as f64 * 4.0 + 2.0,
-                            y1: candle.low,
-                            y2: candle.open.min(candle.close),
-                            color,
-                        });
-
-                        ctx.draw(&Line {
-                            x1: idx as f64 * 4.0 + 2.0,
-                            x2: idx as f64 * 4.0 + 2.0,
-                            y1: candle.high,
-                            y2: candle.open.max(candle.close),
-                            color,
-                        });
+                            x1: 0.0,
+                            x2: num_candles as f64 * 4.0,
+                            y1: state.prev_close_price.unwrap(),
+                            y2: state.prev_close_price.unwrap(),
+                            color: THEME.gray(),
+                        })
                     }
-                }
-            })
-            .render(layout[1], buf);
+
+                    ctx.layer();
+
+                    for (idx, candle) in candles.iter().enumerate() {
+                        if let Some(candle) = candle {
+                            let color = if candle.close.gt(&candle.open) {
+                                THEME.profit()
+                            } else {
+                                THEME.loss()
+                            };
+
+                            ctx.draw(&Rectangle {
+                                x: idx as f64 * 4.0 + 1.0,
+                                y: candle.open.min(candle.close),
+                                width: 2.0,
+                                height: candle.open.max(candle.close)
+                                    - candle.open.min(candle.close),
+                                color,
+                            });
+
+                            ctx.draw(&Line {
+                                x1: idx as f64 * 4.0 + 2.0,
+                                x2: idx as f64 * 4.0 + 2.0,
+                                y1: candle.low,
+                                y2: candle.open.min(candle.close),
+                                color,
+                            });
+
+                            ctx.draw(&Line {
+                                x1: idx as f64 * 4.0 + 2.0,
+                                x2: idx as f64 * 4.0 + 2.0,
+                                y1: candle.high,
+                                y2: candle.open.max(candle.close),
+                                color,
+                            });
+                        }
+                    }
+                })
+                .render(layout[1], buf);
+        } else {
+            Block::default()
+                .borders(if self.show_x_labels {
+                    Borders::LEFT | Borders::BOTTOM
+                } else {
+                    Borders::LEFT
+                })
+                .border_style(Style::default().fg(THEME.border_axis()))
+                .render(layout[1], buf);
+        }
     }
 }
