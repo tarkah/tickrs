@@ -43,6 +43,7 @@ USAGE:
     tickrs [FLAGS] [OPTIONS]
 
 FLAGS:
+        --candle             Use candlestick charts
     -p, --enable-pre-post    Enable pre / post market hours for graphs
     -h, --help               Prints help information
         --hide-help          Hide help icon in top right
@@ -57,7 +58,7 @@ FLAGS:
 OPTIONS:
     -s, --symbols <symbols>...                 Comma separated list of ticker symbols to start app with
     -t, --time-frame <time-frame>              Use specified time frame when starting program and when new stocks are
-                                               added [default: 1D]  [possible values: 1D, 1W, 1M, 3M, 6M, 1Y, 5Y]
+                                               added [default: 1D] [possible values: 1D, 1W, 1M, 3M, 6M, 1Y, 5Y]
     -i, --update-interval <update-interval>    Interval to update data from API (seconds) [default: 1]
 ```
 
