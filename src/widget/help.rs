@@ -26,14 +26,14 @@ Reorder Current Tab:
 Change Time Frame:
   - <Right>: next time frame
   - <Left>: previous time frame
+"#;
+
+const RIGHT_TEXT: &str = r#"
 Graphing Display:
   - c: toggle candlestick chart
   - p: toggle pre / post market
   - v: toggle volumes graph
   - x: toggle labels
-"#;
-
-const RIGHT_TEXT: &str = r#"
 Toggle Options Pane:
   - o: toggle pane
   - <Escape>: close pane
@@ -48,7 +48,7 @@ Toggle Summary Pane:
 const LEFT_WIDTH: usize = 34;
 const RIGHT_WIDTH: usize = 33;
 pub const HELP_WIDTH: usize = LEFT_WIDTH + RIGHT_WIDTH + 4;
-pub const HELP_HEIGHT: usize = 23 + 2;
+pub const HELP_HEIGHT: usize = 18 + 2;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
