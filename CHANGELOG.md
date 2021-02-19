@@ -14,10 +14,21 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Added
+
+- Candestick chart support has been added. You can press 'c' to toggle between
+  line and candlestick charts ([#75])
+  - You can also pass the `--candle` flag on startup, or specify `candle: true`
+    in the config file to launch with candlestick charting enabled
+
 ### Changed
 
 - All theme colors are now optional and can be selectively included / omitted from
   the theme config ([#76])
+
+### Fixed
+
+- Fixed panic when width of terminal was too small on main stock screen ([4cc00d0](https://github.com/tarkah/tickrs/commit/4cc00d052c4bfff993587f1342086498ee8b2766))
 
 ## [0.12.0] - 2021-02-17
 
@@ -101,4 +112,5 @@ and `Removed`.
 [#66]: https://github.com/tarkah/tickrs/pull/66
 [#67]: https://github.com/tarkah/tickrs/pull/67
 [#69]: https://github.com/tarkah/tickrs/pull/69
+[#75]: https://github.com/tarkah/tickrs/pull/75
 [#76]: https://github.com/tarkah/tickrs/pull/76

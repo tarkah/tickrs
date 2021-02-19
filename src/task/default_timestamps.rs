@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::convert::identity;
 
 use async_std::sync::Arc;
 use futures::future::{join_all, BoxFuture};
@@ -45,13 +44,7 @@ impl AsyncTask for DefaultTimestamps {
                 }
             });
 
-            Some(
-                join_all(tasks)
-                    .await
-                    .into_iter()
-                    .filter_map(identity)
-                    .collect(),
-            )
+            Some(join_all(tasks).await.into_iter().flatten().collect())
         })
     }
 }

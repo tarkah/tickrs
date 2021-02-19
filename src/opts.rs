@@ -17,6 +17,7 @@ pub fn resolve_opts() -> Opts {
         opts.update_interval = opts.update_interval.or(config_opts.update_interval);
 
         // Flags
+        opts.candle = opts.candle || config_opts.candle;
         opts.enable_pre_post = opts.enable_pre_post || config_opts.enable_pre_post;
         opts.hide_help = opts.hide_help || config_opts.hide_help;
         opts.hide_prev_close = opts.hide_prev_close || config_opts.hide_prev_close;
@@ -91,6 +92,9 @@ pub struct Opts {
 
     // Flags
     //
+    #[structopt(long)]
+    /// Use candlestick charts
+    pub candle: bool,
     #[structopt(short = "p", long)]
     /// Enable pre / post market hours for graphs
     pub enable_pre_post: bool,
@@ -134,6 +138,9 @@ const DEFAULT_CONFIG: &str = "---
 # Interval to update data from API (seconds)
 # Default is 1
 #update_interval: 1
+
+# Use candlestick charts
+#candle: true
 
 # Enable pre / post market hours for graphs
 #enable_pre_post: true

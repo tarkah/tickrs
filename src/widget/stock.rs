@@ -1,24 +1,20 @@
 use std::hash::{Hash, Hasher};
 
-use itertools::Itertools;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Modifier, Style};
-use tui::symbols::{bar, Marker};
 use tui::text::{Span, Spans};
-use tui::widgets::{
-    Axis, BarChart, Block, Borders, Chart, Dataset, GraphType, Paragraph, StatefulWidget, Tabs,
-    Widget, Wrap,
-};
+use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap};
 
+use super::chart::{PricesCandlestickChart, PricesLineChart, VolumeBarChart};
 use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::{
-    DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS,
-    THEME, TIME_FRAME, TRUNC_PRE,
+    CHART_TYPE, DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES,
+    SHOW_X_LABELS, THEME, TIME_FRAME, TRUNC_PRE,
 };
 
 const NUM_LOADING_TICKS: usize = 4;
@@ -69,6 +65,7 @@ impl Hash for StockState {
         SHOW_VOLUMES.read().unwrap().hash(state);
         SHOW_X_LABELS.read().unwrap().hash(state);
         TRUNC_PRE.hash(state);
+        CHART_TYPE.read().unwrap().hash(state);
     }
 }
 
@@ -133,7 +130,7 @@ impl StockState {
                 if max_time < start {
                     end.max(start)
                 } else {
-                    max_time
+                    max_time.min(end)
                 },
             );
 
@@ -351,23 +348,7 @@ impl StockState {
     }
 
     pub fn min_max(&self, data: &[Price]) -> (f64, f64) {
-        let mut data: Vec<_> = data.iter().map(cast_historical_as_price).collect();
-        data.pop();
-        data.push(self.current_price());
-        data = remove_zeros(data);
-
-        data.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-        let mut min = data.first().cloned().unwrap_or(0.0);
-        let mut max = data.last().cloned().unwrap_or(1.0);
-
-        if self.current_price().le(&min) {
-            min = self.current_price();
-        }
-
-        if self.current_price().gt(&max) {
-            max = self.current_price();
-        }
+        let (mut max, mut min) = self.high_low(data);
 
         if self.time_frame == TimeFrame::Day1 && !*HIDE_PREV_CLOSE {
             if let Some(prev_close) = self.prev_close_price {
@@ -386,23 +367,27 @@ impl StockState {
 
     pub fn high_low(&self, data: &[Price]) -> (f64, f64) {
         let mut data = data.to_vec();
+        data.push(Price {
+            close: self.current_price(),
+            open: self.current_price(),
+            high: self.current_price(),
+            low: self.current_price(),
+            ..Default::default()
+        });
+        data.retain(|p| p.close.gt(&0.0));
 
-        data.sort_by(|a, b| a.high.partial_cmp(&b.high).unwrap());
-        let mut max = data.last().map(|d| d.high).unwrap_or(0.0);
+        let high = data
+            .iter()
+            .max_by(|a, b| a.high.partial_cmp(&b.high).unwrap())
+            .map(|p| p.high)
+            .unwrap_or(1.0);
+        let low = data
+            .iter()
+            .min_by(|a, b| a.low.partial_cmp(&b.low).unwrap())
+            .map(|p| p.low)
+            .unwrap_or(0.0);
 
-        data = remove_zeros_lows(data);
-        data.sort_by(|a, b| a.low.partial_cmp(&b.low).unwrap());
-        let mut min = data.first().map(|d| d.low).unwrap_or(0.0);
-
-        if self.current_price().le(&min) {
-            min = self.current_price();
-        }
-
-        if self.current_price().gt(&max) {
-            max = self.current_price();
-        }
-
-        (max, min)
+        (high, low)
     }
 
     pub fn x_bounds(&self, start: i64, end: i64, data: &[Price]) -> [f64; 2] {
@@ -467,15 +452,15 @@ impl StockState {
         if self.loaded() {
             vec![
                 Span::styled(
-                    format!("{:>8.2}", (min - 0.05)),
+                    format!("{:>8.2}", min),
                     Style::default().fg(THEME.text_normal()),
                 ),
                 Span::styled(
-                    format!("{:>8.2}", ((min - 0.05) + (max + 0.05)) / 2.0),
+                    format!("{:>8.2}", (min + max) / 2.0),
                     Style::default().fg(THEME.text_normal()),
                 ),
                 Span::styled(
-                    format!("{:>8.2}", max + 0.05),
+                    format!("{:>8.2}", max),
                     Style::default().fg(THEME.text_normal()),
                 ),
             ]
@@ -556,6 +541,7 @@ impl CachableWidget<StockState> for StockWidget {
 
         let pct_change = state.pct_change(&data);
 
+        let chart_type = *CHART_TYPE.read().unwrap();
         let show_x_labels = SHOW_X_LABELS.read().map_or(false, |l| *l);
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
         let show_volumes = *SHOW_VOLUMES.read().unwrap();
@@ -597,7 +583,7 @@ impl CachableWidget<StockState> for StockWidget {
         let chunks = Layout::default()
             .constraints(
                 [
-                    Constraint::Length(7),
+                    Constraint::Length(6),
                     Constraint::Min(0),
                     Constraint::Length(2),
                 ]
@@ -611,7 +597,7 @@ impl CachableWidget<StockState> for StockWidget {
             // info_chunks[1] - Toggle block
             let mut info_chunks = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Constraint::Min(0), Constraint::Length(15)].as_ref())
+                .constraints([Constraint::Min(23), Constraint::Length(29)].as_ref())
                 .split(chunks[0]);
             info_chunks[0] = add_padding(info_chunks[0], 1, PaddingDirection::Top);
 
@@ -691,16 +677,37 @@ impl CachableWidget<StockState> for StockWidget {
             if !*HIDE_TOGGLE {
                 let toggle_block = block::new(" Toggle ");
                 toggle_block.render(info_chunks[1], buf);
-                info_chunks[1] = add_padding(info_chunks[1], 2, PaddingDirection::Left);
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Top);
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Right);
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Bottom);
 
-                let mut toggle_info =
+                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::All);
+                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Left);
+
+                let toggle_chunks = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([
+                        Constraint::Length(12),
+                        Constraint::Length(2),
+                        Constraint::Length(12),
+                    ])
+                    .split(info_chunks[1]);
+
+                let mut left_info =
                     vec![Spans::from(Span::styled("Summary  's'", Style::default()))];
+                let mut right_info = vec![];
 
                 if loaded {
-                    toggle_info.push(Spans::from(Span::styled(
+                    left_info.push(Spans::from(Span::styled(
+                        format!(
+                            "{: <8} 'c'",
+                            if chart_type == ChartType::Line {
+                                "Candle"
+                            } else {
+                                "Line"
+                            }
+                        ),
+                        Style::default(),
+                    )));
+
+                    left_info.push(Spans::from(Span::styled(
                         "Volumes  'v'",
                         Style::default().bg(if show_volumes {
                             THEME.highlight_unfocused()
@@ -709,7 +716,7 @@ impl CachableWidget<StockState> for StockWidget {
                         }),
                     )));
 
-                    toggle_info.push(Spans::from(Span::styled(
+                    left_info.push(Spans::from(Span::styled(
                         "X Labels 'x'",
                         Style::default().bg(if show_x_labels {
                             THEME.highlight_unfocused()
@@ -718,7 +725,7 @@ impl CachableWidget<StockState> for StockWidget {
                         }),
                     )));
 
-                    toggle_info.push(Spans::from(Span::styled(
+                    right_info.push(Spans::from(Span::styled(
                         "Pre Post 'p'",
                         Style::default().bg(if enable_pre_post {
                             THEME.highlight_unfocused()
@@ -729,7 +736,7 @@ impl CachableWidget<StockState> for StockWidget {
                 }
 
                 if state.options_enabled() && loaded {
-                    toggle_info.push(Spans::from(Span::styled(
+                    right_info.push(Spans::from(Span::styled(
                         "Options  'o'",
                         Style::default().bg(if state.show_options {
                             THEME.highlight_unfocused()
@@ -739,292 +746,70 @@ impl CachableWidget<StockState> for StockWidget {
                     )));
                 }
 
-                Paragraph::new(toggle_info)
+                Paragraph::new(left_info)
                     .style(
                         Style::default()
                             .fg(THEME.text_normal())
                             .bg(THEME.background()),
                     )
                     .alignment(Alignment::Left)
-                    .render(info_chunks[1], buf);
+                    .render(toggle_chunks[0], buf);
+
+                Paragraph::new(right_info)
+                    .style(
+                        Style::default()
+                            .fg(THEME.text_normal())
+                            .bg(THEME.background()),
+                    )
+                    .alignment(Alignment::Left)
+                    .render(toggle_chunks[2], buf);
             }
         }
 
-        // Draw graph
-        {
-            let (min, max) = state.min_max(&data);
-            let (start, end) = state.start_end();
+        // graph_chunks[0] = prices
+        // graph_chunks[1] = volume
+        let graph_chunks = if show_volumes {
+            Layout::default()
+                .constraints([Constraint::Min(6), Constraint::Length(5)].as_ref())
+                .split(chunks[1])
+        } else {
+            Layout::default()
+                .constraints([Constraint::Min(0)].as_ref())
+                .split(chunks[1])
+        };
 
-            let mut prices: Vec<_> = data.iter().map(cast_historical_as_price).collect();
-
-            prices.pop();
-            prices.push(state.current_price());
-            zeros_as_pre(&mut prices);
-
-            // Need more than one price for GraphType::Line to work
-            let graph_type = if prices.len() <= 2 {
-                GraphType::Scatter
-            } else {
-                GraphType::Line
-            };
-
-            let x_labels = if show_x_labels {
-                state.x_labels(chunks[1].width, start, end, &data)
-            } else {
-                vec![]
-            };
-
-            let trading_period = state.current_trading_period(&data);
-
-            let (reg_prices, pre_prices, post_prices) = if loaded {
-                let (start_idx, end_idx) = state.regular_start_end_idx(&data);
-
-                if enable_pre_post && state.time_frame == TimeFrame::Day1 {
-                    (
-                        prices
-                            .iter()
-                            .enumerate()
-                            .filter(|(idx, _)| {
-                                if let Some(start) = start_idx {
-                                    *idx >= start
-                                } else {
-                                    false
-                                }
-                            })
-                            .filter(|(idx, _)| {
-                                if let Some(end) = end_idx {
-                                    *idx <= end
-                                } else {
-                                    true
-                                }
-                            })
-                            .map(cast_as_dataset)
-                            .collect::<Vec<(f64, f64)>>(),
-                        {
-                            let pre_end_idx = if let Some(start_idx) = start_idx {
-                                start_idx
-                            } else {
-                                prices.len()
-                            };
-
-                            if pre_end_idx > 0 {
-                                Some(
-                                    prices
-                                        .iter()
-                                        .enumerate()
-                                        .filter(|(idx, _)| *idx <= pre_end_idx)
-                                        .map(cast_as_dataset)
-                                        .collect::<Vec<(f64, f64)>>(),
-                                )
-                            } else {
-                                None
-                            }
-                        },
-                        {
-                            if let Some(post_start_idx) = end_idx {
-                                Some(
-                                    prices
-                                        .iter()
-                                        .enumerate()
-                                        .filter(|(idx, _)| *idx >= post_start_idx)
-                                        .map(cast_as_dataset)
-                                        .collect::<Vec<(f64, f64)>>(),
-                                )
-                            } else {
-                                None
-                            }
-                        },
-                    )
-                } else {
-                    (
-                        prices
-                            .iter()
-                            .enumerate()
-                            .map(cast_as_dataset)
-                            .collect::<Vec<(f64, f64)>>(),
-                        None,
-                        None,
-                    )
+        // Draw prices line chart
+        match chart_type {
+            ChartType::Line => {
+                PricesLineChart {
+                    data: &data,
+                    enable_pre_post,
+                    is_profit: pct_change >= 0.0,
+                    is_summary: false,
+                    loaded,
+                    show_x_labels,
                 }
-            } else {
-                (vec![], None, None)
-            };
-
-            let prev_close_line = if state.time_frame == TimeFrame::Day1
-                && loaded
-                && !*HIDE_PREV_CLOSE
-                && state.prev_close_price.is_some()
-            {
-                let num_points = (end - start) / 60 + 1;
-
-                Some(
-                    (0..num_points)
-                        .map(|i| ((i + 1) as f64, state.prev_close_price.unwrap()))
-                        .collect::<Vec<_>>(),
-                )
-            } else {
-                None
-            };
-
-            let mut datasets = vec![Dataset::default()
-                .marker(Marker::Braille)
-                .style(
-                    Style::default()
-                        .fg(
-                            if trading_period != TradingPeriod::Regular && enable_pre_post {
-                                THEME.gray()
-                            } else if pct_change >= 0.0 {
-                                THEME.profit()
-                            } else {
-                                THEME.loss()
-                            },
-                        )
-                        .bg(THEME.background()),
-                )
-                .graph_type(graph_type)
-                .data(&reg_prices)];
-
-            if let Some(data) = post_prices.as_ref() {
-                datasets.push(
-                    Dataset::default()
-                        .marker(Marker::Braille)
-                        .style(
-                            Style::default()
-                                .fg(if trading_period != TradingPeriod::Post {
-                                    THEME.gray()
-                                } else if pct_change >= 0.0 {
-                                    THEME.profit()
-                                } else {
-                                    THEME.loss()
-                                })
-                                .bg(THEME.background()),
-                        )
-                        .graph_type(GraphType::Line)
-                        .data(&data),
-                );
+                .render(graph_chunks[0], buf, state);
             }
-
-            if let Some(data) = pre_prices.as_ref() {
-                datasets.insert(
-                    0,
-                    Dataset::default()
-                        .marker(Marker::Braille)
-                        .style(
-                            Style::default()
-                                .fg(if trading_period != TradingPeriod::Pre {
-                                    THEME.gray()
-                                } else if pct_change >= 0.0 {
-                                    THEME.profit()
-                                } else {
-                                    THEME.loss()
-                                })
-                                .bg(THEME.background()),
-                        )
-                        .graph_type(GraphType::Line)
-                        .data(&data),
-                );
-            }
-
-            if let Some(data) = prev_close_line.as_ref() {
-                datasets.insert(
-                    0,
-                    Dataset::default()
-                        .marker(Marker::Braille)
-                        .style(Style::default().fg(THEME.gray()).bg(THEME.background()))
-                        .graph_type(GraphType::Line)
-                        .data(&data),
-                );
-            }
-
-            // graph_chunks[0] = prices
-            // graph_chunks[1] = volume
-            let graph_chunks = if show_volumes {
-                Layout::default()
-                    .constraints([Constraint::Min(6), Constraint::Length(5)].as_ref())
-                    .split(chunks[1])
-            } else {
-                Layout::default()
-                    .constraints([Constraint::Min(0)].as_ref())
-                    .split(chunks[1])
-            };
-
-            if show_volumes {
-                let mut volume_chunks = graph_chunks[1];
-                volume_chunks.height += 1;
-
-                let x_offset = if !loaded {
-                    8
-                } else if show_x_labels {
-                    match state.time_frame {
-                        TimeFrame::Day1 => 9,
-                        TimeFrame::Week1 => 12,
-                        _ => 11,
-                    }
-                } else {
-                    9
-                };
-                volume_chunks.x += x_offset;
-                volume_chunks.width -= x_offset + 1;
-
-                let width = volume_chunks.width;
-                let num_bars = width as usize;
-
-                let volumes = state.volumes(&data);
-                let vol_count = volumes.len();
-
-                if vol_count > 0 {
-                    let volumes = data
-                        .iter()
-                        .map(|p| [p.volume].repeat(num_bars))
-                        .flatten()
-                        .chunks(vol_count)
-                        .into_iter()
-                        .map(|c| ("", c.sum::<u64>() / vol_count as u64))
-                        .collect::<Vec<_>>();
-
-                    volume_chunks.x -= 1;
-
-                    Block::default()
-                        .borders(Borders::LEFT)
-                        .border_style(Style::default().fg(THEME.border_axis()))
-                        .render(volume_chunks, buf);
-
-                    volume_chunks.x += 1;
-
-                    BarChart::default()
-                        .bar_gap(0)
-                        .bar_set(bar::NINE_LEVELS)
-                        .style(Style::default().fg(THEME.gray()).bg(THEME.background()))
-                        .data(&volumes)
-                        .render(volume_chunks, buf);
+            ChartType::Candlestick => {
+                PricesCandlestickChart {
+                    data: &data,
+                    loaded,
+                    show_x_labels,
+                    is_summary: false,
                 }
+                .render(graph_chunks[0], buf, state);
             }
+        }
 
-            Chart::new(datasets)
-                .style(Style::default().bg(THEME.background()))
-                .block(
-                    Block::default()
-                        .style(Style::default().fg(THEME.border_secondary()))
-                        .borders(Borders::TOP)
-                        .border_style(Style::default()),
-                )
-                .x_axis({
-                    let axis = Axis::default().bounds(state.x_bounds(start, end, &data));
-
-                    if show_x_labels && loaded {
-                        axis.labels(x_labels)
-                            .style(Style::default().fg(THEME.border_axis()))
-                    } else {
-                        axis
-                    }
-                })
-                .y_axis(
-                    Axis::default()
-                        .bounds(state.y_bounds(min, max))
-                        .labels(state.y_labels(min, max))
-                        .style(Style::default().fg(THEME.border_axis())),
-                )
-                .render(graph_chunks[0], buf);
+        // Draw volumes bar chart
+        if show_volumes {
+            VolumeBarChart {
+                data: &data,
+                loaded,
+                show_x_labels,
+            }
+            .render(graph_chunks[1], buf, state);
         }
 
         // Draw time frame tabs

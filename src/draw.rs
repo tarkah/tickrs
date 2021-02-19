@@ -2,7 +2,7 @@ use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::Style;
 use tui::text::{Span, Spans, Text};
-use tui::widgets::{Block, Borders, Paragraph, Tabs, Wrap};
+use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 use tui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
@@ -161,12 +161,20 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             vec![layout[1]]
         };
 
-        // If width is too small, don't render stock widget and use entire space
-        // for options widget
-        if main_chunks[0].width >= 19 {
-            frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
-        } else {
-            main_chunks[1] = layout[1];
+        match app.mode {
+            Mode::DisplayStock | Mode::AddStock => {
+                frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
+            }
+            // If width is too small, don't render stock widget and use entire space
+            // for options widget
+            Mode::DisplayOptions => {
+                if main_chunks[0].width >= 19 {
+                    frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
+                } else {
+                    main_chunks[1] = layout[1];
+                }
+            }
+            _ => {}
         }
 
         if let Some(options) = stock.options.as_mut() {
@@ -292,6 +300,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     // Draw time frame & paging
     {
         layout[2] = add_padding(layout[2], 1, PaddingDirection::Left);
+        frame.render_widget(Clear, layout[2]);
 
         let offset = layout[2].height - 2;
         layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
@@ -356,7 +365,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
 fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     let mut layout = area;
 
-    if layout.width < HELP_WIDTH || layout.height < HELP_HEIGHT {
+    if layout.width < HELP_WIDTH as u16 || layout.height < HELP_HEIGHT as u16 {
         frame.render_widget(
             Paragraph::new(Text::styled(
                 "Increase screen size to display help",
@@ -384,28 +393,28 @@ pub fn add_padding(mut rect: Rect, n: u16, direction: PaddingDirection) -> Rect 
     match direction {
         PaddingDirection::Top => {
             rect.y += n;
-            rect.height -= n;
+            rect.height = rect.height.saturating_sub(n);
             rect
         }
         PaddingDirection::Bottom => {
-            rect.height -= n;
+            rect.height = rect.height.saturating_sub(n);
             rect
         }
         PaddingDirection::Left => {
             rect.x += n;
-            rect.width -= n;
+            rect.width = rect.width.saturating_sub(n);
             rect
         }
         PaddingDirection::Right => {
-            rect.width -= n;
+            rect.width = rect.width.saturating_sub(n);
             rect
         }
         PaddingDirection::All => {
             rect.y += n;
-            rect.height -= n * 2;
+            rect.height = rect.height.saturating_sub(n * 2);
 
             rect.x += n;
-            rect.width -= n * 2;
+            rect.width = rect.width.saturating_sub(n * 2);
 
             rect
         }

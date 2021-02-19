@@ -10,6 +10,21 @@ use tickrs_api::Interval;
 use crate::api::model::ChartData;
 use crate::api::Range;
 
+#[derive(PartialEq, Clone, Copy, Debug, Hash)]
+pub enum ChartType {
+    Line,
+    Candlestick,
+}
+
+impl ChartType {
+    pub fn toggle(self) -> Self {
+        match self {
+            ChartType::Line => ChartType::Candlestick,
+            ChartType::Candlestick => ChartType::Line,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize)]
 pub enum TimeFrame {
     #[serde(alias = "1D")]
@@ -265,12 +280,4 @@ pub fn zeros_as_pre(prices: &mut [f64]) {
             prices[idx] = prices[idx - 1];
         }
     }
-}
-
-pub fn remove_zeros(prices: Vec<f64>) -> Vec<f64> {
-    prices.into_iter().filter(|x| x.ne(&0.0)).collect()
-}
-
-pub fn remove_zeros_lows(prices: Vec<Price>) -> Vec<Price> {
-    prices.into_iter().filter(|x| x.low.ne(&0.0)).collect()
 }
