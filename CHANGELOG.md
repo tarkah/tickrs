@@ -17,7 +17,7 @@ and `Removed`.
 ### Fixed
 
 - Fixed last x label for candlestick charts from showing unix time 0 for 1W - 5Y
-  timeframes
+  timeframes ([#85])
 
 ## [0.13.0] - 2021-02-19
 
@@ -123,3 +123,4 @@ and `Removed`.
 [#75]: https://github.com/tarkah/tickrs/pull/75
 [#76]: https://github.com/tarkah/tickrs/pull/76
 [#79]: https://github.com/tarkah/tickrs/pull/79
+[#85]: https://github.com/tarkah/tickrs/pull/85
