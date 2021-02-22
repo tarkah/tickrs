@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Packaging
+
+- Linux: Binary size has been reduced due to some optimizations, from 10.6MB to
+  8MB ([#86])
+
 ## [0.13.1] - 2021-02-22
 
 ### Fixed
@@ -128,3 +133,4 @@ and `Removed`.
 [#79]: https://github.com/tarkah/tickrs/pull/79
 [#84]: https://github.com/tarkah/tickrs/pull/84
 [#85]: https://github.com/tarkah/tickrs/pull/85
+[#86]: https://github.com/tarkah/tickrs/pull/86
