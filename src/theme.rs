@@ -4,6 +4,7 @@ use tui::style::{Color, Style};
 use self::de::deserialize_option_color_hex_string;
 use crate::THEME;
 
+#[inline]
 pub fn style() -> Style {
     Style::default().bg(THEME.background())
 }
