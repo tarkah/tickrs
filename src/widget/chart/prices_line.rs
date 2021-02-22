@@ -1,12 +1,12 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
-use tui::style::Style;
 use tui::symbols::Marker;
 use tui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, StatefulWidget, Widget};
 
 use crate::common::{
     cast_as_dataset, cast_historical_as_price, zeros_as_pre, Price, TimeFrame, TradingPeriod,
 };
+use crate::theme::style;
 use crate::widget::StockState;
 use crate::{HIDE_PREV_CLOSE, THEME};
 
@@ -140,19 +140,15 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
 
         let mut datasets = vec![Dataset::default()
             .marker(Marker::Braille)
-            .style(
-                Style::default()
-                    .fg(
-                        if trading_period != TradingPeriod::Regular && self.enable_pre_post {
-                            THEME.gray()
-                        } else if self.is_profit {
-                            THEME.profit()
-                        } else {
-                            THEME.loss()
-                        },
-                    )
-                    .bg(THEME.background()),
-            )
+            .style(style().fg(
+                if trading_period != TradingPeriod::Regular && self.enable_pre_post {
+                    THEME.gray()
+                } else if self.is_profit {
+                    THEME.profit()
+                } else {
+                    THEME.loss()
+                },
+            ))
             .graph_type(graph_type)
             .data(&reg_prices)];
 
@@ -160,17 +156,13 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
             datasets.push(
                 Dataset::default()
                     .marker(Marker::Braille)
-                    .style(
-                        Style::default()
-                            .fg(if trading_period != TradingPeriod::Post {
-                                THEME.gray()
-                            } else if self.is_profit {
-                                THEME.profit()
-                            } else {
-                                THEME.loss()
-                            })
-                            .bg(THEME.background()),
-                    )
+                    .style(style().fg(if trading_period != TradingPeriod::Post {
+                        THEME.gray()
+                    } else if self.is_profit {
+                        THEME.profit()
+                    } else {
+                        THEME.loss()
+                    }))
                     .graph_type(GraphType::Line)
                     .data(&data),
             );
@@ -181,17 +173,13 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                 0,
                 Dataset::default()
                     .marker(Marker::Braille)
-                    .style(
-                        Style::default()
-                            .fg(if trading_period != TradingPeriod::Pre {
-                                THEME.gray()
-                            } else if self.is_profit {
-                                THEME.profit()
-                            } else {
-                                THEME.loss()
-                            })
-                            .bg(THEME.background()),
-                    )
+                    .style(style().fg(if trading_period != TradingPeriod::Pre {
+                        THEME.gray()
+                    } else if self.is_profit {
+                        THEME.profit()
+                    } else {
+                        THEME.loss()
+                    }))
                     .graph_type(GraphType::Line)
                     .data(&data),
             );
@@ -202,20 +190,19 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                 0,
                 Dataset::default()
                     .marker(Marker::Braille)
-                    .style(Style::default().fg(THEME.gray()).bg(THEME.background()))
+                    .style(style().fg(THEME.gray()))
                     .graph_type(GraphType::Line)
                     .data(&data),
             );
         }
 
         let mut chart = Chart::new(datasets)
-            .style(Style::default().bg(THEME.background()))
+            .style(style())
             .x_axis({
                 let axis = Axis::default().bounds(state.x_bounds(start, end, &self.data));
 
                 if self.show_x_labels && self.loaded && !self.is_summary {
-                    axis.labels(x_labels)
-                        .style(Style::default().fg(THEME.border_axis()))
+                    axis.labels(x_labels).style(style().fg(THEME.border_axis()))
                 } else {
                     axis
                 }
@@ -224,15 +211,15 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                 Axis::default()
                     .bounds(state.y_bounds(min, max))
                     .labels(state.y_labels(min, max))
-                    .style(Style::default().fg(THEME.border_axis())),
+                    .style(style().fg(THEME.border_axis())),
             );
 
         if !self.is_summary {
             chart = chart.block(
                 Block::default()
-                    .style(Style::default().fg(THEME.border_secondary()))
+                    .style(style().fg(THEME.border_secondary()))
                     .borders(Borders::TOP)
-                    .border_style(Style::default()),
+                    .border_style(style()),
             );
         }
 
