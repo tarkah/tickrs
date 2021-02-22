@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed last x label for candlestick charts from showing unix time 0 for 1W - 5Y
+  timeframes
+
 ## [0.13.0] - 2021-02-19
 
 ### Added
