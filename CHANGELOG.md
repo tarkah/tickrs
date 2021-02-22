@@ -17,6 +17,8 @@ and `Removed`.
 ### Fixed
 
 - Fixed theme background not getting applied to all widgets ([#84])
+- Fixed last x label for candlestick charts from showing unix time 0 for 1W - 5Y
+  timeframes ([#85])
 
 ## [0.13.0] - 2021-02-19
 
@@ -123,3 +125,4 @@ and `Removed`.
 [#76]: https://github.com/tarkah/tickrs/pull/76
 [#79]: https://github.com/tarkah/tickrs/pull/79
 [#84]: https://github.com/tarkah/tickrs/pull/84
+[#85]: https://github.com/tarkah/tickrs/pull/85
