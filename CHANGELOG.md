@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.13.1] - 2021-02-22
+
 ### Fixed
 
 - Fixed theme background not getting applied to all widgets ([#84])

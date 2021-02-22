@@ -1,6 +1,6 @@
 [package]
 name = "tickrs-api"
-version = "0.13.0"
+version = "0.13.1"
 authors = ["tarkah <admin@tarkah.dev>"]
 edition = "2018"
 license = "MIT"
