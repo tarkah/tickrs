@@ -10,6 +10,9 @@ description = "Realtime ticker data in your terminal 📈"
 keywords = ["tui","terminal","stocks"]
 categories = ["command-line-utilities"]
 
+[profile.release]
+lto = true
+
 [workspace]
 members = [
     ".",
