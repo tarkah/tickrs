@@ -1,12 +1,12 @@
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::Style;
 use tui::text::{Span, Spans, Text};
 use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 use tui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
 use crate::common::TimeFrame;
+use crate::theme::style;
 use crate::widget::{
     block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
 };
@@ -26,10 +26,7 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     terminal
         .draw(|mut frame| {
             // Set background color
-            frame.render_widget(
-                Block::default().style(Style::default().bg(THEME.background())),
-                frame.size(),
-            );
+            frame.render_widget(Block::default().style(style()), frame.size());
 
             if app.debug.enabled && app.mode == Mode::AddStock {
                 // layout[0] - Main window
@@ -127,8 +124,8 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             frame.render_widget(
                 Tabs::new(tabs)
                     .select(app.current_tab)
-                    .style(Style::default().fg(THEME.text_secondary()))
-                    .highlight_style(Style::default().fg(THEME.text_primary())),
+                    .style(style().fg(THEME.text_secondary()))
+                    .highlight_style(style().fg(THEME.text_primary())),
                 header[0],
             );
         }
@@ -136,12 +133,8 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         // Draw help icon
         if !app.hide_help {
             frame.render_widget(
-                Paragraph::new(Text::styled("Help '?'", Style::default()))
-                    .style(
-                        Style::default()
-                            .fg(THEME.text_normal())
-                            .bg(THEME.background()),
-                    )
+                Paragraph::new(Text::styled("Help '?'", style()))
+                    .style(style().fg(THEME.text_normal()))
                     .alignment(Alignment::Center),
                 header[1],
             );
@@ -187,7 +180,7 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
                 frame.render_widget(
                     Paragraph::new(Text::styled(
                         "Increase screen size to display options",
-                        Style::default(),
+                        style(),
                     )),
                     main_chunks[1],
                 );
@@ -272,12 +265,8 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     // Draw help icon
     if !app.hide_help {
         frame.render_widget(
-            Paragraph::new(Text::styled("Help '?'", Style::default()))
-                .style(
-                    Style::default()
-                        .fg(THEME.text_normal())
-                        .bg(THEME.background()),
-                )
+            Paragraph::new(Text::styled("Help '?'", style()))
+                .style(style().fg(THEME.text_normal()))
                 .alignment(Alignment::Center),
             header[1],
         );
@@ -301,16 +290,15 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     {
         layout[2] = add_padding(layout[2], 1, PaddingDirection::Left);
         frame.render_widget(Clear, layout[2]);
+        frame.render_widget(Block::default().style(style()), layout[2]);
 
         let offset = layout[2].height - 2;
         layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
 
         frame.render_widget(
-            Block::default().borders(Borders::TOP).border_style(
-                Style::default()
-                    .fg(THEME.border_secondary())
-                    .bg(THEME.background()),
-            ),
+            Block::default()
+                .borders(Borders::TOP)
+                .border_style(style().fg(THEME.border_secondary())),
             layout[2],
         );
 
@@ -330,8 +318,8 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
 
         let tabs = Tabs::new(time_frames)
             .select(app.summary_time_frame.idx())
-            .style(Style::default().fg(THEME.text_secondary()))
-            .highlight_style(Style::default().fg(THEME.text_primary()));
+            .style(style().fg(THEME.text_secondary()))
+            .highlight_style(style().fg(THEME.text_primary()));
 
         frame.render_widget(tabs, bottom_layout[0]);
 
@@ -340,7 +328,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
 
         let up_arrow = Span::styled(
             "ᐱ",
-            Style::default().fg(if more_up {
+            style().fg(if more_up {
                 THEME.text_normal()
             } else {
                 THEME.gray()
@@ -348,7 +336,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         );
         let down_arrow = Span::styled(
             "ᐯ",
-            Style::default().fg(if more_down {
+            style().fg(if more_down {
                 THEME.text_normal()
             } else {
                 THEME.gray()
@@ -369,7 +357,7 @@ fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         frame.render_widget(
             Paragraph::new(Text::styled(
                 "Increase screen size to display help",
-                Style::default(),
+                style(),
             )),
             layout,
         );
@@ -383,7 +371,7 @@ fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
 fn draw_debug<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     app.debug.mode = app.mode;
 
-    let debug_text = Text::styled(format!("{:?}", app.debug), Style::default());
+    let debug_text = Text::styled(format!("{:?}", app.debug), style());
     let debug_paragraph = Paragraph::new(debug_text).wrap(Wrap { trim: true });
 
     frame.render_widget(debug_paragraph, area);

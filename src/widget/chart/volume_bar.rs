@@ -1,11 +1,11 @@
 use itertools::Itertools;
 use tui::buffer::Buffer;
 use tui::layout::Rect;
-use tui::style::Style;
 use tui::symbols::bar;
 use tui::widgets::{BarChart, Block, Borders, StatefulWidget, Widget};
 
 use crate::common::{Price, TimeFrame};
+use crate::theme::style;
 use crate::widget::StockState;
 use crate::THEME;
 
@@ -58,7 +58,7 @@ impl<'a> StatefulWidget for VolumeBarChart<'a> {
 
             Block::default()
                 .borders(Borders::LEFT)
-                .border_style(Style::default().fg(THEME.border_axis()))
+                .border_style(style().fg(THEME.border_axis()))
                 .render(volume_chunks, buf);
 
             volume_chunks.x += 1;
@@ -66,7 +66,7 @@ impl<'a> StatefulWidget for VolumeBarChart<'a> {
             BarChart::default()
                 .bar_gap(0)
                 .bar_set(bar::NINE_LEVELS)
-                .style(Style::default().fg(THEME.gray()).bg(THEME.background()))
+                .style(style().fg(THEME.gray()))
                 .data(&volumes)
                 .render(volume_chunks, buf);
         }

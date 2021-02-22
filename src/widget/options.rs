@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 use chrono::NaiveDateTime;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Modifier, Style};
+use tui::style::Modifier;
 use tui::text::{Span, Spans};
 use tui::widgets::{
     Block, Borders, Cell, List, ListItem, ListState, Paragraph, Row, StatefulWidget, Table,
@@ -15,6 +15,7 @@ use super::{block, CachableWidget, CacheState};
 use crate::api::model::{OptionsData, OptionsQuote};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
+use crate::theme::style;
 use crate::THEME;
 
 #[derive(Clone, Copy, PartialEq, Hash)]
@@ -269,7 +270,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             let call_put_selector = vec![
                 Span::styled(
                     "Call",
-                    Style::default().fg(THEME.profit()).add_modifier(
+                    style().fg(THEME.profit()).add_modifier(
                         if state.selected_type == OptionType::Call {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -277,10 +278,10 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         },
                     ),
                 ),
-                Span::styled(" | ", Style::default()),
+                Span::styled(" | ", style()),
                 Span::styled(
                     "Put",
-                    Style::default().fg(THEME.loss()).add_modifier(
+                    style().fg(THEME.loss()).add_modifier(
                         if state.selected_type == OptionType::Put {
                             Modifier::BOLD | Modifier::UNDERLINED
                         } else {
@@ -294,18 +295,14 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Right);
 
             Block::default()
-                .style(Style::default().fg(THEME.border_secondary()))
+                .style(style().fg(THEME.border_secondary()))
                 .borders(Borders::BOTTOM)
                 .render(chunks[0], buf);
 
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Bottom);
 
             Paragraph::new(Spans::from(call_put_selector))
-                .style(
-                    Style::default()
-                        .fg(THEME.text_normal())
-                        .bg(THEME.background()),
-                )
+                .style(style().fg(THEME.text_normal()))
                 .alignment(Alignment::Center)
                 .render(chunks[0], buf);
         }
@@ -322,7 +319,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             selector_chunks[0] = add_padding(selector_chunks[0], 1, PaddingDirection::Left);
 
             Block::default()
-                .style(Style::default().fg(THEME.border_secondary()))
+                .style(style().fg(THEME.border_secondary()))
                 .borders(Borders::RIGHT)
                 .render(selector_chunks[0], buf);
             selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Right);
@@ -332,26 +329,17 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 .iter()
                 .map(|d| {
                     let date = NaiveDateTime::from_timestamp(*d, 0).date();
-                    ListItem::new(Span::styled(
-                        date.format("%b-%d-%y").to_string(),
-                        Style::default(),
-                    ))
+                    ListItem::new(Span::styled(date.format("%b-%d-%y").to_string(), style()))
                 })
                 .collect::<Vec<_>>();
 
             let list = List::new(dates)
-                .style(
-                    Style::default()
-                        .fg(THEME.text_normal())
-                        .bg(THEME.background()),
-                )
-                .highlight_style(Style::default().bg(
-                    if state.selection_mode == SelectionMode::Dates {
-                        THEME.highlight_focused()
-                    } else {
-                        THEME.highlight_unfocused()
-                    },
-                ));
+                .style(style().fg(THEME.text_normal()))
+                .highlight_style(style().bg(if state.selection_mode == SelectionMode::Dates {
+                    THEME.highlight_focused()
+                } else {
+                    THEME.highlight_unfocused()
+                }));
 
             let mut list_state = ListState::default();
             if let Some(idx) = state
@@ -362,11 +350,8 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 list_state.select(Some(idx));
             }
 
-            Paragraph::new(Span::styled(
-                "Date",
-                Style::default().fg(THEME.text_secondary()),
-            ))
-            .render(selector_chunks[0], buf);
+            Paragraph::new(Span::styled("Date", style().fg(THEME.text_secondary())))
+                .render(selector_chunks[0], buf);
 
             selector_chunks[0] = add_padding(selector_chunks[0], 2, PaddingDirection::Top);
 
@@ -390,7 +375,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         Cell::from(format!("{: <7.2}", d.last_price)),
                         Cell::from(format!("{: >7.2}%", d.percent_change)),
                     ])
-                    .style(Style::default().fg(if d.percent_change >= 0.0 {
+                    .style(style().fg(if d.percent_change >= 0.0 {
                         THEME.profit()
                     } else {
                         THEME.loss()
@@ -400,16 +385,12 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 let table = Table::new(rows)
                     .header(
                         Row::new(vec!["Strike", "Price", "% Change"])
-                            .style(Style::default().fg(THEME.text_secondary()))
+                            .style(style().fg(THEME.text_secondary()))
                             .bottom_margin(1),
                     )
-                    .style(
-                        Style::default()
-                            .fg(THEME.text_normal())
-                            .bg(THEME.background()),
-                    )
+                    .style(style().fg(THEME.text_normal()))
                     .highlight_style(
-                        Style::default()
+                        style()
                             .bg(if state.selection_mode == SelectionMode::Options {
                                 THEME.highlight_focused()
                             } else {
@@ -441,7 +422,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
             chunks[1] = add_padding(chunks[1], 1, PaddingDirection::Right);
 
             Block::default()
-                .style(Style::default().fg(THEME.border_secondary()))
+                .style(style().fg(THEME.border_secondary()))
                 .borders(Borders::BOTTOM)
                 .render(chunks[1], buf);
 
@@ -488,12 +469,12 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                                 option.strike,
                                 currency
                             ),
-                            Style::default(),
+                            style(),
                         )),
                         Spans::default(),
                         Spans::from(Span::styled(
                             format!("price:{}{:.2}", " ".repeat(gap_last), option.last_price,),
-                            Style::default(),
+                            style(),
                         )),
                         Spans::default(),
                         Spans::from(Span::styled(
@@ -502,7 +483,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                                 " ".repeat(gap_ask),
                                 option.bid.unwrap_or_default(),
                             ),
-                            Style::default(),
+                            style(),
                         )),
                         Spans::default(),
                         Spans::from(Span::styled(
@@ -511,7 +492,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                                 " ".repeat(gap_bid),
                                 option.ask.unwrap_or_default(),
                             ),
-                            Style::default(),
+                            style(),
                         )),
                     ];
 
@@ -522,7 +503,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                                 " ".repeat(gap_volume),
                                 option.volume.unwrap_or_default(),
                             ),
-                            Style::default(),
+                            style(),
                         )),
                         Spans::default(),
                         Spans::from(Span::styled(
@@ -531,7 +512,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                                 " ".repeat(gap_open_int),
                                 option.open_interest.unwrap_or_default()
                             ),
-                            Style::default(),
+                            style(),
                         )),
                         Spans::default(),
                         Spans::from(Span::styled(
@@ -540,23 +521,15 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                                 " ".repeat(gap_impl_vol),
                                 option.implied_volatility.unwrap_or_default() * 100.0
                             ),
-                            Style::default(),
+                            style(),
                         )),
                     ];
 
                     Paragraph::new(column_0)
-                        .style(
-                            Style::default()
-                                .fg(THEME.text_normal())
-                                .bg(THEME.background()),
-                        )
+                        .style(style().fg(THEME.text_normal()))
                         .render(columns[0], buf);
                     Paragraph::new(column_1)
-                        .style(
-                            Style::default()
-                                .fg(THEME.text_normal())
-                                .bg(THEME.background()),
-                        )
+                        .style(style().fg(THEME.text_normal()))
                         .render(columns[1], buf);
                 }
             }

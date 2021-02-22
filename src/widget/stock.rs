@@ -2,7 +2,7 @@ use std::hash::{Hash, Hasher};
 
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Modifier, Style};
+use tui::style::Modifier;
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap};
 
@@ -12,6 +12,7 @@ use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
+use crate::theme::style;
 use crate::{
     CHART_TYPE, DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES,
     SHOW_X_LABELS, THEME, TIME_FRAME, TRUNC_PRE,
@@ -424,7 +425,7 @@ impl StockState {
                 labels.push(chunk.get(0).map_or(Span::raw("".to_string()), |d| {
                     Span::styled(
                         self.time_frame.format_time(*d),
-                        Style::default().fg(THEME.text_normal()),
+                        style().fg(THEME.text_normal()),
                     )
                 }));
             }
@@ -435,7 +436,7 @@ impl StockState {
                     .map_or(Span::raw("".to_string()), |d| {
                         Span::styled(
                             self.time_frame.format_time(*d),
-                            Style::default().fg(THEME.text_normal()),
+                            style().fg(THEME.text_normal()),
                         )
                     }),
             );
@@ -451,18 +452,12 @@ impl StockState {
     pub fn y_labels(&self, min: f64, max: f64) -> Vec<Span> {
         if self.loaded() {
             vec![
-                Span::styled(
-                    format!("{:>8.2}", min),
-                    Style::default().fg(THEME.text_normal()),
-                ),
+                Span::styled(format!("{:>8.2}", min), style().fg(THEME.text_normal())),
                 Span::styled(
                     format!("{:>8.2}", (min + max) / 2.0),
-                    Style::default().fg(THEME.text_normal()),
+                    style().fg(THEME.text_normal()),
                 ),
-                Span::styled(
-                    format!("{:>8.2}", max),
-                    Style::default().fg(THEME.text_normal()),
-                ),
+                Span::styled(format!("{:>8.2}", max), style().fg(THEME.text_normal())),
             ]
         } else {
             vec![
@@ -606,14 +601,14 @@ impl CachableWidget<StockState> for StockWidget {
 
             let company_info = vec![
                 Spans::from(vec![
-                    Span::styled("c: ", Style::default()),
+                    Span::styled("c: ", style()),
                     Span::styled(
                         if loaded {
                             format!("{:.2} {}", state.current_price(), currency)
                         } else {
                             "".to_string()
                         },
-                        Style::default()
+                        style()
                             .add_modifier(Modifier::BOLD)
                             .fg(THEME.text_primary()),
                     ),
@@ -623,7 +618,7 @@ impl CachableWidget<StockState> for StockWidget {
                         } else {
                             "".to_string()
                         },
-                        Style::default()
+                        style()
                             .add_modifier(Modifier::BOLD)
                             .fg(if pct_change >= 0.0 {
                                 THEME.profit()
@@ -633,43 +628,39 @@ impl CachableWidget<StockState> for StockWidget {
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("h: ", Style::default()),
+                    Span::styled("h: ", style()),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", high)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary()),
+                        style().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("l: ", Style::default()),
+                    Span::styled("l: ", style()),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", low)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary()),
+                        style().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::default(),
                 Spans::from(vec![
-                    Span::styled("v: ", Style::default()),
+                    Span::styled("v: ", style()),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
-                        Style::default().fg(THEME.text_secondary()),
+                        style().fg(THEME.text_secondary()),
                     ),
                 ]),
             ];
 
             Paragraph::new(company_info)
-                .style(
-                    Style::default()
-                        .fg(THEME.text_normal())
-                        .bg(THEME.background()),
-                )
+                .style(style().fg(THEME.text_normal()))
                 .alignment(Alignment::Left)
                 .wrap(Wrap { trim: true })
                 .render(info_chunks[0], buf);
@@ -690,8 +681,7 @@ impl CachableWidget<StockState> for StockWidget {
                     ])
                     .split(info_chunks[1]);
 
-                let mut left_info =
-                    vec![Spans::from(Span::styled("Summary  's'", Style::default()))];
+                let mut left_info = vec![Spans::from(Span::styled("Summary  's'", style()))];
                 let mut right_info = vec![];
 
                 if loaded {
@@ -704,12 +694,12 @@ impl CachableWidget<StockState> for StockWidget {
                                 "Line"
                             }
                         ),
-                        Style::default(),
+                        style(),
                     )));
 
                     left_info.push(Spans::from(Span::styled(
                         "Volumes  'v'",
-                        Style::default().bg(if show_volumes {
+                        style().bg(if show_volumes {
                             THEME.highlight_unfocused()
                         } else {
                             THEME.background()
@@ -718,7 +708,7 @@ impl CachableWidget<StockState> for StockWidget {
 
                     left_info.push(Spans::from(Span::styled(
                         "X Labels 'x'",
-                        Style::default().bg(if show_x_labels {
+                        style().bg(if show_x_labels {
                             THEME.highlight_unfocused()
                         } else {
                             THEME.background()
@@ -727,7 +717,7 @@ impl CachableWidget<StockState> for StockWidget {
 
                     right_info.push(Spans::from(Span::styled(
                         "Pre Post 'p'",
-                        Style::default().bg(if enable_pre_post {
+                        style().bg(if enable_pre_post {
                             THEME.highlight_unfocused()
                         } else {
                             THEME.background()
@@ -738,7 +728,7 @@ impl CachableWidget<StockState> for StockWidget {
                 if state.options_enabled() && loaded {
                     right_info.push(Spans::from(Span::styled(
                         "Options  'o'",
-                        Style::default().bg(if state.show_options {
+                        style().bg(if state.show_options {
                             THEME.highlight_unfocused()
                         } else {
                             THEME.background()
@@ -747,20 +737,12 @@ impl CachableWidget<StockState> for StockWidget {
                 }
 
                 Paragraph::new(left_info)
-                    .style(
-                        Style::default()
-                            .fg(THEME.text_normal())
-                            .bg(THEME.background()),
-                    )
+                    .style(style().fg(THEME.text_normal()))
                     .alignment(Alignment::Left)
                     .render(toggle_chunks[0], buf);
 
                 Paragraph::new(right_info)
-                    .style(
-                        Style::default()
-                            .fg(THEME.text_normal())
-                            .bg(THEME.background()),
-                    )
+                    .style(style().fg(THEME.text_normal()))
                     .alignment(Alignment::Left)
                     .render(toggle_chunks[2], buf);
             }
@@ -821,15 +803,13 @@ impl CachableWidget<StockState> for StockWidget {
 
             Tabs::new(tab_names)
                 .block(
-                    Block::default().borders(Borders::TOP).border_style(
-                        Style::default()
-                            .fg(THEME.border_secondary())
-                            .bg(THEME.background()),
-                    ),
+                    Block::default()
+                        .borders(Borders::TOP)
+                        .border_style(style().fg(THEME.border_secondary())),
                 )
                 .select(state.time_frame.idx())
-                .style(Style::default().fg(THEME.text_secondary()))
-                .highlight_style(Style::default().fg(THEME.text_primary()))
+                .style(style().fg(THEME.text_secondary()))
+                .highlight_style(style().fg(THEME.text_primary()))
                 .render(chunks[2], buf);
         }
     }

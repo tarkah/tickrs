@@ -1,11 +1,11 @@
 use tui::buffer::Buffer;
 use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::Style;
 use tui::text::{Span, Spans};
 use tui::widgets::{Paragraph, Widget};
 
 use super::block;
 use crate::draw::{add_padding, PaddingDirection};
+use crate::theme::style;
 use crate::THEME;
 
 const LEFT_TEXT: &str = r#"
@@ -84,7 +84,7 @@ impl Widget for HelpWidget {
             .map(|line| {
                 Spans::from(Span::styled(
                     format!("{}\n", line),
-                    Style::default().fg(THEME.text_normal()),
+                    style().fg(THEME.text_normal()),
                 ))
             })
             .collect();
@@ -94,7 +94,7 @@ impl Widget for HelpWidget {
             .map(|line| {
                 Spans::from(Span::styled(
                     format!("{}\n", line),
-                    Style::default().fg(THEME.text_normal()),
+                    style().fg(THEME.text_normal()),
                 ))
             })
             .collect();

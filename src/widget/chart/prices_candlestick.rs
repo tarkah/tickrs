@@ -1,13 +1,13 @@
 use itertools::Itertools;
 use tui::buffer::Buffer;
 use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::Style;
 use tui::text::Span;
 use tui::widgets::canvas::{Canvas, Line, Rectangle};
 use tui::widgets::{Block, Borders, StatefulWidget, Widget};
 
 use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
+use crate::theme::style;
 use crate::widget::StockState;
 use crate::{HIDE_PREV_CLOSE, THEME};
 
@@ -38,7 +38,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
         if !self.is_summary {
             Block::default()
                 .borders(Borders::TOP)
-                .border_style(Style::default().fg(THEME.border_secondary()))
+                .border_style(style().fg(THEME.border_secondary()))
                 .render(area, buf);
             area = add_padding(area, 1, PaddingDirection::Top);
         }
@@ -174,14 +174,16 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
 
         if self.loaded {
             Canvas::default()
+                .background_color(THEME.background())
                 .block(
                     Block::default()
+                        .style(style())
                         .borders(if self.show_x_labels {
                             Borders::LEFT | Borders::BOTTOM
                         } else {
                             Borders::LEFT
                         })
-                        .border_style(Style::default().fg(THEME.border_axis())),
+                        .border_style(style().fg(THEME.border_axis())),
                 )
                 .x_bounds([0.0, num_candles as f64 * 4.0])
                 .y_bounds(state.y_bounds(min, max))
@@ -245,7 +247,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
                 } else {
                     Borders::LEFT
                 })
-                .border_style(Style::default().fg(THEME.border_axis()))
+                .border_style(style().fg(THEME.border_axis()))
                 .render(layout[1], buf);
         }
     }

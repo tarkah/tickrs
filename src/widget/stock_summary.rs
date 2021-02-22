@@ -1,6 +1,6 @@
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Modifier, Style};
+use tui::style::Modifier;
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 
@@ -9,6 +9,7 @@ use super::stock::StockState;
 use super::{CachableWidget, CacheState};
 use crate::common::ChartType;
 use crate::draw::{add_padding, PaddingDirection};
+use crate::theme::style;
 use crate::{CHART_TYPE, ENABLE_PRE_POST, SHOW_VOLUMES, THEME};
 
 pub struct StockSummaryWidget {}
@@ -66,14 +67,10 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                         format!("{:<4}", loading_indicator)
                     }
                 ),
-                Style::default().fg(THEME.text_normal()),
+                style().fg(THEME.text_normal()),
             ))
             .borders(Borders::TOP)
-            .border_style(
-                Style::default()
-                    .fg(THEME.border_secondary())
-                    .bg(THEME.background()),
-            )
+            .border_style(style().fg(THEME.border_secondary()))
             .render(area, buf);
         area = add_padding(area, 1, PaddingDirection::Top);
 
@@ -91,46 +88,46 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
             let prices = vec![
                 Spans::from(vec![
-                    Span::styled("c: ", Style::default().fg(THEME.text_normal())),
+                    Span::styled("c: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2} {}", state.current_price(), currency)
                         } else {
                             "".to_string()
                         },
-                        Style::default()
+                        style()
                             .add_modifier(Modifier::BOLD)
                             .fg(THEME.text_primary()),
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("h: ", Style::default().fg(THEME.text_normal())),
+                    Span::styled("h: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", high)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary()),
+                        style().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("l: ", Style::default().fg(THEME.text_normal())),
+                    Span::styled("l: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", low)
                         } else {
                             "".to_string()
                         },
-                        Style::default().fg(THEME.text_secondary()),
+                        style().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::default(),
                 Spans::from(vec![
-                    Span::styled("v: ", Style::default().fg(THEME.text_normal())),
+                    Span::styled("v: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
-                        Style::default().fg(THEME.text_secondary()),
+                        style().fg(THEME.text_secondary()),
                     ),
                 ]),
             ];
@@ -141,7 +138,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 } else {
                     "".to_string()
                 },
-                Style::default()
+                style()
                     .add_modifier(Modifier::BOLD)
                     .fg(if pct_change >= 0.0 {
                         THEME.profit()
@@ -151,12 +148,12 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             )];
 
             Paragraph::new(prices)
-                .style(Style::default().bg(THEME.background()))
+                .style(style())
                 .alignment(Alignment::Left)
                 .render(layout[0], buf);
 
             Paragraph::new(Spans::from(pct))
-                .style(Style::default().bg(THEME.background()))
+                .style(style())
                 .alignment(Alignment::Right)
                 .render(layout[0], buf);
         }

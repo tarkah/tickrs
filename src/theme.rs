@@ -1,7 +1,12 @@
 use serde::Deserialize;
-use tui::style::Color;
+use tui::style::{Color, Style};
 
 use self::de::deserialize_option_color_hex_string;
+use crate::THEME;
+
+pub fn style() -> Style {
+    Style::default().bg(THEME.background())
+}
 
 macro_rules! def_theme_struct_with_defaults {
     ($($name:ident => $color:expr),+) => {
