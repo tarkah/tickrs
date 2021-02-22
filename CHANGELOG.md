@@ -14,6 +14,10 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed theme background not getting applied to all widgets ([#84])
+
 ## [0.13.0] - 2021-02-19
 
 ### Added
@@ -118,3 +122,4 @@ and `Removed`.
 [#75]: https://github.com/tarkah/tickrs/pull/75
 [#76]: https://github.com/tarkah/tickrs/pull/76
 [#79]: https://github.com/tarkah/tickrs/pull/79
+[#84]: https://github.com/tarkah/tickrs/pull/84
