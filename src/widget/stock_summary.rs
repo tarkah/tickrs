@@ -33,7 +33,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
         let chart_type = state.chart_type;
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
-        let show_volumes = *SHOW_VOLUMES.read().unwrap();
+        let show_volumes = *SHOW_VOLUMES.read().unwrap() && chart_type != ChartType::Kagi;
 
         let loaded = state.loaded();
 

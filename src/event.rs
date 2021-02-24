@@ -30,11 +30,6 @@ pub fn handle_keys_display_stock(
             KeyCode::Char('c') => {
                 app.chart_type = app.chart_type.toggle();
 
-                // Turn off volumes when showing Kagi charts
-                if app.chart_type == ChartType::Kagi {
-                    *SHOW_VOLUMES.write().unwrap() = false;
-                }
-
                 for stock in app.stocks.iter_mut() {
                     stock.set_chart_type(app.chart_type);
                 }
@@ -249,11 +244,6 @@ pub fn handle_keys_display_summary(
             }
             KeyCode::Char('c') => {
                 app.chart_type = app.chart_type.toggle();
-
-                // Turn off volumes when showing Kagi charts
-                if app.chart_type == ChartType::Kagi {
-                    *SHOW_VOLUMES.write().unwrap() = false;
-                }
 
                 for stock in app.stocks.iter_mut() {
                     stock.set_chart_type(app.chart_type);

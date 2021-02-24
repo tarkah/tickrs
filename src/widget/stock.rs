@@ -561,7 +561,7 @@ impl CachableWidget<StockState> for StockWidget {
         let chart_type = state.chart_type;
         let show_x_labels = SHOW_X_LABELS.read().map_or(false, |l| *l);
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
-        let show_volumes = *SHOW_VOLUMES.read().unwrap();
+        let show_volumes = *SHOW_VOLUMES.read().unwrap() && chart_type != ChartType::Kagi;
 
         let loaded = state.loaded();
 
@@ -715,7 +715,7 @@ impl CachableWidget<StockState> for StockWidget {
                     left_info.push(Spans::from(Span::styled(
                         "Volumes  'v'",
                         style()
-                            .bg(if show_volumes && chart_type != ChartType::Kagi {
+                            .bg(if show_volumes {
                                 THEME.highlight_unfocused()
                             } else {
                                 THEME.background()

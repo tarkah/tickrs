@@ -5,7 +5,7 @@ use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 use tui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
-use crate::common::TimeFrame;
+use crate::common::{ChartType, TimeFrame};
 use crate::theme::style;
 use crate::widget::{
     block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
@@ -199,7 +199,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     area = add_padding(area, 1, PaddingDirection::All);
     area = add_padding(area, 1, PaddingDirection::Right);
 
-    let show_volumes = *SHOW_VOLUMES.read().unwrap();
+    let show_volumes = *SHOW_VOLUMES.read().unwrap() && app.chart_type != ChartType::Kagi;
     let stock_widget_height = if show_volumes { 7 } else { 6 };
 
     let height = area.height;
