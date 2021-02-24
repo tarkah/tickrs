@@ -59,11 +59,7 @@ fn main() {
     let data_received = DATA_RECEIVED.1.clone();
     let ui_events = setup_ui_events();
 
-    let starting_chart_type = if opts.candle {
-        ChartType::Candlestick
-    } else {
-        ChartType::Line
-    };
+    let starting_chart_type = opts.chart_type.unwrap_or(ChartType::Line);
 
     let starting_stocks: Vec<_> = opts
         .symbols

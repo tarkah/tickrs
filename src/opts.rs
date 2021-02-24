@@ -4,7 +4,7 @@ use anyhow::{bail, format_err, Error};
 use serde::Deserialize;
 use structopt::StructOpt;
 
-use crate::common::TimeFrame;
+use crate::common::{ChartType, TimeFrame};
 use crate::theme::Theme;
 
 pub fn resolve_opts() -> Opts {
@@ -12,12 +12,12 @@ pub fn resolve_opts() -> Opts {
 
     if let Ok(config_opts) = get_config_opts() {
         // Options
+        opts.chart_type = opts.chart_type.or(config_opts.chart_type);
         opts.symbols = opts.symbols.or(config_opts.symbols);
         opts.time_frame = opts.time_frame.or(config_opts.time_frame);
         opts.update_interval = opts.update_interval.or(config_opts.update_interval);
 
         // Flags
-        opts.candle = opts.candle || config_opts.candle;
         opts.enable_pre_post = opts.enable_pre_post || config_opts.enable_pre_post;
         opts.hide_help = opts.hide_help || config_opts.hide_help;
         opts.hide_prev_close = opts.hide_prev_close || config_opts.hide_prev_close;
@@ -80,6 +80,9 @@ fn get_config_opts() -> Result<Opts, Error> {
 pub struct Opts {
     // Options
     //
+    #[structopt(short, long, possible_values(&["line", "candle", "kagi"]))]
+    /// Chart type to start app with [default: line]
+    pub chart_type: Option<ChartType>,
     #[structopt(short, long, use_delimiter = true)]
     /// Comma separated list of ticker symbols to start app with
     pub symbols: Option<Vec<String>>,
@@ -92,9 +95,6 @@ pub struct Opts {
 
     // Flags
     //
-    #[structopt(long)]
-    /// Use candlestick charts
-    pub candle: bool,
     #[structopt(short = "p", long)]
     /// Enable pre / post market hours for graphs
     pub enable_pre_post: bool,
@@ -130,6 +130,11 @@ const DEFAULT_CONFIG: &str = "---
 #  - SPY
 #  - AMD
 
+# Chart type to start app with
+# Default is line
+# Possible values: line, candle, kagi
+#chart_type: candle
+
 # Use specified time frame when starting program and when new stocks are added
 # Default is 1D
 # Possible values: 1D, 1W, 1M, 3M, 6M, 1Y, 5Y
@@ -138,9 +143,6 @@ const DEFAULT_CONFIG: &str = "---
 # Interval to update data from API (seconds)
 # Default is 1
 #update_interval: 1
-
-# Use candlestick charts
-#candle: true
 
 # Enable pre / post market hours for graphs
 #enable_pre_post: true
