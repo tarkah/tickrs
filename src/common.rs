@@ -14,13 +14,23 @@ use crate::api::Range;
 pub enum ChartType {
     Line,
     Candlestick,
+    Kagi,
 }
 
 impl ChartType {
     pub fn toggle(self) -> Self {
         match self {
             ChartType::Line => ChartType::Candlestick,
-            ChartType::Candlestick => ChartType::Line,
+            ChartType::Candlestick => ChartType::Kagi,
+            ChartType::Kagi => ChartType::Line,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ChartType::Line => "Line",
+            ChartType::Candlestick => "Candle",
+            ChartType::Kagi => "Kagi",
         }
     }
 }

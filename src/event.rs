@@ -2,8 +2,9 @@ use app::ScrollDirection;
 use crossbeam_channel::Sender;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+use crate::common::ChartType;
 use crate::widget::options;
-use crate::{app, cleanup_terminal, CHART_TYPE, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
+use crate::{app, cleanup_terminal, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
 
 pub fn handle_keys_display_stock(
     key_event: KeyEvent,
@@ -27,8 +28,17 @@ pub fn handle_keys_display_stock(
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('c') => {
-                let mut chart_type = CHART_TYPE.write().unwrap();
-                *chart_type = chart_type.toggle();
+                app.chart_type = app.chart_type.toggle();
+
+                // Turn off volumes when showing Kagi charts
+                if app.chart_type == ChartType::Kagi {
+                    *SHOW_VOLUMES.write().unwrap() = false;
+                }
+
+                for stock in app.stocks.iter_mut() {
+                    stock.set_chart_type(app.chart_type);
+                }
+
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('k') => {
@@ -80,9 +90,11 @@ pub fn handle_keys_display_stock(
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('v') => {
-                let mut show_volumes = SHOW_VOLUMES.write().unwrap();
-                *show_volumes = !*show_volumes;
-                let _ = request_redraw.try_send(());
+                if app.chart_type != ChartType::Kagi {
+                    let mut show_volumes = SHOW_VOLUMES.write().unwrap();
+                    *show_volumes = !*show_volumes;
+                    let _ = request_redraw.try_send(());
+                }
             }
             KeyCode::Tab => {
                 if app.current_tab == app.stocks.len() - 1 {
@@ -120,6 +132,24 @@ pub fn handle_keys_display_stock(
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
         match key_event.code {
+            KeyCode::Left => {
+                if let Some(stock) = app.stocks.get_mut(app.current_tab) {
+                    if let Some(chart_state) = stock.chart_state_mut() {
+                        chart_state.scroll_left();
+
+                        let _ = request_redraw.try_send(());
+                    }
+                }
+            }
+            KeyCode::Right => {
+                if let Some(stock) = app.stocks.get_mut(app.current_tab) {
+                    if let Some(chart_state) = stock.chart_state_mut() {
+                        chart_state.scroll_right();
+
+                        let _ = request_redraw.try_send(());
+                    }
+                }
+            }
             KeyCode::Char('?') => {
                 app.previous_mode = app.mode;
                 app.mode = app::Mode::Help;
@@ -146,7 +176,7 @@ pub fn handle_keys_add_stock(
     if key_event.modifiers.is_empty() || key_event.modifiers == KeyModifiers::SHIFT {
         match key_event.code {
             KeyCode::Enter => {
-                let mut stock = app.add_stock.enter();
+                let mut stock = app.add_stock.enter(app.chart_type);
 
                 if app.previous_mode == app::Mode::DisplaySummary {
                     stock.set_time_frame(app.summary_time_frame);
@@ -218,8 +248,17 @@ pub fn handle_keys_display_summary(
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('c') => {
-                let mut chart_type = CHART_TYPE.write().unwrap();
-                *chart_type = chart_type.toggle();
+                app.chart_type = app.chart_type.toggle();
+
+                // Turn off volumes when showing Kagi charts
+                if app.chart_type == ChartType::Kagi {
+                    *SHOW_VOLUMES.write().unwrap() = false;
+                }
+
+                for stock in app.stocks.iter_mut() {
+                    stock.set_chart_type(app.chart_type);
+                }
+
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('p') => {
@@ -236,9 +275,11 @@ pub fn handle_keys_display_summary(
                 let _ = request_redraw.try_send(());
             }
             KeyCode::Char('v') => {
-                let mut show_volumes = SHOW_VOLUMES.write().unwrap();
-                *show_volumes = !*show_volumes;
-                let _ = request_redraw.try_send(());
+                if app.chart_type != ChartType::Kagi {
+                    let mut show_volumes = SHOW_VOLUMES.write().unwrap();
+                    *show_volumes = !*show_volumes;
+                    let _ = request_redraw.try_send(());
+                }
             }
             KeyCode::Char('?') => {
                 app.previous_mode = app.mode;

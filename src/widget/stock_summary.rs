@@ -4,13 +4,13 @@ use tui::style::Modifier;
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 
-use super::chart::{PricesCandlestickChart, PricesLineChart, VolumeBarChart};
+use super::chart::{PricesCandlestickChart, PricesKagiChart, PricesLineChart, VolumeBarChart};
 use super::stock::StockState;
 use super::{CachableWidget, CacheState};
 use crate::common::ChartType;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
-use crate::{CHART_TYPE, ENABLE_PRE_POST, SHOW_VOLUMES, THEME};
+use crate::{ENABLE_PRE_POST, SHOW_VOLUMES, THEME};
 
 pub struct StockSummaryWidget {}
 
@@ -31,7 +31,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
         let data = state.prices().collect::<Vec<_>>();
         let pct_change = state.pct_change(&data);
 
-        let chart_type = *CHART_TYPE.read().unwrap();
+        let chart_type = state.chart_type;
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
         let show_volumes = *SHOW_VOLUMES.read().unwrap();
 
@@ -185,6 +185,15 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             }
             ChartType::Candlestick => {
                 PricesCandlestickChart {
+                    data: &data,
+                    loaded,
+                    show_x_labels: false,
+                    is_summary: true,
+                }
+                .render(graph_chunks[0], buf, state);
+            }
+            ChartType::Kagi => {
+                PricesKagiChart {
                     data: &data,
                     loaded,
                     show_x_labels: false,

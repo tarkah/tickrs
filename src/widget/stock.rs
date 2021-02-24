@@ -6,7 +6,9 @@ use tui::style::Modifier;
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap};
 
-use super::chart::{PricesCandlestickChart, PricesLineChart, VolumeBarChart};
+use super::chart::{
+    ChartState, PricesCandlestickChart, PricesKagiChart, PricesLineChart, VolumeBarChart,
+};
 use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
@@ -14,14 +16,15 @@ use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::theme::style;
 use crate::{
-    CHART_TYPE, DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES,
-    SHOW_X_LABELS, THEME, TIME_FRAME, TRUNC_PRE,
+    DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS,
+    THEME, TIME_FRAME, TRUNC_PRE,
 };
 
 const NUM_LOADING_TICKS: usize = 4;
 
 pub struct StockState {
     pub symbol: String,
+    pub chart_type: ChartType,
     pub stock_service: service::stock::StockService,
     pub profile: Option<CompanyData>,
     pub current_regular_price: f64,
@@ -35,12 +38,14 @@ pub struct StockState {
     pub loading_tick: usize,
     pub prev_state_loaded: bool,
     pub chart_meta: Option<ChartMeta>,
+    pub chart_state: Option<ChartState>,
     pub cache_state: CacheState,
 }
 
 impl Hash for StockState {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.symbol.hash(state);
+        self.chart_type.hash(state);
         self.current_regular_price.to_bits().hash(state);
         // Only fetched once, so just need to check if Some
         self.profile.is_some().hash(state);
@@ -54,6 +59,10 @@ impl Hash for StockState {
         self.prev_state_loaded.hash(state);
         self.chart_meta.hash(state);
 
+        if let Some(chart_state) = self.chart_state.as_ref() {
+            chart_state.hash(state);
+        }
+
         // Hash globals since they affect "state" of how widget is rendered
         DEFAULT_TIMESTAMPS
             .read()
@@ -66,18 +75,18 @@ impl Hash for StockState {
         SHOW_VOLUMES.read().unwrap().hash(state);
         SHOW_X_LABELS.read().unwrap().hash(state);
         TRUNC_PRE.hash(state);
-        CHART_TYPE.read().unwrap().hash(state);
     }
 }
 
 impl StockState {
-    pub fn new(symbol: String) -> StockState {
+    pub fn new(symbol: String, chart_type: ChartType) -> StockState {
         let time_frame = *TIME_FRAME;
 
         let stock_service = service::stock::StockService::new(symbol.clone(), time_frame);
 
         StockState {
             symbol,
+            chart_type,
             stock_service,
             profile: None,
             current_regular_price: 0.0,
@@ -92,6 +101,7 @@ impl StockState {
             prev_state_loaded: false,
             chart_meta: None,
             cache_state: Default::default(),
+            chart_state: None,
         }
     }
 
@@ -111,6 +121,9 @@ impl StockState {
         self.time_frame = time_frame;
 
         self.stock_service.update_time_frame(time_frame);
+
+        // Resets chart state where applicable
+        self.set_chart_type(self.chart_type);
     }
 
     pub fn prices(&self) -> impl Iterator<Item = Price> {
@@ -417,29 +430,24 @@ impl StockState {
             .get(0)
             .map_or(0, |d| self.time_frame.format_time(*d).len())
             + 5;
+
         let num_labels = width as usize / label_len;
-        let chunk_size = (dates.len() as f32 / (num_labels - 1) as f32).ceil() as usize;
 
-        for (idx, chunk) in dates.chunks(chunk_size).enumerate() {
-            if idx == 0 {
-                labels.push(chunk.get(0).map_or(Span::raw("".to_string()), |d| {
-                    Span::styled(
-                        self.time_frame.format_time(*d),
-                        style().fg(THEME.text_normal()),
-                    )
-                }));
-            }
+        if num_labels == 0 {
+            return labels;
+        }
 
-            labels.push(
-                chunk
-                    .get(chunk.len() - 1)
-                    .map_or(Span::raw("".to_string()), |d| {
-                        Span::styled(
-                            self.time_frame.format_time(*d),
-                            style().fg(THEME.text_normal()),
-                        )
-                    }),
+        for i in 0..num_labels {
+            let idx = i * (dates.len() - 1) / (num_labels.max(2) - 1);
+
+            let timestamp = dates.get(idx).unwrap();
+
+            let label = Span::styled(
+                self.time_frame.format_time(*timestamp),
+                style().fg(THEME.text_normal()),
             );
+
+            labels.push(label);
         }
 
         labels
@@ -513,6 +521,20 @@ impl StockState {
             self.prev_state_loaded = true;
         }
     }
+
+    pub fn set_chart_type(&mut self, chart_type: ChartType) {
+        self.chart_state.take();
+
+        if chart_type == ChartType::Kagi {
+            self.chart_state = Some(Default::default());
+        }
+
+        self.chart_type = chart_type;
+    }
+
+    pub fn chart_state_mut(&mut self) -> Option<&mut ChartState> {
+        self.chart_state.as_mut()
+    }
 }
 
 pub struct StockWidget {}
@@ -536,7 +558,7 @@ impl CachableWidget<StockState> for StockWidget {
 
         let pct_change = state.pct_change(&data);
 
-        let chart_type = *CHART_TYPE.read().unwrap();
+        let chart_type = state.chart_type;
         let show_x_labels = SHOW_X_LABELS.read().map_or(false, |l| *l);
         let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
         let show_volumes = *SHOW_VOLUMES.read().unwrap();
@@ -575,7 +597,7 @@ impl CachableWidget<StockState> for StockWidget {
         // chunks[0] - Company Info
         // chunks[1] - Graph - fill remaining space
         // chunks[2] - Time Frame Tabs
-        let chunks = Layout::default()
+        let mut chunks = Layout::default()
             .constraints(
                 [
                     Constraint::Length(6),
@@ -686,24 +708,23 @@ impl CachableWidget<StockState> for StockWidget {
 
                 if loaded {
                     left_info.push(Spans::from(Span::styled(
-                        format!(
-                            "{: <8} 'c'",
-                            if chart_type == ChartType::Line {
-                                "Candle"
-                            } else {
-                                "Line"
-                            }
-                        ),
+                        format!("{: <8} 'c'", chart_type.toggle().as_str()),
                         style(),
                     )));
 
                     left_info.push(Spans::from(Span::styled(
                         "Volumes  'v'",
-                        style().bg(if show_volumes {
-                            THEME.highlight_unfocused()
-                        } else {
-                            THEME.background()
-                        }),
+                        style()
+                            .bg(if show_volumes && chart_type != ChartType::Kagi {
+                                THEME.highlight_unfocused()
+                            } else {
+                                THEME.background()
+                            })
+                            .fg(if chart_type == ChartType::Kagi {
+                                THEME.gray()
+                            } else {
+                                THEME.text_normal()
+                            }),
                     )));
 
                     left_info.push(Spans::from(Span::styled(
@@ -782,6 +803,15 @@ impl CachableWidget<StockState> for StockWidget {
                 }
                 .render(graph_chunks[0], buf, state);
             }
+            ChartType::Kagi => {
+                PricesKagiChart {
+                    data: &data,
+                    loaded,
+                    show_x_labels,
+                    is_summary: false,
+                }
+                .render(graph_chunks[0], buf, state);
+            }
         }
 
         // Draw volumes bar chart
@@ -794,23 +824,61 @@ impl CachableWidget<StockState> for StockWidget {
             .render(graph_chunks[1], buf, state);
         }
 
-        // Draw time frame tabs
+        // Draw time frame tabs & optional chart scroll indicators
         {
+            Block::default()
+                .borders(Borders::TOP)
+                .border_style(style().fg(THEME.border_secondary()))
+                .render(chunks[2], buf);
+            chunks[2] = add_padding(chunks[2], 1, PaddingDirection::Top);
+
+            // layout[0] - timeframe
+            // layout[1] - scroll indicators
+            let layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(if state.chart_state.is_some() {
+                    [Constraint::Min(0), Constraint::Length(3)].as_ref()
+                } else {
+                    [Constraint::Min(0)].as_ref()
+                })
+                .split(chunks[2]);
+
             let tab_names = TimeFrame::tab_names()
                 .iter()
                 .map(|s| Spans::from(*s))
                 .collect();
 
             Tabs::new(tab_names)
-                .block(
-                    Block::default()
-                        .borders(Borders::TOP)
-                        .border_style(style().fg(THEME.border_secondary())),
-                )
                 .select(state.time_frame.idx())
                 .style(style().fg(THEME.text_secondary()))
                 .highlight_style(style().fg(THEME.text_primary()))
-                .render(chunks[2], buf);
+                .render(layout[0], buf);
+
+            if let Some(chart_state) = state.chart_state.as_ref() {
+                let more_left = chart_state.offset.unwrap_or_default()
+                    < chart_state.max_offset.unwrap_or_default();
+                let more_right = chart_state.offset.is_some();
+
+                let left_arrow = Span::styled(
+                    "ᐸ",
+                    style().fg(if more_left {
+                        THEME.text_normal()
+                    } else {
+                        THEME.gray()
+                    }),
+                );
+                let right_arrow = Span::styled(
+                    "ᐳ",
+                    style().fg(if more_right {
+                        THEME.text_normal()
+                    } else {
+                        THEME.gray()
+                    }),
+                );
+
+                Paragraph::new(Spans::from(vec![left_arrow, Span::raw(" "), right_arrow]))
+                    .render(layout[1], buf);
+            }
         }
     }
 }

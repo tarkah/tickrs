@@ -42,11 +42,6 @@ lazy_static! {
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
     pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
-    pub static ref CHART_TYPE: RwLock<ChartType> = RwLock::new(if OPTS.candle {
-        ChartType::Candlestick
-    } else {
-        ChartType::Line
-    });
 }
 
 fn main() {
@@ -64,11 +59,17 @@ fn main() {
     let data_received = DATA_RECEIVED.1.clone();
     let ui_events = setup_ui_events();
 
+    let starting_chart_type = if opts.candle {
+        ChartType::Candlestick
+    } else {
+        ChartType::Line
+    };
+
     let starting_stocks: Vec<_> = opts
         .symbols
         .unwrap_or_default()
         .into_iter()
-        .map(widget::StockState::new)
+        .map(|symbol| widget::StockState::new(symbol, starting_chart_type))
         .collect();
 
     let starting_mode = if starting_stocks.is_empty() {
@@ -103,6 +104,7 @@ fn main() {
         summary_time_frame: opts.time_frame.unwrap_or(TimeFrame::Day1),
         default_timestamp_service,
         summary_scroll_state: Default::default(),
+        chart_type: starting_chart_type,
     }));
 
     let move_app = app.clone();
