@@ -723,16 +723,20 @@ impl CachableWidget<StockState> for StockWidget {
                             THEME.background()
                         }),
                     )));
-                }
 
-                if state.options_enabled() && loaded {
                     right_info.push(Spans::from(Span::styled(
                         "Options  'o'",
-                        style().bg(if state.show_options {
-                            THEME.highlight_unfocused()
-                        } else {
-                            THEME.background()
-                        }),
+                        style()
+                            .bg(if state.show_options {
+                                THEME.highlight_unfocused()
+                            } else {
+                                THEME.background()
+                            })
+                            .fg(if state.options_enabled() {
+                                THEME.text_normal()
+                            } else {
+                                THEME.gray()
+                            }),
                     )));
                 }
 
