@@ -295,8 +295,7 @@ impl StockState {
 
         self.show_configure = !self.show_configure;
 
-        self.chart_configuration
-            .reset_with_defaults(self.time_frame);
+        self.chart_configuration.reset_form(self.time_frame);
 
         true
     }

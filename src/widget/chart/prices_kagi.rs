@@ -69,11 +69,40 @@ impl Hash for ReversalOption {
     }
 }
 
-fn calculate_trends(data: &[Price], reversal_option: ReversalOption) -> Vec<Trend> {
+#[derive(Debug, Clone, Copy, Hash)]
+pub enum PriceOption {
+    Close,
+    HighLow,
+}
+
+#[derive(Clone, Copy)]
+enum ComparisonType {
+    Gt,
+    Lt,
+}
+
+fn choose_price(price: &Price, option: PriceOption, comparison: ComparisonType) -> f64 {
+    match option {
+        PriceOption::Close => price.close,
+        PriceOption::HighLow => match comparison {
+            ComparisonType::Gt => price.high,
+            ComparisonType::Lt => price.low,
+        },
+    }
+}
+
+fn calculate_trends(
+    data: &[Price],
+    reversal_option: ReversalOption,
+    price_option: PriceOption,
+) -> Vec<Trend> {
     let mut trends = vec![];
 
     // Filter out 0 prices
-    let data = data.iter().filter(|p| p.close.gt(&0.0)).collect::<Vec<_>>();
+    let data = match price_option {
+        PriceOption::Close => data.iter().filter(|p| p.close.gt(&0.0)).collect::<Vec<_>>(),
+        PriceOption::HighLow => data.iter().filter(|p| p.low.gt(&0.0)).collect::<Vec<_>>(),
+    };
 
     // Exit if data is empty
     if data.is_empty() {
@@ -85,10 +114,16 @@ fn calculate_trends(data: &[Price], reversal_option: ReversalOption) -> Vec<Tren
     // Find initial trend direction
     let mut initial_direction = TrendDirection::Up;
     for price in data[1..].iter() {
-        if price.close.gt(&first_price.close) {
+        let first_price_gt = choose_price(&first_price, price_option, ComparisonType::Gt);
+        let first_price_lt = choose_price(&first_price, price_option, ComparisonType::Lt);
+
+        let price_gt = choose_price(&price, price_option, ComparisonType::Gt);
+        let price_lt = choose_price(&price, price_option, ComparisonType::Lt);
+
+        if price_gt.gt(&first_price_gt) {
             initial_direction = TrendDirection::Up;
             break;
-        } else if price.close.lt(&first_price.close) {
+        } else if price_lt.lt(&first_price_lt) {
             initial_direction = TrendDirection::Down;
             break;
         }
@@ -102,13 +137,27 @@ fn calculate_trends(data: &[Price], reversal_option: ReversalOption) -> Vec<Tren
     };
 
     for (idx, price) in data[1..].iter().enumerate() {
-        let (reversal_amount, diff) = match reversal_option {
-            ReversalOption::Pct(reversal_amount) => (
-                reversal_amount,
-                price.close / curr_trend.last_price.close - 1.0,
-            ),
-            ReversalOption::Amount(reversal_amount) => {
-                (reversal_amount, price.close - curr_trend.last_price.close)
+        let (reversal_amount, diff) = {
+            let current_price = match curr_trend.direction {
+                TrendDirection::Up => choose_price(&price, price_option, ComparisonType::Lt),
+                TrendDirection::Down => choose_price(&price, price_option, ComparisonType::Gt),
+            };
+            let last_price = match curr_trend.direction {
+                TrendDirection::Up => {
+                    choose_price(&curr_trend.last_price, price_option, ComparisonType::Gt)
+                }
+                TrendDirection::Down => {
+                    choose_price(&curr_trend.last_price, price_option, ComparisonType::Lt)
+                }
+            };
+
+            match reversal_option {
+                ReversalOption::Pct(reversal_amount) => {
+                    (reversal_amount, current_price / last_price - 1.0)
+                }
+                ReversalOption::Amount(reversal_amount) => {
+                    (reversal_amount, current_price - last_price)
+                }
             }
         };
 
@@ -121,7 +170,11 @@ fn calculate_trends(data: &[Price], reversal_option: ReversalOption) -> Vec<Tren
         if let Some(prev_trend) = trends.last() {
             match curr_trend.direction {
                 TrendDirection::Up => {
-                    if price.close.gt(&prev_trend.first_price.close) {
+                    let current_price = choose_price(&price, price_option, ComparisonType::Gt);
+                    let breakpoint_price =
+                        choose_price(&prev_trend.first_price, price_option, ComparisonType::Gt);
+
+                    if current_price.gt(&breakpoint_price) {
                         curr_trend.breakpoint = Some(Breakpoint {
                             kind: BreakpointKind::Yang,
                             price: prev_trend.first_price,
@@ -129,7 +182,11 @@ fn calculate_trends(data: &[Price], reversal_option: ReversalOption) -> Vec<Tren
                     }
                 }
                 TrendDirection::Down => {
-                    if price.close.lt(&prev_trend.first_price.close) {
+                    let current_price = choose_price(&price, price_option, ComparisonType::Lt);
+                    let breakpoint_price =
+                        choose_price(&prev_trend.first_price, price_option, ComparisonType::Lt);
+
+                    if current_price.lt(&breakpoint_price) {
                         curr_trend.breakpoint = Some(Breakpoint {
                             kind: BreakpointKind::Ying,
                             price: prev_trend.first_price,
@@ -142,12 +199,20 @@ fn calculate_trends(data: &[Price], reversal_option: ReversalOption) -> Vec<Tren
         // Set last / low / high of trend where applicable
         match curr_trend.direction {
             TrendDirection::Up => {
-                if price.close.gt(&curr_trend.last_price.close) {
+                let current_price = choose_price(&price, price_option, ComparisonType::Gt);
+                let last_price =
+                    choose_price(&curr_trend.last_price, price_option, ComparisonType::Gt);
+
+                if current_price.gt(&last_price) {
                     curr_trend.last_price = **price;
                 }
             }
             TrendDirection::Down => {
-                if price.close.lt(&curr_trend.last_price.close) {
+                let current_price = choose_price(&price, price_option, ComparisonType::Lt);
+                let last_price =
+                    choose_price(&curr_trend.last_price, price_option, ComparisonType::Lt);
+
+                if current_price.lt(&last_price) {
                     curr_trend.last_price = **price;
                 }
             }
@@ -248,8 +313,9 @@ impl<'a> StatefulWidget for PricesKagiChart<'a> {
             .kagi_options
             .reversal_option
             .unwrap_or(default_reversal_option);
+        let price_option = self.kagi_options.price_option.unwrap_or(PriceOption::Close);
 
-        let kagi_trends = calculate_trends(&self.data, reversal_option);
+        let kagi_trends = calculate_trends(&self.data, reversal_option, price_option);
 
         if !self.is_summary {
             Block::default()
@@ -418,22 +484,54 @@ impl<'a> StatefulWidget for PricesKagiChart<'a> {
                         .iter()
                         .enumerate()
                     {
+                        let start = choose_price(
+                            &trend.first_price,
+                            price_option,
+                            if trend.direction == TrendDirection::Up {
+                                ComparisonType::Lt
+                            } else {
+                                ComparisonType::Gt
+                            },
+                        );
+                        let mid = if let Some(breakpoint) = &trend.breakpoint {
+                            choose_price(
+                                &breakpoint.price,
+                                price_option,
+                                if trend.direction == TrendDirection::Up {
+                                    ComparisonType::Gt
+                                } else {
+                                    ComparisonType::Lt
+                                },
+                            )
+                        } else {
+                            choose_price(
+                                &trend.last_price,
+                                price_option,
+                                if trend.direction == TrendDirection::Up {
+                                    ComparisonType::Gt
+                                } else {
+                                    ComparisonType::Lt
+                                },
+                            )
+                        };
+                        let end = choose_price(
+                            &trend.last_price,
+                            price_option,
+                            if trend.direction == TrendDirection::Up {
+                                ComparisonType::Gt
+                            } else {
+                                ComparisonType::Lt
+                            },
+                        );
+
                         // Draw connector to prev line
                         ctx.draw(&Line {
                             x1: (idx as f64 * 3.0 - 1.0).max(0.0),
                             x2: idx as f64 * 3.0 + 2.0,
-                            y1: trend.first_price.close,
-                            y2: trend.first_price.close,
+                            y1: start,
+                            y2: start,
                             color,
                         });
-
-                        let start = trend.first_price.close;
-                        let mid = if let Some(breakpoint) = &trend.breakpoint {
-                            breakpoint.price.close
-                        } else {
-                            trend.last_price.close
-                        };
-                        let end = trend.last_price.close;
 
                         // Draw through mid (mid = end if no breakpoint)
                         ctx.draw(&Line {
