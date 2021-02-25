@@ -133,7 +133,9 @@ pub fn handle_keys_display_stock(
         }
     } else if key_event.modifiers == KeyModifiers::SHIFT {
         match key_event.code {
-            KeyCode::Left => {
+            // TODO: < and > doesn't work, but I'll just refactor this once rebasing this
+            // to https://github.com/tarkah/tickrs/pull/95
+            KeyCode::Left | KeyCode::Char('<') => {
                 if let Some(stock) = app.stocks.get_mut(app.current_tab) {
                     if let Some(chart_state) = stock.chart_state_mut() {
                         chart_state.scroll_left();
@@ -142,7 +144,7 @@ pub fn handle_keys_display_stock(
                     }
                 }
             }
-            KeyCode::Right => {
+            KeyCode::Right | KeyCode::Char('>') => {
                 if let Some(stock) = app.stocks.get_mut(app.current_tab) {
                     if let Some(chart_state) = stock.chart_state_mut() {
                         chart_state.scroll_right();
