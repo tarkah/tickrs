@@ -142,7 +142,7 @@ fn handle_keys_display_summary_(keycode: KeyCode, mut app: &mut app::App) {
 
 fn handle_keys_display_options_(keycode: KeyCode, mut app: &mut app::App) {
     match keycode {
-        KeyCode::Esc | KeyCode::Char('o') => {
+        KeyCode::Esc | KeyCode::Char('o') | KeyCode::Char('q') => {
             app.stocks[app.current_tab].toggle_options();
             app.mode = app::Mode::DisplayStock;
         }
@@ -250,7 +250,7 @@ pub fn handle_key_bindings(
         {
             app.mode = app.previous_mode;
         }
-        (.., KeyCode::Char('q')) => {
+        (mode, _, KeyCode::Char('q')) if mode != Mode::DisplayOptions => {
             cleanup_terminal();
             std::process::exit(0);
         }
