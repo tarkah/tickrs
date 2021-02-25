@@ -95,17 +95,17 @@ impl ChartConfigurationState {
         });
 
         // Everything validated, save the form values to our state
-        if let Some(reversal_options) = self.kagi_options.reversal_option.as_mut() {
-            match reversal_options {
-                KagiReversalOption::Single(_) => {
-                    let mut options_by_timeframe = HashMap::new();
-                    for time_frame in TimeFrame::ALL.iter() {
-                        options_by_timeframe.insert(*time_frame, new_kagi_reversal_option);
-                    }
+        match &mut self.kagi_options.reversal_option {
+            reversal_options @ Some(KagiReversalOption::Single(_)) | reversal_options @ None => {
+                let mut options_by_timeframe = BTreeMap::new();
+                for time_frame in TimeFrame::ALL.iter() {
+                    options_by_timeframe.insert(*time_frame, new_kagi_reversal_option);
                 }
-                KagiReversalOption::ByTimeFrame(options_by_timeframe) => {
-                    options_by_timeframe.insert(time_frame, new_kagi_reversal_option);
-                }
+
+                *reversal_options = Some(KagiReversalOption::ByTimeFrame(options_by_timeframe));
+            }
+            Some(KagiReversalOption::ByTimeFrame(options_by_timeframe)) => {
+                options_by_timeframe.insert(time_frame, new_kagi_reversal_option);
             }
         }
 
