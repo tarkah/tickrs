@@ -53,49 +53,6 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app:
             app.stocks.swap(app.current_tab, new_idx);
             app.current_tab = new_idx;
         }
-        (KeyCode::Left, _) => {
-            app.stocks[app.current_tab].time_frame_down();
-        }
-        (KeyCode::Right, _) => {
-            app.stocks[app.current_tab].time_frame_up();
-        }
-        (KeyCode::Char('/'), _) => {
-            app.previous_mode = app.mode;
-            app.mode = app::Mode::AddStock;
-        }
-        (KeyCode::Char('k'), _) => {
-            app.stocks.remove(app.current_tab);
-
-            if app.current_tab != 0 {
-                app.current_tab -= 1;
-            }
-
-            if app.stocks.is_empty() {
-                app.previous_mode = app.mode;
-                app.mode = app::Mode::AddStock;
-            }
-        }
-        (KeyCode::Char('s'), _) => {
-            app.mode = app::Mode::DisplaySummary;
-
-            for stock in app.stocks.iter_mut() {
-                if stock.time_frame != app.summary_time_frame {
-                    stock.set_time_frame(app.summary_time_frame);
-                }
-            }
-        }
-        (KeyCode::Char('o'), _) => {
-            if app.stocks[app.current_tab].toggle_options() {
-                app.mode = app::Mode::DisplayOptions;
-            }
-        }
-        (KeyCode::Tab, _) => {
-            if app.current_tab == app.stocks.len() - 1 {
-                app.current_tab = 0;
-            } else {
-                app.current_tab += 1;
-            }
-        }
         (KeyCode::BackTab, KeyModifiers::SHIFT) => {
             if app.current_tab == 0 {
                 app.current_tab = app.stocks.len() - 1;
@@ -103,6 +60,52 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app:
                 app.current_tab -= 1;
             }
         }
+        (keycode, modifiers) if modifiers.is_empty() => match keycode {
+            KeyCode::Left => {
+                app.stocks[app.current_tab].time_frame_down();
+            }
+            KeyCode::Right => {
+                app.stocks[app.current_tab].time_frame_up();
+            }
+            KeyCode::Char('/') => {
+                app.previous_mode = app.mode;
+                app.mode = app::Mode::AddStock;
+            }
+            KeyCode::Char('k') => {
+                app.stocks.remove(app.current_tab);
+
+                if app.current_tab != 0 {
+                    app.current_tab -= 1;
+                }
+
+                if app.stocks.is_empty() {
+                    app.previous_mode = app.mode;
+                    app.mode = app::Mode::AddStock;
+                }
+            }
+            KeyCode::Char('s') => {
+                app.mode = app::Mode::DisplaySummary;
+
+                for stock in app.stocks.iter_mut() {
+                    if stock.time_frame != app.summary_time_frame {
+                        stock.set_time_frame(app.summary_time_frame);
+                    }
+                }
+            }
+            KeyCode::Char('o') => {
+                if app.stocks[app.current_tab].toggle_options() {
+                    app.mode = app::Mode::DisplayOptions;
+                }
+            }
+            KeyCode::Tab => {
+                if app.current_tab == app.stocks.len() - 1 {
+                    app.current_tab = 0;
+                } else {
+                    app.current_tab += 1;
+                }
+            }
+            _ => {}
+        },
         _ => {}
     }
 }
