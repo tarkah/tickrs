@@ -465,8 +465,9 @@ pub fn handle_keys_configure_chart(
             let _ = request_redraw.try_send(());
         }
         (KeyCode::Enter, _) => {
+            let time_frame = app.stocks[app.current_tab].time_frame;
             let config = app.stocks[app.current_tab].chart_config_mut();
-            config.enter();
+            config.enter(time_frame);
             let _ = request_redraw.try_send(());
         }
         (KeyCode::Char('q'), _) => {

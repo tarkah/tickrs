@@ -1,5 +1,6 @@
 #![allow(clippy::single_match)]
 
+use std::collections::{BTreeMap, HashMap};
 use std::hash::{Hash, Hasher};
 
 use crossterm::terminal;
@@ -65,7 +66,7 @@ impl ChartConfigurationState {
         *tab_field = (*tab_field + 1) % mod_value;
     }
 
-    pub fn enter(&mut self) {
+    pub fn enter(&mut self, time_frame: TimeFrame) {
         self.error_message.take();
 
         // Validate Kagi reversal option
@@ -80,11 +81,11 @@ impl ChartConfigurationState {
                 }
             };
 
-            Some(match self.input.kagi_reversal_type {
+            match self.input.kagi_reversal_type {
                 0 => ReversalOption::Pct(value),
                 1 => ReversalOption::Amount(value),
                 _ => unreachable!(),
-            })
+            }
         };
 
         let new_kagi_price_option = Some(match self.input.kagi_price_type {
@@ -94,7 +95,20 @@ impl ChartConfigurationState {
         });
 
         // Everything validated, save the form values to our state
-        self.kagi_options.reversal_option = new_kagi_reversal_option;
+        if let Some(reversal_options) = self.kagi_options.reversal_option.as_mut() {
+            match reversal_options {
+                KagiReversalOption::Single(_) => {
+                    let mut options_by_timeframe = HashMap::new();
+                    for time_frame in TimeFrame::ALL.iter() {
+                        options_by_timeframe.insert(*time_frame, new_kagi_reversal_option);
+                    }
+                }
+                KagiReversalOption::ByTimeFrame(options_by_timeframe) => {
+                    options_by_timeframe.insert(time_frame, new_kagi_reversal_option);
+                }
+            }
+        }
+
         self.kagi_options.price_option = new_kagi_price_option;
     }
 
@@ -128,14 +142,27 @@ impl ChartConfigurationState {
             TimeFrame::Day1 => 0.01,
             _ => 0.04,
         };
+
         let (reversal_type, reversal_amount) = self
             .kagi_options
             .reversal_option
-            .map(|o| match o {
-                ReversalOption::Pct(amount) => (0, amount),
-                ReversalOption::Amount(amount) => (1, amount),
+            .as_ref()
+            .map(|o| {
+                let option = match o {
+                    KagiReversalOption::Single(option) => *option,
+                    KagiReversalOption::ByTimeFrame(options_by_timeframe) => options_by_timeframe
+                        .get(&time_frame)
+                        .copied()
+                        .unwrap_or(ReversalOption::Pct(default_reversal_amount)),
+                };
+
+                match option {
+                    ReversalOption::Pct(amount) => (0, amount),
+                    ReversalOption::Amount(amount) => (1, amount),
+                }
             })
             .unwrap_or((0, default_reversal_amount));
+
         let price_type = self
             .kagi_options
             .price_option
@@ -168,12 +195,19 @@ pub struct Input {
     pub kagi_price_type: usize,
 }
 
-#[derive(Default, Debug, Clone, Copy, Hash, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize, Hash)]
 pub struct KagiOptions {
     #[serde(rename = "reversal")]
-    pub reversal_option: Option<prices_kagi::ReversalOption>,
+    pub reversal_option: Option<KagiReversalOption>,
     #[serde(rename = "price")]
     pub price_option: Option<prices_kagi::PriceOption>,
+}
+
+#[derive(Debug, Clone, Deserialize, Hash)]
+#[serde(untagged)]
+pub enum KagiReversalOption {
+    Single(prices_kagi::ReversalOption),
+    ByTimeFrame(BTreeMap<TimeFrame, prices_kagi::ReversalOption>),
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq)]

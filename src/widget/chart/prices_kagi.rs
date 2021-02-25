@@ -10,7 +10,7 @@ use tui::widgets::{Block, Borders, StatefulWidget, Widget};
 use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
-use crate::widget::chart_configuration::KagiOptions;
+use crate::widget::chart_configuration::{KagiOptions, KagiReversalOption};
 use crate::widget::StockState;
 use crate::{HIDE_PREV_CLOSE, THEME};
 
@@ -315,10 +315,20 @@ impl<'a> StatefulWidget for PricesKagiChart<'a> {
             TimeFrame::Day1 => ReversalOption::Pct(0.01),
             _ => ReversalOption::Pct(0.04),
         };
+
         let reversal_option = self
             .kagi_options
             .reversal_option
+            .as_ref()
+            .map(|o| match o {
+                KagiReversalOption::Single(option) => *option,
+                KagiReversalOption::ByTimeFrame(options_by_timeframe) => options_by_timeframe
+                    .get(&state.time_frame)
+                    .copied()
+                    .unwrap_or(default_reversal_option),
+            })
             .unwrap_or(default_reversal_option);
+
         let price_option = self.kagi_options.price_option.unwrap_or(PriceOption::Close);
 
         let kagi_trends = calculate_trends(&self.data, reversal_option, price_option);

@@ -52,7 +52,7 @@ impl FromStr for ChartType {
         }
     }
 }
-#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize)]
+#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize, Ord)]
 pub enum TimeFrame {
     #[serde(alias = "1D")]
     Day1,

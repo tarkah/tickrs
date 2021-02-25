@@ -855,7 +855,7 @@ impl CachableWidget<StockState> for StockWidget {
                     loaded,
                     show_x_labels,
                     is_summary: false,
-                    kagi_options: state.chart_configuration.kagi_options,
+                    kagi_options: state.chart_configuration.kagi_options.clone(),
                 }
                 .render(graph_chunks[0], buf, state);
             }

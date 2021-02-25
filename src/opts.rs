@@ -181,7 +181,11 @@ const DEFAULT_CONFIG: &str = "---
 # entry is defined for a symbol, a default of 'close' price and 1% for 1D and 4%
 # for non-1D timeframes is used. This can be updated in the GUI by pressing 'e'
 #
+# reversal can be supplied as a single value, or a map on time frame to give each
+# time frame a different reversal amount
+#
 # reversal.type can be 'amount' or 'pct'
+#
 # price can be 'close' or 'high_low'
 #
 #kagi_options:
@@ -196,6 +200,14 @@ const DEFAULT_CONFIG: &str = "---
 #    reversal:
 #      type: pct
 #      value: 0.08
+#  NVDA:
+#    reversal:
+#      1D:
+#        type: pct
+#        value: 0.02
+#      5Y:
+#        type: pct
+#        value: 0.10
 
 # Apply a custom theme
 #
