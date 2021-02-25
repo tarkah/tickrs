@@ -1,6 +1,4 @@
-#![allow(clippy::single_match)]
-
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
 use crossterm::terminal;
@@ -274,8 +272,9 @@ impl CachableWidget<ChartConfigurationState> for ChartConfigurationWidget {
             .render(layout[0], buf);
 
         match self.chart_type {
+            ChartType::Line => {}
+            ChartType::Candlestick => {}
             ChartType::Kagi => render_kagi_options(layout[1], buf, state),
-            _ => {}
         }
     }
 }
