@@ -14,6 +14,20 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Added
+
+- Kagi charts have been added!
+  - You can specify custom reversal type (pct or amount), reversal value, and
+    price type (close or high_low) within the GUI by pressing 'e'
+  - New config options have been added to configure the behavior of Kagi charts,
+    see the updated [wiki entry](https://github.com/tarkah/tickrs/wiki/Config-file)
+  - As Kagi charts x-axis is decoupled from time, the chart width may be wider than
+    the terminal. You can now press <kbd>SHIFT</kbd> + <kbd><</kbd> / <kbd>></kbd>
+    or <kbd>SHIFT</kbd> + <kbd>LEFT</kbd> / <kbd>RIGHT</kbd> to scroll the chart.
+    An indicator in the bottom right corner will notify you if you can scroll further
+    left / right
+  - `--candle` has been deprecated in favor of `--chart-type`
+
 ### Packaging
 
 - Linux: Binary size has been reduced due to some optimizations, from 10.6MB to
