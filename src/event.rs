@@ -243,10 +243,10 @@ pub fn handle_key_bindings(
         }
         (Mode::Help, modifiers, keycode)
             if modifiers.is_empty()
-                && (match keycode {
-                    KeyCode::Esc | KeyCode::Char('?') | KeyCode::Char('q') => true,
-                    _ => false,
-                }) =>
+                && (matches!(
+                    keycode,
+                    KeyCode::Esc | KeyCode::Char('?') | KeyCode::Char('q')
+                )) =>
         {
             app.mode = app.previous_mode;
         }
