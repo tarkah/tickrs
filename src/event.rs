@@ -6,7 +6,7 @@ use crate::app::{self, Mode};
 use crate::widget::options;
 use crate::{cleanup_terminal, CHART_TYPE, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
 
-fn handle_keys_add_stock_(keycode: KeyCode, mut app: &mut app::App) {
+fn handle_keys_add_stock(keycode: KeyCode, mut app: &mut app::App) {
     match keycode {
         KeyCode::Enter => {
             let mut stock = app.add_stock.enter();
@@ -37,7 +37,7 @@ fn handle_keys_add_stock_(keycode: KeyCode, mut app: &mut app::App) {
     }
 }
 
-fn handle_keys_display_stock_(keycode: KeyCode, modifiers: KeyModifiers, mut app: &mut app::App) {
+fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app: &mut app::App) {
     match (keycode, modifiers) {
         (KeyCode::Left, KeyModifiers::CONTROL) => {
             let new_idx = if app.current_tab == 0 {
@@ -107,7 +107,7 @@ fn handle_keys_display_stock_(keycode: KeyCode, modifiers: KeyModifiers, mut app
     }
 }
 
-fn handle_keys_display_summary_(keycode: KeyCode, mut app: &mut app::App) {
+fn handle_keys_display_summary(keycode: KeyCode, mut app: &mut app::App) {
     match keycode {
         KeyCode::Left => {
             app.summary_time_frame = app.summary_time_frame.down();
@@ -140,7 +140,7 @@ fn handle_keys_display_summary_(keycode: KeyCode, mut app: &mut app::App) {
     }
 }
 
-fn handle_keys_display_options_(keycode: KeyCode, mut app: &mut app::App) {
+fn handle_keys_display_options(keycode: KeyCode, mut app: &mut app::App) {
     match keycode {
         KeyCode::Esc | KeyCode::Char('o') | KeyCode::Char('q') => {
             app.stocks[app.current_tab].toggle_options();
@@ -239,7 +239,7 @@ pub fn handle_key_bindings(
         (Mode::AddStock, modifiers, keycode)
             if modifiers.is_empty() || modifiers == KeyModifiers::SHIFT =>
         {
-            handle_keys_add_stock_(keycode, app)
+            handle_keys_add_stock(keycode, app)
         }
         (Mode::Help, modifiers, keycode)
             if modifiers.is_empty()
@@ -271,17 +271,17 @@ pub fn handle_key_bindings(
             *guard = !*guard;
         }
         (Mode::DisplaySummary, modifiers, keycode) if modifiers.is_empty() => {
-            handle_keys_display_summary_(keycode, app)
+            handle_keys_display_summary(keycode, app)
         }
         (.., KeyCode::Char('x')) => {
             let mut show_x_labels = SHOW_X_LABELS.write().unwrap();
             *show_x_labels = !*show_x_labels;
         }
         (Mode::DisplayOptions, modifiers, keycode) if modifiers.is_empty() => {
-            handle_keys_display_options_(keycode, app)
+            handle_keys_display_options(keycode, app)
         }
         (Mode::DisplayStock, modifiers, keycode) => {
-            handle_keys_display_stock_(keycode, modifiers, app)
+            handle_keys_display_stock(keycode, modifiers, app)
         }
         _ => {}
     }
