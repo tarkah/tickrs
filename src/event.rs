@@ -60,52 +60,49 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app:
                 app.current_tab -= 1;
             }
         }
-        (keycode, modifiers) if modifiers.is_empty() => match keycode {
-            KeyCode::Left => {
-                app.stocks[app.current_tab].time_frame_down();
+        (KeyCode::Left, KeyModifiers::NONE) => {
+            app.stocks[app.current_tab].time_frame_down();
+        }
+        (KeyCode::Right, KeyModifiers::NONE) => {
+            app.stocks[app.current_tab].time_frame_up();
+        }
+        (KeyCode::Char('/'), KeyModifiers::NONE) => {
+            app.previous_mode = app.mode;
+            app.mode = app::Mode::AddStock;
+        }
+        (KeyCode::Char('k'), KeyModifiers::NONE) => {
+            app.stocks.remove(app.current_tab);
+
+            if app.current_tab != 0 {
+                app.current_tab -= 1;
             }
-            KeyCode::Right => {
-                app.stocks[app.current_tab].time_frame_up();
-            }
-            KeyCode::Char('/') => {
+
+            if app.stocks.is_empty() {
                 app.previous_mode = app.mode;
                 app.mode = app::Mode::AddStock;
             }
-            KeyCode::Char('k') => {
-                app.stocks.remove(app.current_tab);
+        }
+        (KeyCode::Char('s'), KeyModifiers::NONE) => {
+            app.mode = app::Mode::DisplaySummary;
 
-                if app.current_tab != 0 {
-                    app.current_tab -= 1;
-                }
-
-                if app.stocks.is_empty() {
-                    app.previous_mode = app.mode;
-                    app.mode = app::Mode::AddStock;
+            for stock in app.stocks.iter_mut() {
+                if stock.time_frame != app.summary_time_frame {
+                    stock.set_time_frame(app.summary_time_frame);
                 }
             }
-            KeyCode::Char('s') => {
-                app.mode = app::Mode::DisplaySummary;
-
-                for stock in app.stocks.iter_mut() {
-                    if stock.time_frame != app.summary_time_frame {
-                        stock.set_time_frame(app.summary_time_frame);
-                    }
-                }
+        }
+        (KeyCode::Char('o'), KeyModifiers::NONE) => {
+            if app.stocks[app.current_tab].toggle_options() {
+                app.mode = app::Mode::DisplayOptions;
             }
-            KeyCode::Char('o') => {
-                if app.stocks[app.current_tab].toggle_options() {
-                    app.mode = app::Mode::DisplayOptions;
-                }
+        }
+        (KeyCode::Tab, KeyModifiers::NONE) => {
+            if app.current_tab == app.stocks.len() - 1 {
+                app.current_tab = 0;
+            } else {
+                app.current_tab += 1;
             }
-            KeyCode::Tab => {
-                if app.current_tab == app.stocks.len() - 1 {
-                    app.current_tab = 0;
-                } else {
-                    app.current_tab += 1;
-                }
-            }
-            _ => {}
-        },
+        }
         _ => {}
     }
 }
@@ -239,54 +236,58 @@ pub fn handle_key_bindings(
             cleanup_terminal();
             std::process::exit(0);
         }
-        (Mode::AddStock, modifiers, keycode)
-            if modifiers.is_empty() || modifiers == KeyModifiers::SHIFT =>
-        {
-            handle_keys_add_stock(keycode, app)
+        (Mode::AddStock, modifiers, keycode) => {
+            if modifiers.is_empty() || modifiers == KeyModifiers::SHIFT {
+                handle_keys_add_stock(keycode, app)
+            }
         }
-        (Mode::Help, modifiers, keycode)
+        (Mode::Help, modifiers, keycode) => {
             if modifiers.is_empty()
                 && (matches!(
                     keycode,
                     KeyCode::Esc | KeyCode::Char('?') | KeyCode::Char('q')
-                )) =>
-        {
-            app.mode = app.previous_mode;
+                ))
+            {
+                app.mode = app.previous_mode;
+            }
         }
-        (mode, _, KeyCode::Char('q')) if mode != Mode::DisplayOptions => {
+        (mode, KeyModifiers::NONE, KeyCode::Char('q')) if mode != Mode::DisplayOptions => {
             cleanup_terminal();
             std::process::exit(0);
         }
-        (.., KeyCode::Char('?')) => {
+        (_, KeyModifiers::NONE, KeyCode::Char('?')) => {
             app.previous_mode = app.mode;
             app.mode = app::Mode::Help;
         }
-        (.., KeyCode::Char('c')) => {
+        (_, KeyModifiers::NONE, KeyCode::Char('c')) => {
             let mut chart_type = CHART_TYPE.write().unwrap();
             *chart_type = chart_type.toggle();
         }
-        (.., KeyCode::Char('v')) => {
+        (_, KeyModifiers::NONE, KeyCode::Char('v')) => {
             let mut show_volumes = SHOW_VOLUMES.write().unwrap();
             *show_volumes = !*show_volumes;
         }
-        (.., KeyCode::Char('p')) => {
+        (_, KeyModifiers::NONE, KeyCode::Char('p')) => {
             let mut guard = ENABLE_PRE_POST.write().unwrap();
             *guard = !*guard;
         }
-        (Mode::DisplaySummary, modifiers, keycode) if modifiers.is_empty() => {
-            handle_keys_display_summary(keycode, app)
+        (Mode::DisplaySummary, modifiers, keycode) => {
+            if modifiers.is_empty() {
+                handle_keys_display_summary(keycode, app)
+            }
         }
-        (.., KeyCode::Char('x')) => {
+        (_, KeyModifiers::NONE, KeyCode::Char('x')) => {
             let mut show_x_labels = SHOW_X_LABELS.write().unwrap();
             *show_x_labels = !*show_x_labels;
         }
-        (Mode::DisplayOptions, modifiers, keycode) if modifiers.is_empty() => {
-            handle_keys_display_options(keycode, app)
+        (Mode::DisplayOptions, modifiers, keycode) => {
+            if modifiers.is_empty() {
+                handle_keys_display_options(keycode, app)
+            }
         }
         (Mode::DisplayStock, modifiers, keycode) => {
             handle_keys_display_stock(keycode, modifiers, app)
         }
-        _ => {}
     }
     let _ = request_redraw.try_send(());
 }
