@@ -6,6 +6,7 @@ use tui::layout::Rect;
 use tui::widgets::StatefulWidget;
 
 pub use self::add_stock::{AddStockState, AddStockWidget};
+pub use self::chart_configuration::ChartConfigurationWidget;
 pub use self::help::{HelpWidget, HELP_HEIGHT, HELP_WIDTH};
 pub use self::options::{OptionsState, OptionsWidget};
 pub use self::stock::{StockState, StockWidget};
@@ -14,6 +15,7 @@ pub use self::stock_summary::StockSummaryWidget;
 mod add_stock;
 pub mod block;
 mod chart;
+pub mod chart_configuration;
 mod help;
 pub mod options;
 mod stock;

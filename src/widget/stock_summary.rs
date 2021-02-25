@@ -198,6 +198,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     loaded,
                     show_x_labels: false,
                     is_summary: true,
+                    kagi_options: state.chart_configuration.kagi_options,
                 }
                 .render(graph_chunks[0], buf, state);
             }

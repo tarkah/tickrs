@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+use std::hash::{Hash, Hasher};
 
 use tui::buffer::Buffer;
 use tui::layout::{Constraint, Direction, Layout, Rect};
@@ -9,6 +9,7 @@ use tui::widgets::{Block, Borders, StatefulWidget, Widget};
 use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
+use crate::widget::chart_configuration::KagiOptions;
 use crate::widget::StockState;
 use crate::{HIDE_PREV_CLOSE, THEME};
 
@@ -47,9 +48,25 @@ enum BreakpointKind {
     Ying,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum ReversalOption {
     Pct(f64),
     Amount(f64),
+}
+
+impl Hash for ReversalOption {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            ReversalOption::Pct(amount) => {
+                0.hash(state);
+                amount.to_bits().hash(state);
+            }
+            ReversalOption::Amount(amount) => {
+                1.hash(state);
+                amount.to_bits().hash(state);
+            }
+        }
+    }
 }
 
 fn calculate_trends(data: &[Price], reversal_option: ReversalOption) -> Vec<Trend> {
@@ -157,6 +174,7 @@ pub struct PricesKagiChart<'a> {
     pub data: &'a [Price],
     pub is_summary: bool,
     pub show_x_labels: bool,
+    pub kagi_options: KagiOptions,
 }
 
 impl<'a> PricesKagiChart<'a> {
@@ -226,8 +244,12 @@ impl<'a> StatefulWidget for PricesKagiChart<'a> {
             TimeFrame::Day1 => ReversalOption::Pct(0.01),
             _ => ReversalOption::Pct(0.04),
         };
+        let reversal_option = self
+            .kagi_options
+            .reversal_option
+            .unwrap_or(default_reversal_option);
 
-        let kagi_trends = calculate_trends(&self.data, default_reversal_option);
+        let kagi_trends = calculate_trends(&self.data, reversal_option);
 
         if !self.is_summary {
             Block::default()

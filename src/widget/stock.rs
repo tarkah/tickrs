@@ -9,6 +9,7 @@ use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap
 use super::chart::{
     ChartState, PricesCandlestickChart, PricesKagiChart, PricesLineChart, VolumeBarChart,
 };
+use super::chart_configuration::ChartConfigurationState;
 use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
@@ -34,7 +35,9 @@ pub struct StockState {
     pub prices: [Vec<Price>; 7],
     pub time_frame: TimeFrame,
     pub show_options: bool,
+    pub show_configure: bool,
     pub options: Option<OptionsState>,
+    pub chart_configuration: ChartConfigurationState,
     pub loading_tick: usize,
     pub prev_state_loaded: bool,
     pub chart_meta: Option<ChartMeta>,
@@ -55,6 +58,8 @@ impl Hash for StockState {
         self.prices.hash(state);
         self.time_frame.hash(state);
         self.show_options.hash(state);
+        self.show_configure.hash(state);
+        self.chart_configuration.hash(state);
         self.loading_tick.hash(state);
         self.prev_state_loaded.hash(state);
         self.chart_meta.hash(state);
@@ -96,7 +101,10 @@ impl StockState {
             prices: [vec![], vec![], vec![], vec![], vec![], vec![], vec![]],
             time_frame,
             show_options: false,
+            show_configure: false,
             options: None,
+            // TODO: Load from config if present
+            chart_configuration: Default::default(),
             loading_tick: NUM_LOADING_TICKS,
             prev_state_loaded: false,
             chart_meta: None,
@@ -253,6 +261,10 @@ impl StockState {
         !self.is_crypto()
     }
 
+    fn configure_enabled(&self) -> bool {
+        self.chart_type == ChartType::Kagi
+    }
+
     fn is_crypto(&self) -> bool {
         self.chart_meta
             .as_ref()
@@ -272,6 +284,19 @@ impl StockState {
         } else {
             self.options = Some(OptionsState::new(self.symbol.clone()));
         }
+
+        true
+    }
+
+    pub fn toggle_configure(&mut self) -> bool {
+        if !self.configure_enabled() {
+            return false;
+        }
+
+        self.show_configure = !self.show_configure;
+
+        self.chart_configuration
+            .reset_with_defaults(self.time_frame);
 
         true
     }
@@ -535,6 +560,10 @@ impl StockState {
     pub fn chart_state_mut(&mut self) -> Option<&mut ChartState> {
         self.chart_state.as_mut()
     }
+
+    pub fn chart_config_mut(&mut self) -> &mut ChartConfigurationState {
+        &mut self.chart_configuration
+    }
 }
 
 pub struct StockWidget {}
@@ -744,6 +773,21 @@ impl CachableWidget<StockState> for StockWidget {
                             THEME.background()
                         }),
                     )));
+
+                    right_info.push(Spans::from(Span::styled(
+                        "Edit     'e'",
+                        style()
+                            .bg(if state.show_configure {
+                                THEME.highlight_unfocused()
+                            } else {
+                                THEME.background()
+                            })
+                            .fg(if state.configure_enabled() {
+                                THEME.text_normal()
+                            } else {
+                                THEME.gray()
+                            }),
+                    )));
                 }
 
                 if state.options_enabled() && loaded {
@@ -809,6 +853,7 @@ impl CachableWidget<StockState> for StockWidget {
                     loaded,
                     show_x_labels,
                     is_summary: false,
+                    kagi_options: state.chart_configuration.kagi_options,
                 }
                 .render(graph_chunks[0], buf, state);
             }

@@ -8,6 +8,7 @@ use crate::{widget, DEFAULT_TIMESTAMPS};
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Mode {
     AddStock,
+    ConfigureChart,
     DisplayStock,
     DisplayOptions,
     DisplaySummary,

@@ -36,6 +36,12 @@ pub fn handle_keys_display_stock(
 
                 let _ = request_redraw.try_send(());
             }
+            KeyCode::Char('e') => {
+                if app.stocks[app.current_tab].toggle_configure() {
+                    app.mode = app::Mode::ConfigureChart;
+                    let _ = request_redraw.try_send(());
+                }
+            }
             KeyCode::Char('k') => {
                 app.stocks.remove(app.current_tab);
 
@@ -428,5 +434,64 @@ pub fn handle_keys_display_options(
             app.mode = app::Mode::Help;
             let _ = request_redraw.try_send(());
         }
+    }
+}
+
+pub fn handle_keys_configure_chart(
+    key_event: KeyEvent,
+    mut app: &mut app::App,
+    request_redraw: &Sender<()>,
+) {
+    match (key_event.code, key_event.modifiers) {
+        (KeyCode::Esc, _) | (KeyCode::Char('e'), _) => {
+            app.stocks[app.current_tab].toggle_configure();
+            app.mode = app::Mode::DisplayStock;
+
+            let _ = request_redraw.try_send(());
+        }
+        (KeyCode::Up, _) => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.selection_up();
+            let _ = request_redraw.try_send(());
+        }
+        (KeyCode::Down, _) => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.selection_down();
+            let _ = request_redraw.try_send(());
+        }
+        (KeyCode::Tab, _) => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.tab();
+            let _ = request_redraw.try_send(());
+        }
+        (KeyCode::Enter, _) => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.enter();
+            let _ = request_redraw.try_send(());
+        }
+        (KeyCode::Char('q'), _) => {
+            cleanup_terminal();
+            std::process::exit(0);
+        }
+        (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
+            cleanup_terminal();
+            std::process::exit(0);
+        }
+        (KeyCode::Char('?'), _) => {
+            app.previous_mode = app.mode;
+            app.mode = app::Mode::Help;
+            let _ = request_redraw.try_send(());
+        }
+        (KeyCode::Char(c), _) => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.add_char(c);
+            let _ = request_redraw.try_send(());
+        }
+        (KeyCode::Backspace, _) => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.del_char();
+            let _ = request_redraw.try_send(());
+        }
+        (_, _) => {}
     }
 }

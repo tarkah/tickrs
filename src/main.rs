@@ -165,6 +165,9 @@ fn main() {
                             app::Mode::AddStock => {
                                 event::handle_keys_add_stock(key_event, &mut app, &request_redraw);
                             }
+                            app::Mode::ConfigureChart => {
+                                event::handle_keys_configure_chart(key_event, &mut app, &request_redraw);
+                            }
                             app::Mode::DisplayStock => {
                                 event::handle_keys_display_stock(key_event,&mut app, &request_redraw);
                             }
