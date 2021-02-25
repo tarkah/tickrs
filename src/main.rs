@@ -163,23 +163,7 @@ fn main() {
 
                 match message {
                     Ok(Event::Key(key_event)) => {
-                        match app.mode {
-                            app::Mode::AddStock => {
-                                event::handle_keys_add_stock(key_event, &mut app, &request_redraw);
-                            }
-                            app::Mode::DisplayStock => {
-                                event::handle_keys_display_stock(key_event,&mut app, &request_redraw);
-                            }
-                            app::Mode::DisplaySummary => {
-                                event::handle_keys_display_summary(key_event, &mut app, &request_redraw);
-                            }
-                            app::Mode::Help => {
-                                event::handle_keys_help(key_event, &mut app, &request_redraw);
-                            }
-                            app::Mode::DisplayOptions => {
-                                event::handle_keys_display_options(key_event, &mut app, &request_redraw);
-                            }
-                        }
+                        event::handle_key_bindings(app.mode, key_event, &mut app, &request_redraw);
                     }
                     Ok(Event::Mouse(MouseEvent { kind, row, column,.. })) => {
                         if app.debug.enabled {
