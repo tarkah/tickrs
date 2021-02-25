@@ -6,7 +6,7 @@ use tui::layout::Rect;
 use tui::widgets::StatefulWidget;
 
 pub use self::add_stock::{AddStockState, AddStockWidget};
-pub use self::chart_configuration::ChartConfigurationWidget;
+pub use self::chart_configuration::{ChartConfigurationWidget, KagiOptions};
 pub use self::help::{HelpWidget, HELP_HEIGHT, HELP_WIDTH};
 pub use self::options::{OptionsState, OptionsWidget};
 pub use self::stock::{StockState, StockWidget};

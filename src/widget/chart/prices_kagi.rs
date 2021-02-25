@@ -1,5 +1,6 @@
 use std::hash::{Hash, Hasher};
 
+use serde::Deserialize;
 use tui::buffer::Buffer;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::text::Span;
@@ -48,9 +49,12 @@ enum BreakpointKind {
     Ying,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(tag = "type", content = "value")]
 pub enum ReversalOption {
+    #[serde(rename = "pct")]
     Pct(f64),
+    #[serde(rename = "amount")]
     Amount(f64),
 }
 
@@ -69,9 +73,11 @@ impl Hash for ReversalOption {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Copy, Hash, Deserialize)]
 pub enum PriceOption {
+    #[serde(rename = "close")]
     Close,
+    #[serde(rename = "high_low")]
     HighLow,
 }
 

@@ -17,8 +17,8 @@ use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::theme::style;
 use crate::{
-    DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, SHOW_VOLUMES, SHOW_X_LABELS,
-    THEME, TIME_FRAME, TRUNC_PRE,
+    DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, OPTS, SHOW_VOLUMES,
+    SHOW_X_LABELS, THEME, TIME_FRAME, TRUNC_PRE,
 };
 
 const NUM_LOADING_TICKS: usize = 4;
@@ -88,6 +88,7 @@ impl StockState {
         let time_frame = *TIME_FRAME;
 
         let stock_service = service::stock::StockService::new(symbol.clone(), time_frame);
+        let kagi_options = OPTS.kagi_options.get(&symbol).cloned().unwrap_or_default();
 
         StockState {
             symbol,
@@ -103,8 +104,10 @@ impl StockState {
             show_options: false,
             show_configure: false,
             options: None,
-            // TODO: Load from config if present
-            chart_configuration: Default::default(),
+            chart_configuration: ChartConfigurationState {
+                kagi_options,
+                ..Default::default()
+            },
             loading_tick: NUM_LOADING_TICKS,
             prev_state_loaded: false,
             chart_meta: None,

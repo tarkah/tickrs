@@ -1,9 +1,9 @@
 #![allow(clippy::single_match)]
-#![allow(irrefutable_let_patterns)]
 
 use std::hash::{Hash, Hasher};
 
 use crossterm::terminal;
+use serde::Deserialize;
 use tui::buffer::Buffer;
 use tui::layout::{Constraint, Layout, Rect};
 use tui::text::{Span, Spans};
@@ -168,9 +168,11 @@ pub struct Input {
     pub kagi_price_type: usize,
 }
 
-#[derive(Default, Debug, Clone, Copy, Hash)]
+#[derive(Default, Debug, Clone, Copy, Hash, Deserialize)]
 pub struct KagiOptions {
+    #[serde(rename = "reversal")]
     pub reversal_option: Option<prices_kagi::ReversalOption>,
+    #[serde(rename = "price")]
     pub price_option: Option<prices_kagi::PriceOption>,
 }
 
@@ -219,15 +221,15 @@ impl CachableWidget<ChartConfigurationState> for ChartConfigurationWidget {
         } else {
             vec![
                 Spans::from(Span::styled(
-                    "<Up / Down>: move up / down",
+                    "  <Up / Down>: move up / down",
                     style().fg(THEME.text_normal()),
                 )),
                 Spans::from(Span::styled(
-                    "<Tab>: toggle option",
+                    "  <Tab>: toggle option",
                     style().fg(THEME.text_normal()),
                 )),
                 Spans::from(Span::styled(
-                    "<Enter>: submit changes",
+                    "  <Enter>: submit changes",
                     style().fg(THEME.text_normal()),
                 )),
             ]

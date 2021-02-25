@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{fs, process};
 
 use anyhow::{bail, format_err, Error};
@@ -6,6 +7,7 @@ use structopt::StructOpt;
 
 use crate::common::{ChartType, TimeFrame};
 use crate::theme::Theme;
+use crate::widget::KagiOptions;
 
 pub fn resolve_opts() -> Opts {
     let mut opts = get_cli_opts();
@@ -29,6 +31,9 @@ pub fn resolve_opts() -> Opts {
 
         // Theme
         opts.theme = config_opts.theme;
+
+        // Kagi Options
+        opts.kagi_options = config_opts.kagi_options;
     }
 
     opts
@@ -122,6 +127,8 @@ pub struct Opts {
 
     #[structopt(skip)]
     pub theme: Option<Theme>,
+    #[structopt(skip)]
+    pub kagi_options: HashMap<String, KagiOptions>,
 }
 
 const DEFAULT_CONFIG: &str = "---
@@ -167,6 +174,28 @@ const DEFAULT_CONFIG: &str = "---
 
 # Truncate pre market graphing to only 30 minutes prior to markets opening
 #trunc_pre: true
+
+# Ticker options for Kagi charts
+#
+# A map of each ticker with reversal and/or price fields (both optional). If no
+# entry is defined for a symbol, a default of 'close' price and 1% for 1D and 4%
+# for non-1D timeframes is used. This can be updated in the GUI by pressing 'e'
+#
+# reversal.type can be 'amount' or 'pct'
+# price can be 'close' or 'high_low'
+#
+#kagi_options:
+#  SPY:
+#    reversal:
+#      type: amount
+#      value: 5.00
+#    price: close
+#  AMD:
+#    price: high_low
+#  TSLA:
+#    reversal:
+#      type: pct
+#      value: 0.08
 
 # Apply a custom theme
 #
