@@ -46,9 +46,9 @@ Toggle Summary Pane:
 "#;
 
 const LEFT_WIDTH: usize = 34;
-const RIGHT_WIDTH: usize = 33;
-pub const HELP_WIDTH: usize = LEFT_WIDTH + RIGHT_WIDTH + 4;
-pub const HELP_HEIGHT: usize = 18 + 2;
+const RIGHT_WIDTH: usize = 32;
+pub const HELP_WIDTH: usize = 2 + LEFT_WIDTH + 2 + RIGHT_WIDTH + 2;
+pub const HELP_HEIGHT: usize = 2 + 17 + 1;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
