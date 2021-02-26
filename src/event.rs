@@ -316,7 +316,7 @@ pub fn handle_key_bindings(
             app.previous_mode = app.mode;
             app.mode = app::Mode::Help;
         }
-        (_, KeyModifiers::NONE, KeyCode::Char('c')) => {
+        (_, KeyModifiers::NONE, KeyCode::Char('c')) if mode != Mode::ConfigureChart => {
             app.chart_type = app.chart_type.toggle();
 
             for stock in app.stocks.iter_mut() {
