@@ -15,8 +15,6 @@ Add Stock:
   - (while adding):
     - <Enter>: accept
     - <Escape>: quit
-Remove Stock:
-  - k: remove stock
 Change Tab:
   - <Tab>: next stock
   - <Shift+Tab>: previous stock
@@ -26,9 +24,13 @@ Reorder Current Tab:
 Change Time Frame:
   - <Right>: next time frame
   - <Left>: previous time frame
+Toggle Summary Pane:
+  - s: toggle pane
+  - <Up / Down>: scroll pane
 "#;
 
 const RIGHT_TEXT: &str = r#"
+Remove Stock: k
 Graphing Display:
   - c: toggle candlestick chart
   - p: toggle pre / post market
@@ -40,15 +42,18 @@ Toggle Options Pane:
   - <Tab>: toggle calls / puts
   - Navigate with arrow keys
   - Cryptocurrency not supported
-Toggle Summary Pane:
-  - s: toggle pane
-  - <Up / Down>: scroll pane
+Toggle Chart Configurations Pane:
+  - e: toggle pane
+  - <Up / Down>: move up/down
+  - <Tab / Shift+Tab>: move up/down
+  - <Left / Right>: select options
+  - <Enter>: submit changes
 "#;
 
 const LEFT_WIDTH: usize = 34;
-const RIGHT_WIDTH: usize = 32;
+const RIGHT_WIDTH: usize = 35;
 pub const HELP_WIDTH: usize = 2 + LEFT_WIDTH + 2 + RIGHT_WIDTH + 2;
-pub const HELP_HEIGHT: usize = 2 + 17 + 1;
+pub const HELP_HEIGHT: usize = 2 + 18 + 1;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}
