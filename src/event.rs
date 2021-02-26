@@ -334,11 +334,6 @@ pub fn handle_key_bindings(
             let mut show_x_labels = SHOW_X_LABELS.write().unwrap();
             *show_x_labels = !*show_x_labels;
         }
-        (Mode::DisplayOptions, modifiers, keycode) => {
-            if modifiers.is_empty() {
-                handle_keys_display_options(keycode, app)
-            }
-        }
         (_, KeyModifiers::SHIFT, KeyCode::Left) | (_, KeyModifiers::NONE, KeyCode::Char('<')) => {
             if let Some(stock) = app.stocks.get_mut(app.current_tab) {
                 if let Some(chart_state) = stock.chart_state_mut() {
@@ -351,6 +346,11 @@ pub fn handle_key_bindings(
                 if let Some(chart_state) = stock.chart_state_mut() {
                     chart_state.scroll_right();
                 }
+            }
+        }
+        (Mode::DisplayOptions, modifiers, keycode) => {
+            if modifiers.is_empty() {
+                handle_keys_display_options(keycode, app)
             }
         }
         (Mode::ConfigureChart, modifiers, keycode) => {
