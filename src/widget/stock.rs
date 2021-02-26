@@ -739,7 +739,7 @@ impl CachableWidget<StockState> for StockWidget {
 
                 if loaded {
                     left_info.push(Spans::from(Span::styled(
-                        format!("{: <8} 'c'", chart_type.toggle().as_str()),
+                        format!("{: <8} 'c'", chart_type.as_str()),
                         style(),
                     )));
 
