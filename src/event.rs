@@ -251,21 +251,21 @@ pub fn handle_keys_configure_chart(keycode: KeyCode, mut app: &mut app::App) {
             app.stocks[app.current_tab].toggle_configure();
             app.mode = app::Mode::DisplayStock;
         }
-        KeyCode::Up => {
+        KeyCode::Up | KeyCode::BackTab => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.selection_up();
         }
-        KeyCode::Down => {
+        KeyCode::Down | KeyCode::Tab => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.selection_down();
         }
-        KeyCode::Tab => {
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.tab();
-        }
-        KeyCode::BackTab => {
+        KeyCode::Left => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.back_tab();
+        }
+        KeyCode::Right => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.tab();
         }
         KeyCode::Enter => {
             let time_frame = app.stocks[app.current_tab].time_frame;
