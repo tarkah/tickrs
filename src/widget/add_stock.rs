@@ -40,7 +40,7 @@ impl AddStockState {
     }
 
     pub fn enter(&mut self, chart_type: ChartType) -> super::StockState {
-        super::StockState::new(self.search_string.clone(), chart_type)
+        super::StockState::new(self.search_string.clone().to_ascii_uppercase(), chart_type)
     }
 }
 
