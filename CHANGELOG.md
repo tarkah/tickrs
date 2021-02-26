@@ -16,7 +16,7 @@ and `Removed`.
 
 ### Added
 
-- Kagi charts have been added!
+- Kagi charts have been added! ([#93])
   - You can specify custom reversal type (pct or amount), reversal value, and
     price type (close or high_low) within the GUI by pressing 'e'
   - New config options have been added to configure the behavior of Kagi charts,
@@ -148,3 +148,4 @@ and `Removed`.
 [#84]: https://github.com/tarkah/tickrs/pull/84
 [#85]: https://github.com/tarkah/tickrs/pull/85
 [#86]: https://github.com/tarkah/tickrs/pull/86
+[#93]: https://github.com/tarkah/tickrs/pull/93
