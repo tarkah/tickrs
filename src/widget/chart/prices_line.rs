@@ -93,18 +93,14 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                         }
                     },
                     {
-                        if let Some(post_start_idx) = end_idx {
-                            Some(
-                                prices
-                                    .iter()
-                                    .enumerate()
-                                    .filter(|(idx, _)| *idx >= post_start_idx)
-                                    .map(cast_as_dataset)
-                                    .collect::<Vec<(f64, f64)>>(),
-                            )
-                        } else {
-                            None
-                        }
+                        end_idx.map(|post_start_idx| {
+                            prices
+                                .iter()
+                                .enumerate()
+                                .filter(|(idx, _)| *idx >= post_start_idx)
+                                .map(cast_as_dataset)
+                                .collect::<Vec<(f64, f64)>>()
+                        })
                     },
                 )
             } else {
