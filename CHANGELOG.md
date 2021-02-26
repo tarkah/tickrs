@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed keybind to correctly capture <kbd>SHIFT</kbd>+<kbd>TAB</kbd> in the
+  chart configuration pane
+
 ## [0.14.0] - 2021-02-26
 
 ### Added
