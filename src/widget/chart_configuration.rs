@@ -94,13 +94,45 @@ impl ChartConfigurationState {
 
         // Everything validated, save the form values to our state
         match &mut self.kagi_options.reversal_option {
-            reversal_options @ Some(KagiReversalOption::Single(_)) | reversal_options @ None => {
+            reversal_options @ None => {
                 let mut options_by_timeframe = BTreeMap::new();
-                for time_frame in TimeFrame::ALL.iter() {
-                    options_by_timeframe.insert(*time_frame, new_kagi_reversal_option);
+                for iter_time_frame in TimeFrame::ALL.iter() {
+                    let default_reversal_amount = match iter_time_frame {
+                        TimeFrame::Day1 => 0.01,
+                        _ => 0.04,
+                    };
+
+                    // If this is the time frame we are submitting for, store that value,
+                    // otherwise use the default still
+                    if *iter_time_frame == time_frame {
+                        options_by_timeframe.insert(*iter_time_frame, new_kagi_reversal_option);
+                    } else {
+                        options_by_timeframe.insert(
+                            *iter_time_frame,
+                            ReversalOption::Pct(default_reversal_amount),
+                        );
+                    }
                 }
 
                 *reversal_options = Some(KagiReversalOption::ByTimeFrame(options_by_timeframe));
+            }
+            reversal_options @ Some(KagiReversalOption::Single(_)) => {
+                // Always succeeds since we already pattern matched it
+                if let KagiReversalOption::Single(config_option) = reversal_options.clone().unwrap()
+                {
+                    let mut options_by_timeframe = BTreeMap::new();
+                    for iter_time_frame in TimeFrame::ALL.iter() {
+                        // If this is the time frame we are submitting for, store that value,
+                        // otherwise use the single value defined from the config
+                        if *iter_time_frame == time_frame {
+                            options_by_timeframe.insert(*iter_time_frame, new_kagi_reversal_option);
+                        } else {
+                            options_by_timeframe.insert(*iter_time_frame, config_option);
+                        }
+                    }
+
+                    *reversal_options = Some(KagiReversalOption::ByTimeFrame(options_by_timeframe));
+                }
             }
             Some(KagiReversalOption::ByTimeFrame(options_by_timeframe)) => {
                 options_by_timeframe.insert(time_frame, new_kagi_reversal_option);
