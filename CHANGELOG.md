@@ -21,7 +21,7 @@ and `Removed`.
 
 ### Changed
 
-- Stock symbols show as uppercase in tabs section
+- Stock symbols show as uppercase in tabs section ([#112])
 - Letters for stock information are now capitalized
 - Words in Options pane are now capitalized
 - Toggle box shows the current chart type rather than the next chart type
@@ -163,3 +163,4 @@ and `Removed`.
 [#85]: https://github.com/tarkah/tickrs/pull/85
 [#86]: https://github.com/tarkah/tickrs/pull/86
 [#93]: https://github.com/tarkah/tickrs/pull/93
+[#112]: https://github.com/tarkah/tickrs/pull/112
