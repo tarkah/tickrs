@@ -21,10 +21,11 @@ and `Removed`.
 
 ### Changed
 
-- Stock symbols show as uppercase in tabs section ([#112])
-- Letters for stock information are now capitalized
-- Words in Options pane are now capitalized
-- Toggle box shows the current chart type rather than the next chart type
+- UI changes so that wording is consistent throughout ([#112])
+  - Stock symbols show as uppercase in tabs section
+  - Letters for stock information are now capitalized
+  - Words in Options pane are now capitalized
+  - Toggle box shows the current chart type rather than the next chart type
 
 ## [0.14.0] - 2021-02-26
 
