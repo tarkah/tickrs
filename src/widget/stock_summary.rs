@@ -88,7 +88,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
             let prices = vec![
                 Spans::from(vec![
-                    Span::styled("c: ", style().fg(THEME.text_normal())),
+                    Span::styled("C: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2} {}", state.current_price(), currency)
@@ -101,7 +101,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("h: ", style().fg(THEME.text_normal())),
+                    Span::styled("H: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", high)
@@ -112,7 +112,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("l: ", style().fg(THEME.text_normal())),
+                    Span::styled("L: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", low)
@@ -124,7 +124,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 ]),
                 Spans::default(),
                 Spans::from(vec![
-                    Span::styled("v: ", style().fg(THEME.text_normal())),
+                    Span::styled("Volume: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
