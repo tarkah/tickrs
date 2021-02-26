@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.0] - 2021-02-26
+
 ### Added
 
 - Kagi charts have been added! ([#93])
