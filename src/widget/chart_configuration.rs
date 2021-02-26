@@ -285,7 +285,7 @@ impl CachableWidget<ChartConfigurationState> for ChartConfigurationWidget {
         // layout[0] - Info / Error message
         // layout[1] - Kagi options
         let mut layout = Layout::default()
-            .constraints([Constraint::Length(5), Constraint::Min(0)])
+            .constraints([Constraint::Length(6), Constraint::Min(0)])
             .split(area);
 
         layout[0] = add_padding(layout[0], 1, PaddingDirection::Top);
