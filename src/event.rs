@@ -231,40 +231,49 @@ fn handle_keys_display_options(keycode: KeyCode, mut app: &mut app::App) {
     }
 }
 
-pub fn handle_keys_configure_chart(keycode: KeyCode, mut app: &mut app::App) {
-    match keycode {
-        KeyCode::Esc | KeyCode::Char('e') | KeyCode::Char('q') => {
+pub fn handle_keys_configure_chart(
+    keycode: KeyCode,
+    modifiers: KeyModifiers,
+    mut app: &mut app::App,
+) {
+    match (keycode, modifiers) {
+        (keycode, _)
+            if matches!(
+                keycode,
+                KeyCode::Esc | KeyCode::Char('e') | KeyCode::Char('q')
+            ) =>
+        {
             app.stocks[app.current_tab].toggle_configure();
             app.mode = app::Mode::DisplayStock;
         }
-        KeyCode::Up | KeyCode::BackTab => {
+        (KeyCode::Up, KeyModifiers::NONE) | (KeyCode::BackTab, KeyModifiers::SHIFT) => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.selection_up();
         }
-        KeyCode::Down | KeyCode::Tab => {
+        (KeyCode::Down, KeyModifiers::NONE) | (KeyCode::Tab, KeyModifiers::NONE) => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.selection_down();
         }
-        KeyCode::Left => {
+        (KeyCode::Left, KeyModifiers::NONE) => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.back_tab();
         }
-        KeyCode::Right => {
+        (KeyCode::Right, KeyModifiers::NONE) => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.tab();
         }
-        KeyCode::Enter => {
+        (KeyCode::Enter, KeyModifiers::NONE) => {
             let time_frame = app.stocks[app.current_tab].time_frame;
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.enter(time_frame);
         }
-        KeyCode::Char(c) => {
+        (KeyCode::Char(c), KeyModifiers::NONE) => {
             if c.is_numeric() || c == '.' {
                 let config = app.stocks[app.current_tab].chart_config_mut();
                 config.add_char(c);
             }
         }
-        KeyCode::Backspace => {
+        (KeyCode::Backspace, KeyModifiers::NONE) => {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.del_char();
         }
@@ -354,9 +363,7 @@ pub fn handle_key_bindings(
             }
         }
         (Mode::ConfigureChart, modifiers, keycode) => {
-            if modifiers.is_empty() {
-                handle_keys_configure_chart(keycode, app)
-            }
+            handle_keys_configure_chart(keycode, modifiers, app)
         }
         (Mode::DisplayStock, modifiers, keycode) => {
             handle_keys_display_stock(keycode, modifiers, app)
