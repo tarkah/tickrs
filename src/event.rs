@@ -67,14 +67,14 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app:
         (KeyCode::Right, KeyModifiers::NONE) => {
             app.stocks[app.current_tab].time_frame_up();
         }
-        (KeyCode::Left, KeyModifiers::SHIFT) | (KeyCode::Char('<'), _) => {
+        (KeyCode::Left, KeyModifiers::SHIFT) | (KeyCode::Char('<'), KeyModifiers::NONE) => {
             if let Some(stock) = app.stocks.get_mut(app.current_tab) {
                 if let Some(chart_state) = stock.chart_state_mut() {
                     chart_state.scroll_left();
                 }
             }
         }
-        (KeyCode::Right, KeyModifiers::SHIFT) | (KeyCode::Char('>'), _) => {
+        (KeyCode::Right, KeyModifiers::SHIFT) | (KeyCode::Char('>'), KeyModifiers::NONE) => {
             if let Some(stock) = app.stocks.get_mut(app.current_tab) {
                 if let Some(chart_state) = stock.chart_state_mut() {
                     chart_state.scroll_right();
