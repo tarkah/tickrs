@@ -263,6 +263,10 @@ pub fn handle_keys_configure_chart(keycode: KeyCode, mut app: &mut app::App) {
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.tab();
         }
+        KeyCode::BackTab => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.back_tab();
+        }
         KeyCode::Enter => {
             let time_frame = app.stocks[app.current_tab].time_frame;
             let config = app.stocks[app.current_tab].chart_config_mut();

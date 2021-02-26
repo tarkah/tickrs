@@ -48,11 +48,11 @@ impl ChartConfigurationState {
         input_field.pop();
     }
 
-    pub fn tab(&mut self) {
+    fn get_tab_artifacts(&mut self) -> Option<(&mut usize, usize)> {
         let tab_field = match self.selection {
             Some(Selection::KagiReversalType) => &mut self.input.kagi_reversal_type,
             Some(Selection::KagiPriceType) => &mut self.input.kagi_price_type,
-            _ => return,
+            _ => return None,
         };
 
         let mod_value = match self.selection {
@@ -60,8 +60,19 @@ impl ChartConfigurationState {
             Some(Selection::KagiPriceType) => 2,
             _ => 1,
         };
+        Some((tab_field, mod_value))
+    }
 
-        *tab_field = (*tab_field + 1) % mod_value;
+    pub fn tab(&mut self) {
+        if let Some((tab_field, mod_value)) = self.get_tab_artifacts() {
+            *tab_field = (*tab_field + 1) % mod_value;
+        }
+    }
+
+    pub fn back_tab(&mut self) {
+        if let Some((tab_field, mod_value)) = self.get_tab_artifacts() {
+            *tab_field = (*tab_field + mod_value - 1) % mod_value;
+        }
     }
 
     pub fn enter(&mut self, time_frame: TimeFrame) {
