@@ -300,7 +300,11 @@ impl CachableWidget<ChartConfigurationState> for ChartConfigurationWidget {
                     style().fg(THEME.text_normal()),
                 )),
                 Spans::from(Span::styled(
-                    "  <Tab>: toggle option",
+                    "  <Tab / Shift+Tab>: move up / down",
+                    style().fg(THEME.text_normal()),
+                )),
+                Spans::from(Span::styled(
+                    "  <Left / Right>: toggle option",
                     style().fg(THEME.text_normal()),
                 )),
                 Spans::from(Span::styled(
