@@ -19,6 +19,13 @@ and `Removed`.
 - Fixed keybind to correctly capture <kbd>SHIFT</kbd>+<kbd>TAB</kbd> in the
   chart configuration pane
 
+### Changed
+
+- Stock symbols show as uppercase in tabs section
+- Letters for stock information are now capitalized
+- Words in Options pane are now capitalized
+- Toggle box shows the current chart type rather than the next chart type
+
 ## [0.14.0] - 2021-02-26
 
 ### Added
