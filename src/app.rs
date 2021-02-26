@@ -1,6 +1,6 @@
 use crossterm::event::Event;
 
-use crate::common::TimeFrame;
+use crate::common::{ChartType, TimeFrame};
 use crate::service::default_timestamps::DefaultTimestampService;
 use crate::service::Service;
 use crate::{widget, DEFAULT_TIMESTAMPS};
@@ -8,6 +8,7 @@ use crate::{widget, DEFAULT_TIMESTAMPS};
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum Mode {
     AddStock,
+    ConfigureChart,
     DisplayStock,
     DisplayOptions,
     DisplaySummary,
@@ -26,6 +27,7 @@ pub struct App {
     pub summary_time_frame: TimeFrame,
     pub default_timestamp_service: DefaultTimestampService,
     pub summary_scroll_state: SummaryScrollState,
+    pub chart_type: ChartType,
 }
 
 impl App {

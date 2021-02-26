@@ -10,22 +10,49 @@ use tickrs_api::Interval;
 use crate::api::model::ChartData;
 use crate::api::Range;
 
-#[derive(PartialEq, Clone, Copy, Debug, Hash)]
+#[derive(PartialEq, Clone, Copy, Debug, Hash, Deserialize)]
 pub enum ChartType {
+    #[serde(rename = "line")]
     Line,
+    #[serde(rename = "candle")]
     Candlestick,
+    #[serde(rename = "kagi")]
+    Kagi,
 }
 
 impl ChartType {
     pub fn toggle(self) -> Self {
         match self {
             ChartType::Line => ChartType::Candlestick,
-            ChartType::Candlestick => ChartType::Line,
+            ChartType::Candlestick => ChartType::Kagi,
+            ChartType::Kagi => ChartType::Line,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ChartType::Line => "Line",
+            ChartType::Candlestick => "Candle",
+            ChartType::Kagi => "Kagi",
         }
     }
 }
 
-#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize)]
+impl FromStr for ChartType {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use ChartType::*;
+
+        match s {
+            "line" => Ok(Line),
+            "candle" => Ok(Candlestick),
+            "kagi" => Ok(Kagi),
+            _ => Err("Valid chart types are: 'line', 'candle', 'kagi'"),
+        }
+    }
+}
+#[derive(Clone, Copy, PartialOrd, Debug, Hash, PartialEq, Eq, Deserialize, Ord)]
 pub enum TimeFrame {
     #[serde(alias = "1D")]
     Day1,

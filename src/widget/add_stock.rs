@@ -5,6 +5,7 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Paragraph, StatefulWidget, Widget, Wrap};
 
 use super::block;
+use crate::common::ChartType;
 use crate::theme::style;
 use crate::THEME;
 
@@ -38,8 +39,8 @@ impl AddStockState {
         self.error_msg = None;
     }
 
-    pub fn enter(&mut self) -> super::StockState {
-        super::StockState::new(self.search_string.clone())
+    pub fn enter(&mut self, chart_type: ChartType) -> super::StockState {
+        super::StockState::new(self.search_string.clone(), chart_type)
     }
 }
 

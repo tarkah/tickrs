@@ -3,13 +3,14 @@ use crossbeam_channel::Sender;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::app::{self, Mode};
+use crate::common::ChartType;
 use crate::widget::options;
-use crate::{cleanup_terminal, CHART_TYPE, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
+use crate::{cleanup_terminal, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
 
 fn handle_keys_add_stock(keycode: KeyCode, mut app: &mut app::App) {
     match keycode {
         KeyCode::Enter => {
-            let mut stock = app.add_stock.enter();
+            let mut stock = app.add_stock.enter(app.chart_type);
 
             if app.previous_mode == app::Mode::DisplaySummary {
                 stock.set_time_frame(app.summary_time_frame);
@@ -94,6 +95,11 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app:
         (KeyCode::Char('o'), KeyModifiers::NONE) => {
             if app.stocks[app.current_tab].toggle_options() {
                 app.mode = app::Mode::DisplayOptions;
+            }
+        }
+        (KeyCode::Char('e'), KeyModifiers::NONE) => {
+            if app.stocks[app.current_tab].toggle_configure() {
+                app.mode = app::Mode::ConfigureChart;
             }
         }
         (KeyCode::Tab, KeyModifiers::NONE) => {
@@ -225,6 +231,47 @@ fn handle_keys_display_options(keycode: KeyCode, mut app: &mut app::App) {
     }
 }
 
+pub fn handle_keys_configure_chart(keycode: KeyCode, mut app: &mut app::App) {
+    match keycode {
+        KeyCode::Esc | KeyCode::Char('e') | KeyCode::Char('q') => {
+            app.stocks[app.current_tab].toggle_configure();
+            app.mode = app::Mode::DisplayStock;
+        }
+        KeyCode::Up | KeyCode::BackTab => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.selection_up();
+        }
+        KeyCode::Down | KeyCode::Tab => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.selection_down();
+        }
+        KeyCode::Left => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.back_tab();
+        }
+        KeyCode::Right => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.tab();
+        }
+        KeyCode::Enter => {
+            let time_frame = app.stocks[app.current_tab].time_frame;
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.enter(time_frame);
+        }
+        KeyCode::Char(c) => {
+            if c.is_numeric() || c == '.' {
+                let config = app.stocks[app.current_tab].chart_config_mut();
+                config.add_char(c);
+            }
+        }
+        KeyCode::Backspace => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.del_char();
+        }
+        _ => {}
+    }
+}
+
 pub fn handle_key_bindings(
     mode: Mode,
     key_event: KeyEvent,
@@ -251,7 +298,9 @@ pub fn handle_key_bindings(
                 app.mode = app.previous_mode;
             }
         }
-        (mode, KeyModifiers::NONE, KeyCode::Char('q')) if mode != Mode::DisplayOptions => {
+        (mode, KeyModifiers::NONE, KeyCode::Char('q'))
+            if !matches!(mode, Mode::DisplayOptions | Mode::ConfigureChart) =>
+        {
             cleanup_terminal();
             std::process::exit(0);
         }
@@ -259,13 +308,18 @@ pub fn handle_key_bindings(
             app.previous_mode = app.mode;
             app.mode = app::Mode::Help;
         }
-        (_, KeyModifiers::NONE, KeyCode::Char('c')) => {
-            let mut chart_type = CHART_TYPE.write().unwrap();
-            *chart_type = chart_type.toggle();
+        (_, KeyModifiers::NONE, KeyCode::Char('c')) if mode != Mode::ConfigureChart => {
+            app.chart_type = app.chart_type.toggle();
+
+            for stock in app.stocks.iter_mut() {
+                stock.set_chart_type(app.chart_type);
+            }
         }
         (_, KeyModifiers::NONE, KeyCode::Char('v')) => {
-            let mut show_volumes = SHOW_VOLUMES.write().unwrap();
-            *show_volumes = !*show_volumes;
+            if app.chart_type != ChartType::Kagi {
+                let mut show_volumes = SHOW_VOLUMES.write().unwrap();
+                *show_volumes = !*show_volumes;
+            }
         }
         (_, KeyModifiers::NONE, KeyCode::Char('p')) => {
             let mut guard = ENABLE_PRE_POST.write().unwrap();
@@ -280,9 +334,28 @@ pub fn handle_key_bindings(
             let mut show_x_labels = SHOW_X_LABELS.write().unwrap();
             *show_x_labels = !*show_x_labels;
         }
+        (_, KeyModifiers::SHIFT, KeyCode::Left) | (_, KeyModifiers::NONE, KeyCode::Char('<')) => {
+            if let Some(stock) = app.stocks.get_mut(app.current_tab) {
+                if let Some(chart_state) = stock.chart_state_mut() {
+                    chart_state.scroll_left();
+                }
+            }
+        }
+        (_, KeyModifiers::SHIFT, KeyCode::Right) | (_, KeyModifiers::NONE, KeyCode::Char('>')) => {
+            if let Some(stock) = app.stocks.get_mut(app.current_tab) {
+                if let Some(chart_state) = stock.chart_state_mut() {
+                    chart_state.scroll_right();
+                }
+            }
+        }
         (Mode::DisplayOptions, modifiers, keycode) => {
             if modifiers.is_empty() {
                 handle_keys_display_options(keycode, app)
+            }
+        }
+        (Mode::ConfigureChart, modifiers, keycode) => {
+            if modifiers.is_empty() {
+                handle_keys_configure_chart(keycode, app)
             }
         }
         (Mode::DisplayStock, modifiers, keycode) => {

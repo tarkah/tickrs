@@ -1,23 +1,25 @@
+use std::collections::HashMap;
 use std::{fs, process};
 
 use anyhow::{bail, format_err, Error};
 use serde::Deserialize;
 use structopt::StructOpt;
 
-use crate::common::TimeFrame;
+use crate::common::{ChartType, TimeFrame};
 use crate::theme::Theme;
+use crate::widget::KagiOptions;
 
 pub fn resolve_opts() -> Opts {
     let mut opts = get_cli_opts();
 
     if let Ok(config_opts) = get_config_opts() {
         // Options
+        opts.chart_type = opts.chart_type.or(config_opts.chart_type);
         opts.symbols = opts.symbols.or(config_opts.symbols);
         opts.time_frame = opts.time_frame.or(config_opts.time_frame);
         opts.update_interval = opts.update_interval.or(config_opts.update_interval);
 
         // Flags
-        opts.candle = opts.candle || config_opts.candle;
         opts.enable_pre_post = opts.enable_pre_post || config_opts.enable_pre_post;
         opts.hide_help = opts.hide_help || config_opts.hide_help;
         opts.hide_prev_close = opts.hide_prev_close || config_opts.hide_prev_close;
@@ -29,6 +31,9 @@ pub fn resolve_opts() -> Opts {
 
         // Theme
         opts.theme = config_opts.theme;
+
+        // Kagi Options
+        opts.kagi_options = config_opts.kagi_options;
     }
 
     opts
@@ -80,6 +85,9 @@ fn get_config_opts() -> Result<Opts, Error> {
 pub struct Opts {
     // Options
     //
+    #[structopt(short, long, possible_values(&["line", "candle", "kagi"]))]
+    /// Chart type to start app with [default: line]
+    pub chart_type: Option<ChartType>,
     #[structopt(short, long, use_delimiter = true)]
     /// Comma separated list of ticker symbols to start app with
     pub symbols: Option<Vec<String>>,
@@ -92,9 +100,6 @@ pub struct Opts {
 
     // Flags
     //
-    #[structopt(long)]
-    /// Use candlestick charts
-    pub candle: bool,
     #[structopt(short = "p", long)]
     /// Enable pre / post market hours for graphs
     pub enable_pre_post: bool,
@@ -122,6 +127,8 @@ pub struct Opts {
 
     #[structopt(skip)]
     pub theme: Option<Theme>,
+    #[structopt(skip)]
+    pub kagi_options: HashMap<String, KagiOptions>,
 }
 
 const DEFAULT_CONFIG: &str = "---
@@ -129,6 +136,11 @@ const DEFAULT_CONFIG: &str = "---
 #symbols:
 #  - SPY
 #  - AMD
+
+# Chart type to start app with
+# Default is line
+# Possible values: line, candle, kagi
+#chart_type: candle
 
 # Use specified time frame when starting program and when new stocks are added
 # Default is 1D
@@ -138,9 +150,6 @@ const DEFAULT_CONFIG: &str = "---
 # Interval to update data from API (seconds)
 # Default is 1
 #update_interval: 1
-
-# Use candlestick charts
-#candle: true
 
 # Enable pre / post market hours for graphs
 #enable_pre_post: true
@@ -165,6 +174,40 @@ const DEFAULT_CONFIG: &str = "---
 
 # Truncate pre market graphing to only 30 minutes prior to markets opening
 #trunc_pre: true
+
+# Ticker options for Kagi charts
+#
+# A map of each ticker with reversal and/or price fields (both optional). If no
+# entry is defined for a symbol, a default of 'close' price and 1% for 1D and 4%
+# for non-1D timeframes is used. This can be updated in the GUI by pressing 'e'
+#
+# reversal can be supplied as a single value, or a map on time frame to give each
+# time frame a different reversal amount
+#
+# reversal.type can be 'amount' or 'pct'
+#
+# price can be 'close' or 'high_low'
+#
+#kagi_options:
+#  SPY:
+#    reversal:
+#      type: amount
+#      value: 5.00
+#    price: close
+#  AMD:
+#    price: high_low
+#  TSLA:
+#    reversal:
+#      type: pct
+#      value: 0.08
+#  NVDA:
+#    reversal:
+#      1D:
+#        type: pct
+#        value: 0.02
+#      5Y:
+#        type: pct
+#        value: 0.10
 
 # Apply a custom theme
 #

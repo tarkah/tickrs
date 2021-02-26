@@ -5,10 +5,11 @@ use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 use tui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
-use crate::common::TimeFrame;
+use crate::common::{ChartType, TimeFrame};
 use crate::theme::style;
 use crate::widget::{
-    block, AddStockWidget, OptionsWidget, StockSummaryWidget, StockWidget, HELP_HEIGHT, HELP_WIDTH,
+    block, AddStockWidget, ChartConfigurationWidget, OptionsWidget, StockSummaryWidget,
+    StockWidget, HELP_HEIGHT, HELP_WIDTH,
 };
 use crate::{SHOW_VOLUMES, THEME};
 
@@ -144,23 +145,24 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     // Draw main widget
     if let Some(stock) = app.stocks.get_mut(app.current_tab) {
         // main_chunks[0] - Stock widget
-        // main_chunks[1] - Options widget (optional)
-        let mut main_chunks = if app.mode == Mode::DisplayOptions {
-            Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Min(0), Constraint::Length(44)].as_ref())
-                .split(layout[1])
-        } else {
-            vec![layout[1]]
-        };
+        // main_chunks[1] - Options widget / Configuration widget (optional)
+        let mut main_chunks =
+            if app.mode == Mode::DisplayOptions || app.mode == Mode::ConfigureChart {
+                Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([Constraint::Min(0), Constraint::Length(44)].as_ref())
+                    .split(layout[1])
+            } else {
+                vec![layout[1]]
+            };
 
         match app.mode {
             Mode::DisplayStock | Mode::AddStock => {
                 frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
             }
             // If width is too small, don't render stock widget and use entire space
-            // for options widget
-            Mode::DisplayOptions => {
+            // for options / configure widget
+            Mode::DisplayOptions | Mode::ConfigureChart => {
                 if main_chunks[0].width >= 19 {
                     frame.render_stateful_widget(StockWidget {}, main_chunks[0], stock);
                 } else {
@@ -170,21 +172,55 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             _ => {}
         }
 
-        if let Some(options) = stock.options.as_mut() {
-            if main_chunks[1].width >= 44 && main_chunks[1].height >= 14 {
-                frame.render_stateful_widget(OptionsWidget {}, main_chunks[1], options);
-            } else {
-                main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Left);
-                main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Top);
+        match app.mode {
+            Mode::DisplayOptions => {
+                if let Some(options) = stock.options.as_mut() {
+                    if main_chunks[1].width >= 44 && main_chunks[1].height >= 14 {
+                        frame.render_stateful_widget(OptionsWidget {}, main_chunks[1], options);
+                    } else {
+                        main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Left);
+                        main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Top);
 
-                frame.render_widget(
-                    Paragraph::new(Text::styled(
-                        "Increase screen size to display options",
-                        style(),
-                    )),
-                    main_chunks[1],
-                );
+                        frame.render_widget(
+                            Paragraph::new(Text::styled(
+                                "Increase screen size to display options",
+                                style(),
+                            )),
+                            main_chunks[1],
+                        );
+                    }
+                }
             }
+            Mode::ConfigureChart => {
+                if main_chunks[1].width >= 44 && main_chunks[1].height >= 14 {
+                    let state = &mut stock.chart_configuration;
+
+                    let chart_type = stock.chart_type;
+                    let time_frame = stock.time_frame;
+
+                    frame.render_stateful_widget(
+                        ChartConfigurationWidget {
+                            chart_type,
+                            time_frame,
+                        },
+                        main_chunks[1],
+                        state,
+                    );
+                } else {
+                    main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Left);
+                    main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Top);
+
+                    frame.render_widget(
+                        Paragraph::new(Text::styled(
+                            "Increase screen size to display configuration screen",
+                            style(),
+                        ))
+                        .wrap(Wrap { trim: false }),
+                        main_chunks[1],
+                    );
+                }
+            }
+            _ => {}
         }
     }
 }
@@ -199,7 +235,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     area = add_padding(area, 1, PaddingDirection::All);
     area = add_padding(area, 1, PaddingDirection::Right);
 
-    let show_volumes = *SHOW_VOLUMES.read().unwrap();
+    let show_volumes = *SHOW_VOLUMES.read().unwrap() && app.chart_type != ChartType::Kagi;
     let stock_widget_height = if show_volumes { 7 } else { 6 };
 
     let height = area.height;
