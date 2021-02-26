@@ -308,7 +308,9 @@ pub fn handle_key_bindings(
                 app.mode = app.previous_mode;
             }
         }
-        (mode, KeyModifiers::NONE, KeyCode::Char('q')) if mode != Mode::DisplayOptions => {
+        (mode, KeyModifiers::NONE, KeyCode::Char('q'))
+            if !matches!(mode, Mode::DisplayOptions | Mode::ConfigureChart) =>
+        {
             cleanup_terminal();
             std::process::exit(0);
         }
