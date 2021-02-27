@@ -17,7 +17,7 @@ and `Removed`.
 ### Fixed
 
 - Fixed keybind to correctly capture <kbd>SHIFT</kbd>+<kbd>TAB</kbd> in the
-  chart configuration pane
+  chart configuration pane ([#110])
 
 ### Changed
 
@@ -164,4 +164,5 @@ and `Removed`.
 [#85]: https://github.com/tarkah/tickrs/pull/85
 [#86]: https://github.com/tarkah/tickrs/pull/86
 [#93]: https://github.com/tarkah/tickrs/pull/93
+[#110]: https://github.com/tarkah/tickrs/pull/110
 [#112]: https://github.com/tarkah/tickrs/pull/112
