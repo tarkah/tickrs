@@ -654,7 +654,7 @@ impl CachableWidget<StockState> for StockWidget {
 
             let company_info = vec![
                 Spans::from(vec![
-                    Span::styled("c: ", style()),
+                    Span::styled("C: ", style()),
                     Span::styled(
                         if loaded {
                             format!("{:.2} {}", state.current_price(), currency)
@@ -681,7 +681,7 @@ impl CachableWidget<StockState> for StockWidget {
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("h: ", style()),
+                    Span::styled("H: ", style()),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", high)
@@ -692,7 +692,7 @@ impl CachableWidget<StockState> for StockWidget {
                     ),
                 ]),
                 Spans::from(vec![
-                    Span::styled("l: ", style()),
+                    Span::styled("L: ", style()),
                     Span::styled(
                         if loaded {
                             format!("{:.2}", low)
@@ -704,7 +704,7 @@ impl CachableWidget<StockState> for StockWidget {
                 ]),
                 Spans::default(),
                 Spans::from(vec![
-                    Span::styled("v: ", style()),
+                    Span::styled("Volume: ", style()),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
@@ -739,7 +739,7 @@ impl CachableWidget<StockState> for StockWidget {
 
                 if loaded {
                     left_info.push(Spans::from(Span::styled(
-                        format!("{: <8} 'c'", chart_type.toggle().as_str()),
+                        format!("{: <8} 'c'", chart_type.as_str()),
                         style(),
                     )));
 

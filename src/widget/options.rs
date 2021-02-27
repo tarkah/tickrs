@@ -453,7 +453,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         18 - (format!("{}", option.volume.unwrap_or_default()).len() + 7);
                     let gap_open_int =
                         18 - (format!("{}", option.open_interest.unwrap_or_default()).len() + 9);
-                    let gap_impl_vol = 18
+                    let gap_impl_vol = 17
                         - (format!(
                             "{:.0}%",
                             option.implied_volatility.unwrap_or_default() * 100.0
@@ -464,7 +464,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                     let column_0 = vec![
                         Spans::from(Span::styled(
                             format!(
-                                "strike:{}{:.2} {}",
+                                "Strike:{}{:.2} {}",
                                 " ".repeat(gap_strike),
                                 option.strike,
                                 currency
@@ -473,13 +473,13 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         )),
                         Spans::default(),
                         Spans::from(Span::styled(
-                            format!("price:{}{:.2}", " ".repeat(gap_last), option.last_price,),
+                            format!("Price:{}{:.2}", " ".repeat(gap_last), option.last_price,),
                             style(),
                         )),
                         Spans::default(),
                         Spans::from(Span::styled(
                             format!(
-                                "bid:{}{:.2}",
+                                "Bid:{}{:.2}",
                                 " ".repeat(gap_ask),
                                 option.bid.unwrap_or_default(),
                             ),
@@ -488,7 +488,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         Spans::default(),
                         Spans::from(Span::styled(
                             format!(
-                                "ask:{}{:.2}",
+                                "Ask:{}{:.2}",
                                 " ".repeat(gap_bid),
                                 option.ask.unwrap_or_default(),
                             ),
@@ -499,7 +499,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                     let column_1 = vec![
                         Spans::from(Span::styled(
                             format!(
-                                "volume:{}{}",
+                                "Volume:{}{}",
                                 " ".repeat(gap_volume),
                                 option.volume.unwrap_or_default(),
                             ),
@@ -508,7 +508,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         Spans::default(),
                         Spans::from(Span::styled(
                             format!(
-                                "interest:{}{}",
+                                "Open Int:{}{}",
                                 " ".repeat(gap_open_int),
                                 option.open_interest.unwrap_or_default()
                             ),
@@ -517,7 +517,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                         Spans::default(),
                         Spans::from(Span::styled(
                             format!(
-                                "volatility:{}{:.0}%",
+                                "Implied Vol:{}{:.0}%",
                                 " ".repeat(gap_impl_vol),
                                 option.implied_volatility.unwrap_or_default() * 100.0
                             ),

@@ -19,6 +19,14 @@ and `Removed`.
 - Fixed keybind to correctly capture <kbd>SHIFT</kbd>+<kbd>TAB</kbd> in the
   chart configuration pane
 
+### Changed
+
+- UI changes so that wording is consistent throughout ([#112])
+  - Stock symbols show as uppercase in tabs section
+  - Letters for stock information are now capitalized
+  - Words in Options pane are now capitalized
+  - Toggle box shows the current chart type rather than the next chart type
+
 ## [0.14.0] - 2021-02-26
 
 ### Added
@@ -156,3 +164,4 @@ and `Removed`.
 [#85]: https://github.com/tarkah/tickrs/pull/85
 [#86]: https://github.com/tarkah/tickrs/pull/86
 [#93]: https://github.com/tarkah/tickrs/pull/93
+[#112]: https://github.com/tarkah/tickrs/pull/112
