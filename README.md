@@ -29,6 +29,13 @@ cargo install tickrs
 yay -S tickrs-git
 ```
 
+### Homebrew
+
+```
+brew tap tarkah/tickrs
+brew install tickrs
+```
+
 ## Config File
 
 See [wiki entry](https://github.com/tarkah/tickrs/wiki/Config-file)
