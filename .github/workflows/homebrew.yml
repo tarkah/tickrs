@@ -17,6 +17,7 @@ jobs:
         with:
           formula-name: tickrs
           homebrew-tap: tarkah/homebrew-tickrs
+          tag-name: ${{ github.event.inputs.tag }}
           download-url: https://github.com/tarkah/tickrs/releases/download/${{ github.event.inputs.tag }}/tickrs-${{ github.event.inputs.tag }}-x86_64-apple-darwin.tar.gz
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
