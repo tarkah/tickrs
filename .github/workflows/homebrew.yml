@@ -1,0 +1,22 @@
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Specify tag to bump"
+        required: true
+
+name: Bump Homebrew
+
+jobs:
+  bump-homebrew:
+    name: "Bump Homebrew"
+    runs-on: macos-latest
+    steps:
+      - name: Bump Homebrew Formula
+        uses: mislav/bump-homebrew-formula-action@v1
+        with:
+          formula-name: tickrs
+          homebrew-tap: tarkah/homebrew-tickrs
+          download-url: https://github.com/tarkah/tickrs/releases/download/${{ github.event.inputs.tag }}/tickrs-${{ github.event.inputs.tag }}-x86_64-apple-darwin.tar.gz
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
