@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.1] - 2021-03-02
+
 ### Fixed
 
 - Fixed keybind to correctly capture <kbd>SHIFT</kbd>+<kbd>TAB</kbd> in the
