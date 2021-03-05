@@ -254,7 +254,7 @@ impl StockState {
                     self.chart_meta = Some(chart_meta);
                 }
                 service::stock::Update::CompanyData(data) => {
-                    self.profile = Some(data);
+                    self.profile = Some(*data);
                 }
             }
         }
