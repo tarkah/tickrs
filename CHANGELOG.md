@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.2] - 2021-03-05
+
 ### Fixed
 
 - Fix bug preventing Index tickers from working ([#115])
