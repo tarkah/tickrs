@@ -137,8 +137,8 @@ pub struct CompanyPrice {
     pub long_name: Option<String>,
     pub regular_market_price: CompanyMarketPrice,
     pub regular_market_previous_close: CompanyMarketPrice,
-    pub post_market_price: CompanyPostMarketPrice,
-    pub regular_market_volume: CompanyMarketPrice,
+    pub post_market_price: OptionalCompanyMarketPrice,
+    pub regular_market_volume: OptionalCompanyMarketPrice,
     pub currency: Option<String>,
 }
 
@@ -152,9 +152,10 @@ pub struct CompanyMarketPrice {
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct CompanyPostMarketPrice {
+pub struct OptionalCompanyMarketPrice {
     #[serde(rename = "raw")]
     pub price: Option<f64>,
+    pub fmt: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

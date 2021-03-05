@@ -35,7 +35,7 @@ impl AsyncTask for CurrentPrice {
 
                 let post_price = response.price.post_market_price.price;
 
-                let volume = response.price.regular_market_volume.fmt;
+                let volume = response.price.regular_market_volume.fmt.unwrap_or_default();
 
                 Some((regular_price, post_price, volume))
             } else {
