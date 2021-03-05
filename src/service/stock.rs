@@ -41,7 +41,7 @@ impl StockService {
 pub enum Update {
     NewPrice((f64, Option<f64>, String)),
     Prices((TimeFrame, ChartMeta, Vec<Price>)),
-    CompanyData(CompanyData),
+    CompanyData(Box<CompanyData>),
 }
 
 impl Service for StockService {
@@ -64,6 +64,7 @@ impl Service for StockService {
             .company_handle
             .response()
             .try_iter()
+            .map(Box::new)
             .map(Update::CompanyData);
         updates.extend(company_updates);
 

@@ -14,6 +14,10 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix bug preventing Index tickers from working ([#115])
+
 ## [0.14.1] - 2021-03-02
 
 ### Fixed
@@ -168,3 +172,4 @@ and `Removed`.
 [#93]: https://github.com/tarkah/tickrs/pull/93
 [#110]: https://github.com/tarkah/tickrs/pull/110
 [#112]: https://github.com/tarkah/tickrs/pull/112
+[#115]: https://github.com/tarkah/tickrs/pull/115

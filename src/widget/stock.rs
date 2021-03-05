@@ -254,14 +254,14 @@ impl StockState {
                     self.chart_meta = Some(chart_meta);
                 }
                 service::stock::Update::CompanyData(data) => {
-                    self.profile = Some(data);
+                    self.profile = Some(*data);
                 }
             }
         }
     }
 
     fn options_enabled(&self) -> bool {
-        !self.is_crypto()
+        !self.is_crypto() && !self.is_index()
     }
 
     fn configure_enabled(&self) -> bool {
@@ -273,6 +273,13 @@ impl StockState {
             .as_ref()
             .and_then(|m| m.instrument_type.as_deref())
             == Some("CRYPTOCURRENCY")
+    }
+
+    fn is_index(&self) -> bool {
+        self.chart_meta
+            .as_ref()
+            .and_then(|m| m.instrument_type.as_deref())
+            == Some("INDEX")
     }
 
     pub fn toggle_options(&mut self) -> bool {
