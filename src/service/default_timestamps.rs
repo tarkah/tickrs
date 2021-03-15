@@ -23,4 +23,12 @@ impl Service for DefaultTimestampService {
     fn updates(&self) -> Vec<Self::Update> {
         self.handle.response().try_iter().collect()
     }
+
+    fn pause(&self) {
+        self.handle.pause();
+    }
+
+    fn resume(&self) {
+        self.handle.resume();
+    }
 }

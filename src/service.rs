@@ -8,4 +8,8 @@ pub trait Service {
     type Update;
 
     fn updates(&self) -> Vec<Self::Update>;
+
+    fn pause(&self);
+
+    fn resume(&self);
 }

@@ -6,6 +6,7 @@ use tui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
 use crate::common::{ChartType, TimeFrame};
+use crate::service::Service;
 use crate::theme::style;
 use crate::widget::{
     block, AddStockWidget, ChartConfigurationWidget, OptionsWidget, StockSummaryWidget,
@@ -141,6 +142,15 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             );
         }
     }
+
+    // Make sure only displayed stock has network activity
+    app.stocks.iter().enumerate().for_each(|(idx, s)| {
+        if idx == app.current_tab {
+            s.stock_service.resume();
+        } else {
+            s.stock_service.pause();
+        }
+    });
 
     // Draw main widget
     if let Some(stock) = app.stocks.get_mut(app.current_tab) {
@@ -314,6 +324,15 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         .collect::<Vec<_>>();
 
     let stock_layout = Layout::default().constraints(contraints).split(layout[1]);
+
+    // Make sure only displayed stocks have network activity
+    app.stocks.iter().enumerate().for_each(|(idx, s)| {
+        if idx >= scroll_offset && idx < num_to_render + scroll_offset {
+            s.stock_service.resume();
+        } else {
+            s.stock_service.pause();
+        }
+    });
 
     for (idx, stock) in app.stocks[scroll_offset..num_to_render + scroll_offset]
         .iter_mut()

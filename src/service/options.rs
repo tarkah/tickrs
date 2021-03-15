@@ -57,4 +57,18 @@ impl Service for OptionsService {
 
         updates
     }
+
+    fn pause(&self) {
+        self.expiration_dates_handle.pause();
+        if let Some(handle) = self.options_data_handle.as_ref() {
+            handle.pause();
+        }
+    }
+
+    fn resume(&self) {
+        self.expiration_dates_handle.resume();
+        if let Some(handle) = self.options_data_handle.as_ref() {
+            handle.resume();
+        }
+    }
 }
