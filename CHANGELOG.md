@@ -14,6 +14,12 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Changed
+
+- API data is only fetched for widgets that are actively shown
+  - This greatly reduces the number of active API requests when many tickers are
+    added. Data is lazily fetched & updated once a widget is in view ([#118])
+
 ## [0.14.2] - 2021-03-05
 
 ### Fixed
@@ -175,3 +181,4 @@ and `Removed`.
 [#110]: https://github.com/tarkah/tickrs/pull/110
 [#112]: https://github.com/tarkah/tickrs/pull/112
 [#115]: https://github.com/tarkah/tickrs/pull/115
+[#118]: https://github.com/tarkah/tickrs/pull/118
