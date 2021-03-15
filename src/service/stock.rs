@@ -70,4 +70,16 @@ impl Service for StockService {
 
         updates
     }
+
+    fn pause(&self) {
+        self.current_price_handle.pause();
+        self.prices_handle.pause();
+        self.company_handle.pause();
+    }
+
+    fn resume(&self) {
+        self.current_price_handle.resume();
+        self.prices_handle.resume();
+        self.company_handle.resume();
+    }
 }
