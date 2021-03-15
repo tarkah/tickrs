@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.3] - 2021-03-15
+
 ### Changed
 
 - API data is only fetched for widgets that are actively shown
