@@ -49,6 +49,10 @@ jobs:
             os: ubuntu-latest
             cross: true
             binary_path: target/aarch64-unknown-linux-gnu/release/tickrs
+          - target: aarch64-linux-android
+            os: ubuntu-latest
+            cross: true
+            binary_path: target/aarch64-linux-android/release/tickrs
 
     runs-on: ${{ matrix.target.os }}
     steps:

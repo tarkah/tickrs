@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use anyhow::{bail, Context, Result};
 use futures::AsyncReadExt;
 use http::Uri;
-use isahc::HttpClient;
+use isahc::prelude::*;
 use serde::de::DeserializeOwned;
 
 use crate::model::{Chart, ChartData, Company, CompanyData, Options, OptionsHeader};
@@ -182,7 +182,17 @@ impl Client {
 
 impl Default for Client {
     fn default() -> Client {
-        let client = HttpClient::new().unwrap();
+        #[allow(unused_mut)]
+        let mut builder = HttpClient::builder();
+
+        #[cfg(target_os = "android")]
+        {
+            use isahc::config::SslOption;
+
+            builder = builder.ssl_options(SslOption::DANGER_ACCEPT_INVALID_CERTS);
+        }
+
+        let client = builder.build().unwrap();
 
         let base = String::from("https://query1.finance.yahoo.com");
 
