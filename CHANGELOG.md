@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.4] - 2021-03-17
+
 ### Packaging
 
 - Add support and releases for Android (aarch64-linux-android)
