@@ -23,10 +23,10 @@ Download the latest [release](https://github.com/tarkah/tickrs/releases/latest) 
 cargo install tickrs
 ```
 
-### AUR
+### Arch Linux
 
 ```
-yay -S tickrs-git
+pacman -S tickrs
 ```
 
 ### Homebrew
