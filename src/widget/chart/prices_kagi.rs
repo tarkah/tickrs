@@ -7,7 +7,7 @@ use tui::text::Span;
 use tui::widgets::canvas::{Canvas, Line};
 use tui::widgets::{Block, Borders, StatefulWidget, Widget};
 
-use crate::common::{Price, TimeFrame};
+use crate::common::{DecimalFormat, Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
 use crate::widget::chart_configuration::{KagiOptions, KagiReversalOption};
@@ -246,6 +246,7 @@ pub struct PricesKagiChart<'a> {
     pub is_summary: bool,
     pub show_x_labels: bool,
     pub kagi_options: KagiOptions,
+    pub decimal_format: DecimalFormat,
 }
 
 impl<'a> PricesKagiChart<'a> {
@@ -305,7 +306,6 @@ impl<'a> PricesKagiChart<'a> {
 impl<'a> StatefulWidget for PricesKagiChart<'a> {
     type State = StockState;
 
-    #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if area.width <= 9 || area.height <= 3 {
             return;
@@ -439,7 +439,7 @@ impl<'a> StatefulWidget for PricesKagiChart<'a> {
         if self.loaded {
             let y_area = layout[0];
 
-            let labels = state.y_labels(min, max);
+            let labels = state.y_labels(min, max, self.decimal_format);
             let labels_len = labels.len() as u16;
             for (i, label) in labels.iter().enumerate() {
                 let dy = i as u16 * (y_area.height - 1) / (labels_len - 1);
