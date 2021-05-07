@@ -488,18 +488,24 @@ impl StockState {
     }
 
     pub fn y_bounds(&self, min: f64, max: f64) -> [f64; 2] {
-        [(min - 0.05), (max + 0.05)]
+        [(min), (max)]
     }
 
-    pub fn y_labels(&self, min: f64, max: f64) -> Vec<Span> {
+    pub fn y_labels(&self, min: f64, max: f64, format: DecimalFormat) -> Vec<Span> {
+        let padded = |x: f64| match format {
+            DecimalFormat::Two => {
+                format!("{:>8.2}", x)
+            }
+            DecimalFormat::Four => {
+                format!("{:>8.4}", x)
+            }
+        };
+
         if self.loaded() {
             vec![
-                Span::styled(format!("{:>8.2}", min), style().fg(THEME.text_normal())),
-                Span::styled(
-                    format!("{:>8.2}", (min + max) / 2.0),
-                    style().fg(THEME.text_normal()),
-                ),
-                Span::styled(format!("{:>8.2}", max), style().fg(THEME.text_normal())),
+                Span::styled(padded(min), style().fg(THEME.text_normal())),
+                Span::styled(padded((min + max) / 2.0), style().fg(THEME.text_normal())),
+                Span::styled(padded(max), style().fg(THEME.text_normal())),
             ]
         } else {
             vec![
@@ -532,6 +538,18 @@ impl StockState {
         };
 
         self.current_price() / baseline - 1.0
+    }
+
+    pub fn decimal_format(&self, data: &[Price]) -> DecimalFormat {
+        let (min, max) = self.min_max(&data);
+
+        let diff = max - min;
+
+        if diff.le(&1.0) {
+            DecimalFormat::Four
+        } else {
+            DecimalFormat::Two
+        }
     }
 
     pub fn loaded(&self) -> bool {
@@ -594,6 +612,7 @@ impl CachableWidget<StockState> for StockWidget {
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
         let data = state.prices().collect::<Vec<_>>();
 
+        let decimal_format = state.decimal_format(&data);
         let pct_change = state.pct_change(&data);
 
         let chart_type = state.chart_type;
@@ -657,6 +676,10 @@ impl CachableWidget<StockState> for StockWidget {
             info_chunks[0] = add_padding(info_chunks[0], 1, PaddingDirection::Top);
 
             let (high, low) = state.high_low(&data);
+            let current_fmt = format_decimals(decimal_format, state.current_price());
+            let high_fmt = format_decimals(decimal_format, high);
+            let low_fmt = format_decimals(decimal_format, low);
+
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let company_info = vec![
@@ -664,7 +687,7 @@ impl CachableWidget<StockState> for StockWidget {
                     Span::styled("C: ", style()),
                     Span::styled(
                         if loaded {
-                            format!("{:.2} {}", state.current_price(), currency)
+                            format!("{} {}", current_fmt, currency)
                         } else {
                             "".to_string()
                         },
@@ -690,22 +713,14 @@ impl CachableWidget<StockState> for StockWidget {
                 Spans::from(vec![
                     Span::styled("H: ", style()),
                     Span::styled(
-                        if loaded {
-                            format!("{:.2}", high)
-                        } else {
-                            "".to_string()
-                        },
+                        if loaded { high_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::from(vec![
                     Span::styled("L: ", style()),
                     Span::styled(
-                        if loaded {
-                            format!("{:.2}", low)
-                        } else {
-                            "".to_string()
-                        },
+                        if loaded { low_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
@@ -844,6 +859,7 @@ impl CachableWidget<StockState> for StockWidget {
                     is_summary: false,
                     loaded,
                     show_x_labels,
+                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }
@@ -853,6 +869,7 @@ impl CachableWidget<StockState> for StockWidget {
                     loaded,
                     show_x_labels,
                     is_summary: false,
+                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }
@@ -863,6 +880,7 @@ impl CachableWidget<StockState> for StockWidget {
                     show_x_labels,
                     is_summary: false,
                     kagi_options: state.chart_configuration.kagi_options.clone(),
+                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }

@@ -7,7 +7,7 @@ use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 use super::chart::{PricesCandlestickChart, PricesKagiChart, PricesLineChart, VolumeBarChart};
 use super::stock::StockState;
 use super::{CachableWidget, CacheState};
-use crate::common::ChartType;
+use crate::common::{format_decimals, ChartType};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
 use crate::{ENABLE_PRE_POST, SHOW_VOLUMES, THEME};
@@ -29,6 +29,8 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
         let data = state.prices().collect::<Vec<_>>();
+
+        let decimal_format = state.decimal_format(&data);
         let pct_change = state.pct_change(&data);
 
         let chart_type = state.chart_type;
@@ -84,6 +86,10 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             layout[0] = add_padding(layout[0], 2, PaddingDirection::Right);
 
             let (high, low) = state.high_low(&data);
+            let current_fmt = format_decimals(decimal_format, state.current_price());
+            let high_fmt = format_decimals(decimal_format, high);
+            let low_fmt = format_decimals(decimal_format, low);
+
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let prices = vec![
@@ -91,7 +97,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     Span::styled("C: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
-                            format!("{:.2} {}", state.current_price(), currency)
+                            format!("{} {}", current_fmt, currency)
                         } else {
                             "".to_string()
                         },
@@ -103,22 +109,14 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 Spans::from(vec![
                     Span::styled("H: ", style().fg(THEME.text_normal())),
                     Span::styled(
-                        if loaded {
-                            format!("{:.2}", high)
-                        } else {
-                            "".to_string()
-                        },
+                        if loaded { high_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
                 Spans::from(vec![
                     Span::styled("L: ", style().fg(THEME.text_normal())),
                     Span::styled(
-                        if loaded {
-                            format!("{:.2}", low)
-                        } else {
-                            "".to_string()
-                        },
+                        if loaded { low_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
@@ -180,6 +178,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     is_summary: true,
                     loaded,
                     show_x_labels: false,
+                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }
@@ -189,6 +188,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     loaded,
                     show_x_labels: false,
                     is_summary: true,
+                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }
@@ -199,6 +199,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     show_x_labels: false,
                     is_summary: true,
                     kagi_options: state.chart_configuration.kagi_options.clone(),
+                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }

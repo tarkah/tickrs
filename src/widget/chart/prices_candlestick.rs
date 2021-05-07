@@ -5,7 +5,7 @@ use tui::text::Span;
 use tui::widgets::canvas::{Canvas, Line, Rectangle};
 use tui::widgets::{Block, Borders, StatefulWidget, Widget};
 
-use crate::common::{Price, TimeFrame};
+use crate::common::{DecimalFormat, Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
 use crate::widget::StockState;
@@ -24,6 +24,7 @@ pub struct PricesCandlestickChart<'a> {
     pub data: &'a [Price],
     pub is_summary: bool,
     pub show_x_labels: bool,
+    pub decimal_format: DecimalFormat,
 }
 
 impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
@@ -119,7 +120,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
         if self.loaded {
             let y_area = layout[0];
 
-            let labels = state.y_labels(min, max);
+            let labels = state.y_labels(min, max, self.decimal_format);
             let labels_len = labels.len() as u16;
             for (i, label) in labels.iter().enumerate() {
                 let dy = i as u16 * (y_area.height - 1) / (labels_len - 1);

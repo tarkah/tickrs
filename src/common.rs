@@ -308,3 +308,20 @@ pub fn zeros_as_pre(prices: &mut [f64]) {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub enum DecimalFormat {
+    Two,
+    Four,
+}
+
+pub fn format_decimals(format: DecimalFormat, value: f64) -> String {
+    match format {
+        DecimalFormat::Two => {
+            format!("{:.2}", value)
+        }
+        DecimalFormat::Four => {
+            format!("{:.4}", value)
+        }
+    }
+}
