@@ -598,7 +598,6 @@ pub struct StockWidget {}
 impl StatefulWidget for StockWidget {
     type State = StockState;
 
-    #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         self.render_cached(area, buf, state);
     }

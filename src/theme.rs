@@ -90,7 +90,6 @@ mod de {
                 formatter.write_str("a hex string in the format of '#09ACDF'")
             }
 
-            #[allow(clippy::unnecessary_unwrap)]
             fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
             where
                 E: Error,

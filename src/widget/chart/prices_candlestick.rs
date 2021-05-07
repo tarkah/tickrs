@@ -30,7 +30,6 @@ pub struct PricesCandlestickChart<'a> {
 impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
     type State = StockState;
 
-    #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if area.width <= 9 || area.height <= 3 {
             return;

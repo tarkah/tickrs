@@ -18,7 +18,6 @@ pub struct VolumeBarChart<'a> {
 impl<'a> StatefulWidget for VolumeBarChart<'a> {
     type State = StockState;
 
-    #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let mut volume_chunks = area;
         volume_chunks.height += 1;

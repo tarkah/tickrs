@@ -306,7 +306,6 @@ impl<'a> PricesKagiChart<'a> {
 impl<'a> StatefulWidget for PricesKagiChart<'a> {
     type State = StockState;
 
-    #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         if area.width <= 9 || area.height <= 3 {
             return;

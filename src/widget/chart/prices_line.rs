@@ -24,7 +24,6 @@ pub struct PricesLineChart<'a> {
 impl<'a> StatefulWidget for PricesLineChart<'a> {
     type State = StockState;
 
-    #[allow(clippy::clippy::unnecessary_unwrap)]
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let (min, max) = state.min_max(&self.data);
         let (start, end) = state.start_end();
