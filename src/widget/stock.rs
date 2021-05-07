@@ -1,5 +1,6 @@
 use std::hash::{Hash, Hasher};
 
+use itertools::Itertools;
 use tui::buffer::Buffer;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::Modifier;
@@ -541,11 +542,28 @@ impl StockState {
     }
 
     pub fn decimal_format(&self, data: &[Price]) -> DecimalFormat {
-        let (min, max) = self.min_max(&data);
+        if data.is_empty() {
+            return DecimalFormat::Two;
+        }
 
-        let diff = max - min;
+        let prices = data.iter().filter(|p| p.close.gt(&0.0)).map(|p| p.close);
 
-        if diff.le(&1.0) {
+        let mut price_movements = prices
+            .tuple_windows()
+            .filter_map(|(a, b)| if a.ne(&b) { Some((b - a).abs()) } else { None })
+            .collect::<Vec<_>>();
+        price_movements.sort_by(|a, b| a.partial_cmp(&b).unwrap());
+
+        let len = price_movements.len();
+
+        if len == 0 {
+            return DecimalFormat::Two;
+        }
+
+        let mid = len / 2;
+        let median = price_movements[mid];
+
+        if median.le(&0.005) {
             DecimalFormat::Four
         } else {
             DecimalFormat::Two
