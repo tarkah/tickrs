@@ -25,7 +25,7 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
     type State = StockState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let (min, max) = state.min_max(&self.data);
+        let (min, max) = state.min_max(self.data);
         let (start, end) = state.start_end();
 
         let mut prices: Vec<_> = self.data.iter().map(cast_historical_as_price).collect();
@@ -42,15 +42,15 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
         };
 
         let x_labels = if self.show_x_labels {
-            state.x_labels(area.width, start, end, &self.data)
+            state.x_labels(area.width, start, end, self.data)
         } else {
             vec![]
         };
 
-        let trading_period = state.current_trading_period(&self.data);
+        let trading_period = state.current_trading_period(self.data);
 
         let (reg_prices, pre_prices, post_prices) = if self.loaded {
-            let (start_idx, end_idx) = state.regular_start_end_idx(&self.data);
+            let (start_idx, end_idx) = state.regular_start_end_idx(self.data);
 
             if self.enable_pre_post && state.time_frame == TimeFrame::Day1 {
                 (
@@ -161,7 +161,7 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                         THEME.loss()
                     }))
                     .graph_type(GraphType::Line)
-                    .data(&data),
+                    .data(data),
             );
         }
 
@@ -178,7 +178,7 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                         THEME.loss()
                     }))
                     .graph_type(GraphType::Line)
-                    .data(&data),
+                    .data(data),
             );
         }
 
@@ -189,14 +189,14 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
                     .marker(Marker::Braille)
                     .style(style().fg(THEME.gray()))
                     .graph_type(GraphType::Line)
-                    .data(&data),
+                    .data(data),
             );
         }
 
         let mut chart = Chart::new(datasets)
             .style(style())
             .x_axis({
-                let axis = Axis::default().bounds(state.x_bounds(start, end, &self.data));
+                let axis = Axis::default().bounds(state.x_bounds(start, end, self.data));
 
                 if self.show_x_labels && self.loaded && !self.is_summary {
                     axis.labels(x_labels).style(style().fg(THEME.border_axis()))

@@ -99,7 +99,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
             x_area.x = layout[1].x + 1;
             x_area.width = layout[1].width - 1;
 
-            let labels = state.x_labels(area.width, start, end, &self.data);
+            let labels = state.x_labels(area.width, start, end, self.data);
             let total_width = labels.iter().map(Span::width).sum::<usize>() as u16;
             let labels_len = labels.len() as u16;
             if total_width < x_area.width && labels_len > 1 {

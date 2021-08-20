@@ -123,8 +123,8 @@ fn calculate_trends(
         let first_price_gt = choose_price(&first_price, price_option, ComparisonType::Gt);
         let first_price_lt = choose_price(&first_price, price_option, ComparisonType::Lt);
 
-        let price_gt = choose_price(&price, price_option, ComparisonType::Gt);
-        let price_lt = choose_price(&price, price_option, ComparisonType::Lt);
+        let price_gt = choose_price(price, price_option, ComparisonType::Gt);
+        let price_lt = choose_price(price, price_option, ComparisonType::Lt);
 
         if price_gt.gt(&first_price_gt) {
             initial_direction = TrendDirection::Up;
@@ -145,8 +145,8 @@ fn calculate_trends(
     for (idx, price) in data[1..].iter().enumerate() {
         let (reversal_amount, diff) = {
             let current_price = match curr_trend.direction {
-                TrendDirection::Up => choose_price(&price, price_option, ComparisonType::Lt),
-                TrendDirection::Down => choose_price(&price, price_option, ComparisonType::Gt),
+                TrendDirection::Up => choose_price(price, price_option, ComparisonType::Lt),
+                TrendDirection::Down => choose_price(price, price_option, ComparisonType::Gt),
             };
             let last_price = match curr_trend.direction {
                 TrendDirection::Up => {
@@ -176,7 +176,7 @@ fn calculate_trends(
         if let Some(prev_trend) = trends.last() {
             match curr_trend.direction {
                 TrendDirection::Up => {
-                    let current_price = choose_price(&price, price_option, ComparisonType::Gt);
+                    let current_price = choose_price(price, price_option, ComparisonType::Gt);
                     let breakpoint_price =
                         choose_price(&prev_trend.first_price, price_option, ComparisonType::Gt);
 
@@ -188,7 +188,7 @@ fn calculate_trends(
                     }
                 }
                 TrendDirection::Down => {
-                    let current_price = choose_price(&price, price_option, ComparisonType::Lt);
+                    let current_price = choose_price(price, price_option, ComparisonType::Lt);
                     let breakpoint_price =
                         choose_price(&prev_trend.first_price, price_option, ComparisonType::Lt);
 
@@ -205,7 +205,7 @@ fn calculate_trends(
         // Set last / low / high of trend where applicable
         match curr_trend.direction {
             TrendDirection::Up => {
-                let current_price = choose_price(&price, price_option, ComparisonType::Gt);
+                let current_price = choose_price(price, price_option, ComparisonType::Gt);
                 let last_price =
                     choose_price(&curr_trend.last_price, price_option, ComparisonType::Gt);
 
@@ -214,7 +214,7 @@ fn calculate_trends(
                 }
             }
             TrendDirection::Down => {
-                let current_price = choose_price(&price, price_option, ComparisonType::Lt);
+                let current_price = choose_price(price, price_option, ComparisonType::Lt);
                 let last_price =
                     choose_price(&curr_trend.last_price, price_option, ComparisonType::Lt);
 
@@ -331,7 +331,7 @@ impl<'a> StatefulWidget for PricesKagiChart<'a> {
 
         let price_option = self.kagi_options.price_option.unwrap_or(PriceOption::Close);
 
-        let kagi_trends = calculate_trends(&self.data, reversal_option, price_option);
+        let kagi_trends = calculate_trends(self.data, reversal_option, price_option);
 
         if !self.is_summary {
             Block::default()

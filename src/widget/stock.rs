@@ -541,7 +541,7 @@ impl StockState {
     }
 
     pub fn decimal_format(&self, data: &[Price]) -> DecimalFormat {
-        let (min, max) = self.min_max(&data);
+        let (min, max) = self.min_max(data);
 
         let diff = max - min;
 
