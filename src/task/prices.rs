@@ -39,7 +39,7 @@ impl AsyncTask for Prices {
             let include_pre_post = time_frame == TimeFrame::Day1;
 
             if let Ok(response) = crate::CLIENT
-                .get_chart_data(&symbol, interval, time_frame.as_range(), include_pre_post)
+                .get_chart_data(symbol, interval, time_frame.as_range(), include_pre_post)
                 .await
             {
                 Some((

@@ -39,7 +39,7 @@ impl<'a> StatefulWidget for VolumeBarChart<'a> {
         let width = volume_chunks.width;
         let num_bars = width as usize;
 
-        let volumes = state.volumes(&self.data);
+        let volumes = state.volumes(self.data);
         let vol_count = volumes.len();
 
         if vol_count > 0 {
