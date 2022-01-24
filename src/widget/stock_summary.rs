@@ -30,7 +30,6 @@ impl CachableWidget<StockState> for StockSummaryWidget {
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut <Self as StatefulWidget>::State) {
         let data = state.prices().collect::<Vec<_>>();
 
-        let decimal_format = state.decimal_format(&data);
         let pct_change = state.pct_change(&data);
 
         let chart_type = state.chart_type;
@@ -86,9 +85,9 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             layout[0] = add_padding(layout[0], 2, PaddingDirection::Right);
 
             let (high, low) = state.high_low(&data);
-            let current_fmt = format_decimals(decimal_format, state.current_price());
-            let high_fmt = format_decimals(decimal_format, high);
-            let low_fmt = format_decimals(decimal_format, low);
+            let current_fmt = format_decimals(state.current_price());
+            let high_fmt = format_decimals(high);
+            let low_fmt = format_decimals(low);
 
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
@@ -178,7 +177,6 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     is_summary: true,
                     loaded,
                     show_x_labels: false,
-                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }
@@ -188,7 +186,6 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     loaded,
                     show_x_labels: false,
                     is_summary: true,
-                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }
@@ -199,7 +196,6 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                     show_x_labels: false,
                     is_summary: true,
                     kagi_options: state.chart_configuration.kagi_options.clone(),
-                    decimal_format,
                 }
                 .render(graph_chunks[0], buf, state);
             }
