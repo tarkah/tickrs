@@ -4,8 +4,7 @@ use tui::symbols::Marker;
 use tui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, StatefulWidget, Widget};
 
 use crate::common::{
-    cast_as_dataset, cast_historical_as_price, zeros_as_pre, DecimalFormat, Price, TimeFrame,
-    TradingPeriod,
+    cast_as_dataset, cast_historical_as_price, zeros_as_pre, Price, TimeFrame, TradingPeriod,
 };
 use crate::theme::style;
 use crate::widget::StockState;
@@ -18,7 +17,6 @@ pub struct PricesLineChart<'a> {
     pub is_profit: bool,
     pub is_summary: bool,
     pub data: &'a [Price],
-    pub decimal_format: DecimalFormat,
 }
 
 impl<'a> StatefulWidget for PricesLineChart<'a> {
@@ -207,7 +205,7 @@ impl<'a> StatefulWidget for PricesLineChart<'a> {
             .y_axis(
                 Axis::default()
                     .bounds(state.y_bounds(min, max))
-                    .labels(state.y_labels(min, max, self.decimal_format))
+                    .labels(state.y_labels(min, max))
                     .style(style().fg(THEME.border_axis())),
             );
 

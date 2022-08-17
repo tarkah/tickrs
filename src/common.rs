@@ -309,19 +309,17 @@ pub fn zeros_as_pre(prices: &mut [f64]) {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum DecimalFormat {
-    Two,
-    Four,
-}
+pub fn format_decimals(value: f64) -> String {
+    let abs = value.abs();
 
-pub fn format_decimals(format: DecimalFormat, value: f64) -> String {
-    match format {
-        DecimalFormat::Two => {
-            format!("{:.2}", value)
-        }
-        DecimalFormat::Four => {
-            format!("{:.4}", value)
-        }
+    if abs == 0.0 {
+        "0".into()
+    } else {
+        let max_chars: usize = 8;
+
+        // Max chars minus (chars to left of decial + decimal place)
+        let n = max_chars.saturating_sub(abs.log10() as usize + 2);
+
+        format!("{:.*}", n, value)
     }
 }
