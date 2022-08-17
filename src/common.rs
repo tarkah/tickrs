@@ -10,7 +10,7 @@ use tickrs_api::Interval;
 use crate::api::model::ChartData;
 use crate::api::Range;
 
-#[derive(PartialEq, Clone, Copy, Debug, Hash, Deserialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Hash, Deserialize)]
 pub enum ChartType {
     #[serde(rename = "line")]
     Line,
@@ -226,7 +226,7 @@ impl Iterator for MarketHours {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TradingPeriod {
     Pre,
     Regular,

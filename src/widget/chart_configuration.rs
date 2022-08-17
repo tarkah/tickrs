@@ -251,7 +251,7 @@ pub enum KagiReversalOption {
     ByTimeFrame(BTreeMap<TimeFrame, prices_kagi::ReversalOption>),
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Selection {
     KagiPriceType,
     KagiReversalType,

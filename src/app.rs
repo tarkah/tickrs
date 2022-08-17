@@ -5,7 +5,7 @@ use crate::service::default_timestamps::DefaultTimestampService;
 use crate::service::Service;
 use crate::{widget, DEFAULT_TIMESTAMPS};
 
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Mode {
     AddStock,
     ConfigureChart,

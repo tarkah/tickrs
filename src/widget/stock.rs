@@ -461,7 +461,7 @@ impl StockState {
         }
 
         let label_len = dates
-            .get(0)
+            .first()
             .map_or(0, |d| self.time_frame.format_time(*d).len())
             + 5;
 

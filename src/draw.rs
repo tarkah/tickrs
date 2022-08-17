@@ -26,7 +26,7 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
     }
 
     terminal
-        .draw(|mut frame| {
+        .draw(|frame| {
             // Set background color
             frame.render_widget(Block::default().style(style()), frame.size());
 
@@ -47,13 +47,13 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
 
                 if !app.stocks.is_empty() {
                     match app.previous_mode {
-                        Mode::DisplaySummary => draw_summary(&mut frame, app, layout[0]),
-                        _ => draw_main(&mut frame, app, layout[0]),
+                        Mode::DisplaySummary => draw_summary(frame, app, layout[0]),
+                        _ => draw_main(frame, app, layout[0]),
                     }
                 }
 
-                draw_add_stock(&mut frame, app, layout[1]);
-                draw_debug(&mut frame, app, layout[2]);
+                draw_add_stock(frame, app, layout[1]);
+                draw_debug(frame, app, layout[2]);
             } else if app.debug.enabled {
                 // layout[0] - Main window
                 // layout[1] - Debug window
@@ -62,12 +62,12 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                     .split(frame.size());
 
                 match app.mode {
-                    Mode::DisplaySummary => draw_summary(&mut frame, app, layout[0]),
-                    Mode::Help => draw_help(&mut frame, app, layout[0]),
-                    _ => draw_main(&mut frame, app, layout[0]),
+                    Mode::DisplaySummary => draw_summary(frame, app, layout[0]),
+                    Mode::Help => draw_help(frame, app, layout[0]),
+                    _ => draw_main(frame, app, layout[0]),
                 }
 
-                draw_debug(&mut frame, app, layout[1]);
+                draw_debug(frame, app, layout[1]);
             } else if app.mode == Mode::AddStock {
                 // layout[0] - Main window
                 // layout[1] - Add Stock window
@@ -77,20 +77,20 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
 
                 if !app.stocks.is_empty() {
                     match app.previous_mode {
-                        Mode::DisplaySummary => draw_summary(&mut frame, app, layout[0]),
-                        _ => draw_main(&mut frame, app, layout[0]),
+                        Mode::DisplaySummary => draw_summary(frame, app, layout[0]),
+                        _ => draw_main(frame, app, layout[0]),
                     }
                 }
 
-                draw_add_stock(&mut frame, app, layout[1]);
+                draw_add_stock(frame, app, layout[1]);
             } else {
                 // layout - Main window
                 let layout = frame.size();
 
                 match app.mode {
-                    Mode::DisplaySummary => draw_summary(&mut frame, app, layout),
-                    Mode::Help => draw_help(&mut frame, app, layout),
-                    _ => draw_main(&mut frame, app, layout),
+                    Mode::DisplaySummary => draw_summary(frame, app, layout),
+                    Mode::Help => draw_help(frame, app, layout),
+                    _ => draw_main(frame, app, layout),
                 }
             };
         })

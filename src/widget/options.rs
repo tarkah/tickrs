@@ -24,7 +24,7 @@ enum OptionType {
     Put,
 }
 
-#[derive(Clone, Copy, PartialEq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SelectionMode {
     Dates,
     Options,
