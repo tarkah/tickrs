@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.6] - 2022-08-17
+
 ### Changed 
 
 - Improved dynamic decimal formatting
