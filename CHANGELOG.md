@@ -14,6 +14,10 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Changed 
+
+- Improved dynamic decimal formatting
+
 ## [0.14.5] - 2021-05-07
 
 ### Added
