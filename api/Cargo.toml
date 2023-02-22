@@ -11,7 +11,7 @@ repository = "https://github.com/tarkah/tickrs"
 anyhow = "1.0"
 futures = "0.3"
 http = "0.2"
-isahc = "1.7"
+isahc = { version = "1.7", features = ["static-ssl"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7"
