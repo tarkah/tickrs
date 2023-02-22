@@ -2,12 +2,12 @@
 name = "tickrs"
 version = "0.14.6"
 authors = ["tarkah <admin@tarkah.dev>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 repository = "https://github.com/tarkah/tickrs"
 readme = "README.md"
 description = "Realtime ticker data in your terminal 📈"
-keywords = ["tui","terminal","stocks"]
+keywords = ["tui", "terminal", "stocks"]
 categories = ["command-line-utilities"]
 
 [profile.release]
@@ -20,22 +20,20 @@ members = [
 ]
 
 [dependencies]
-tickrs-api = { path = "api/", version = "0.14.6" }
-
 anyhow = "1.0"
-crossbeam-channel = "0.4"
+async-std = "1.12"
+better-panic = "0.3"
 chrono = "0.4"
-chrono-tz = "0.5"
+crossbeam-channel = "0.5"
+crossterm = "0.25" # use the same version as tui
 dirs-next = "2.0.0"
-itertools = "0.9"
-lazy_static = "1.4"
-serde = { version = "1", features = ["derive"] }
-serde_yaml = "0.8"
-structopt = "0.3"
-
-async-std = "1.5"
 futures = "0.3"
-
-better-panic = "0.2"
-crossterm = "0.19"
-tui = { version = "0.14", default-features = false, features = ["crossterm","serde"] }
+itertools = "0.10"
+lazy_static = "1.4"
+parking_lot = "0.12.1"
+rclite = "0.1.5"
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+structopt = "0.3"
+tickrs-api = { path = "api/", version = "0.14.6" }
+tui = { version = "0.19", default-features = false, features = ["crossterm","serde"] }

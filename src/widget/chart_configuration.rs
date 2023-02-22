@@ -18,7 +18,7 @@ use crate::THEME;
 #[derive(Default, Debug, Clone)]
 pub struct ChartConfigurationState {
     pub input: Input,
-    pub selection: Option<Selection>,
+    pub selection: Option<KagiSelection>,
     pub error_message: Option<String>,
     pub kagi_options: KagiOptions,
     pub cache_state: CacheState,
@@ -27,7 +27,7 @@ pub struct ChartConfigurationState {
 impl ChartConfigurationState {
     pub fn add_char(&mut self, c: char) {
         let input_field = match self.selection {
-            Some(Selection::KagiReversalValue) => &mut self.input.kagi_reversal_value,
+            Some(KagiSelection::ReversalValue) => &mut self.input.kagi_reversal_value,
             _ => return,
         };
 
@@ -41,7 +41,7 @@ impl ChartConfigurationState {
 
     pub fn del_char(&mut self) {
         let input_field = match self.selection {
-            Some(Selection::KagiReversalValue) => &mut self.input.kagi_reversal_value,
+            Some(KagiSelection::ReversalValue) => &mut self.input.kagi_reversal_value,
             _ => return,
         };
 
@@ -50,14 +50,14 @@ impl ChartConfigurationState {
 
     fn get_tab_artifacts(&mut self) -> Option<(&mut usize, usize)> {
         let tab_field = match self.selection {
-            Some(Selection::KagiReversalType) => &mut self.input.kagi_reversal_type,
-            Some(Selection::KagiPriceType) => &mut self.input.kagi_price_type,
+            Some(KagiSelection::ReversalType) => &mut self.input.kagi_reversal_type,
+            Some(KagiSelection::PriceType) => &mut self.input.kagi_price_type,
             _ => return None,
         };
 
         let mod_value = match self.selection {
-            Some(Selection::KagiReversalType) => 2,
-            Some(Selection::KagiPriceType) => 2,
+            Some(KagiSelection::ReversalType) => 2,
+            Some(KagiSelection::PriceType) => 2,
             _ => 1,
         };
         Some((tab_field, mod_value))
@@ -155,10 +155,10 @@ impl ChartConfigurationState {
 
     pub fn selection_up(&mut self) {
         let new_selection = match self.selection {
-            None => Selection::KagiReversalValue,
-            Some(Selection::KagiReversalValue) => Selection::KagiReversalType,
-            Some(Selection::KagiReversalType) => Selection::KagiPriceType,
-            Some(Selection::KagiPriceType) => Selection::KagiReversalValue,
+            None => KagiSelection::ReversalValue,
+            Some(KagiSelection::ReversalValue) => KagiSelection::ReversalType,
+            Some(KagiSelection::ReversalType) => KagiSelection::PriceType,
+            Some(KagiSelection::PriceType) => KagiSelection::ReversalValue,
         };
 
         self.selection = Some(new_selection);
@@ -166,10 +166,10 @@ impl ChartConfigurationState {
 
     pub fn selection_down(&mut self) {
         let new_selection = match self.selection {
-            None => Selection::KagiPriceType,
-            Some(Selection::KagiPriceType) => Selection::KagiReversalType,
-            Some(Selection::KagiReversalType) => Selection::KagiReversalValue,
-            Some(Selection::KagiReversalValue) => Selection::KagiPriceType,
+            None => KagiSelection::PriceType,
+            Some(KagiSelection::PriceType) => KagiSelection::ReversalType,
+            Some(KagiSelection::ReversalType) => KagiSelection::ReversalValue,
+            Some(KagiSelection::ReversalValue) => KagiSelection::PriceType,
         };
 
         self.selection = Some(new_selection);
@@ -213,7 +213,7 @@ impl ChartConfigurationState {
             })
             .unwrap_or(0);
 
-        self.selection = Some(Selection::KagiPriceType);
+        self.selection = Some(KagiSelection::PriceType);
         self.input.kagi_reversal_value = format!("{:.2}", reversal_amount);
         self.input.kagi_reversal_type = reversal_type;
         self.input.kagi_price_type = price_type;
@@ -252,10 +252,10 @@ pub enum KagiReversalOption {
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub enum Selection {
-    KagiPriceType,
-    KagiReversalType,
-    KagiReversalValue,
+pub enum KagiSelection {
+    PriceType,
+    ReversalType,
+    ReversalValue,
 }
 
 pub struct ChartConfigurationWidget {
@@ -358,7 +358,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
         Spans::default(),
         Spans::from(vec![
             Span::styled(
-                if state.selection == Some(Selection::KagiPriceType) {
+                if state.selection == Some(KagiSelection::PriceType) {
                     "> "
                 } else {
                     "  "
@@ -370,7 +370,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
         Spans::default(),
         Spans::from(vec![
             Span::styled(
-                if state.selection == Some(Selection::KagiReversalType) {
+                if state.selection == Some(KagiSelection::ReversalType) {
                     "> "
                 } else {
                     "  "
@@ -382,7 +382,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
         Spans::default(),
         Spans::from(vec![
             Span::styled(
-                if state.selection == Some(Selection::KagiReversalValue) {
+                if state.selection == Some(KagiSelection::ReversalValue) {
                     "> "
                 } else {
                     "  "
@@ -400,7 +400,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
                 "Close",
                 style().fg(THEME.text_normal()).bg(
                     match (state.selection, state.input.kagi_price_type) {
-                        (Some(Selection::KagiPriceType), 0) => THEME.highlight_focused(),
+                        (Some(KagiSelection::PriceType), 0) => THEME.highlight_focused(),
                         (_, 0) => THEME.highlight_unfocused(),
                         (_, _) => THEME.background(),
                     },
@@ -411,7 +411,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
                 "High / Low",
                 style().fg(THEME.text_normal()).bg(
                     match (state.selection, state.input.kagi_price_type) {
-                        (Some(Selection::KagiPriceType), 1) => THEME.highlight_focused(),
+                        (Some(KagiSelection::PriceType), 1) => THEME.highlight_focused(),
                         (_, 1) => THEME.highlight_unfocused(),
                         (_, _) => THEME.background(),
                     },
@@ -424,7 +424,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
                 "Pct",
                 style().fg(THEME.text_normal()).bg(
                     match (state.selection, state.input.kagi_reversal_type) {
-                        (Some(Selection::KagiReversalType), 0) => THEME.highlight_focused(),
+                        (Some(KagiSelection::ReversalType), 0) => THEME.highlight_focused(),
                         (_, 0) => THEME.highlight_unfocused(),
                         (_, _) => THEME.background(),
                     },
@@ -435,7 +435,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
                 "Amount",
                 style().fg(THEME.text_normal()).bg(
                     match (state.selection, state.input.kagi_reversal_type) {
-                        (Some(Selection::KagiReversalType), 1) => THEME.highlight_focused(),
+                        (Some(KagiSelection::ReversalType), 1) => THEME.highlight_focused(),
                         (_, 1) => THEME.highlight_unfocused(),
                         (_, _) => THEME.background(),
                     },
@@ -446,12 +446,12 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
         Spans::from(vec![Span::styled(
             format!("{: <22}", &state.input.kagi_reversal_value),
             style()
-                .fg(if state.selection == Some(Selection::KagiReversalValue) {
+                .fg(if state.selection == Some(KagiSelection::ReversalValue) {
                     THEME.text_secondary()
                 } else {
                     THEME.text_normal()
                 })
-                .bg(if state.selection == Some(Selection::KagiReversalValue) {
+                .bg(if state.selection == Some(KagiSelection::ReversalValue) {
                     THEME.highlight_unfocused()
                 } else {
                     THEME.background()
@@ -468,7 +468,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfig
         .render(layout[2], buf);
 
     // Set "cursor" color
-    if matches!(state.selection, Some(Selection::KagiReversalValue)) {
+    if matches!(state.selection, Some(KagiSelection::ReversalValue)) {
         let size = terminal::size().unwrap_or((0, 0));
 
         let x = layout[2].left() as usize + state.input.kagi_reversal_value.len().min(20);

@@ -245,7 +245,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     area = add_padding(area, 1, PaddingDirection::All);
     area = add_padding(area, 1, PaddingDirection::Right);
 
-    let show_volumes = *SHOW_VOLUMES.read().unwrap() && app.chart_type != ChartType::Kagi;
+    let show_volumes = *SHOW_VOLUMES.read() && app.chart_type != ChartType::Kagi;
     let stock_widget_height = if show_volumes { 7 } else { 6 };
 
     let height = area.height;

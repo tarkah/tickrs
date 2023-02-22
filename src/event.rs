@@ -326,12 +326,12 @@ pub fn handle_key_bindings(
         }
         (_, KeyModifiers::NONE, KeyCode::Char('v')) => {
             if app.chart_type != ChartType::Kagi {
-                let mut show_volumes = SHOW_VOLUMES.write().unwrap();
+                let mut show_volumes = SHOW_VOLUMES.write();
                 *show_volumes = !*show_volumes;
             }
         }
         (_, KeyModifiers::NONE, KeyCode::Char('p')) => {
-            let mut guard = ENABLE_PRE_POST.write().unwrap();
+            let mut guard = ENABLE_PRE_POST.write();
             *guard = !*guard;
         }
         (Mode::DisplaySummary, modifiers, keycode) => {
@@ -340,7 +340,7 @@ pub fn handle_key_bindings(
             }
         }
         (_, KeyModifiers::NONE, KeyCode::Char('x')) => {
-            let mut show_x_labels = SHOW_X_LABELS.write().unwrap();
+            let mut show_x_labels = SHOW_X_LABELS.write();
             *show_x_labels = !*show_x_labels;
         }
         (_, KeyModifiers::SHIFT, KeyCode::Left) | (_, KeyModifiers::NONE, KeyCode::Char('<')) => {
