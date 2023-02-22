@@ -14,6 +14,12 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.7] - 2023-02-22
+
+### Packaging
+
+- Updated dependencies
+
 ## [0.14.6] - 2022-08-17
 
 ### Changed 
