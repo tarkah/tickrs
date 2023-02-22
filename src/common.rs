@@ -187,7 +187,7 @@ impl TimeFrame {
     }
 
     pub fn format_time(&self, timestamp: i64) -> String {
-        let utc_date = Utc.timestamp(timestamp, 0);
+        let utc_date = Utc.timestamp_opt(timestamp, 0).unwrap();
         let local_date = utc_date.with_timezone(&Local);
 
         let fmt = match self {

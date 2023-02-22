@@ -1,7 +1,4 @@
-extern crate tickrs_api as api;
-
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 use std::{io, panic, thread};
 
@@ -9,7 +6,10 @@ use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
 use crossterm::event::{Event, MouseEvent, MouseEventKind};
 use crossterm::{cursor, execute, terminal};
 use lazy_static::lazy_static;
+use parking_lot::{Mutex, RwLock};
+use rclite::Arc;
 use service::default_timestamps::DefaultTimestampService;
+use tickrs_api as api;
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
@@ -114,13 +114,13 @@ fn main() {
         loop {
             select! {
                 recv(redraw_requested) -> _ => {
-                    let mut app = app.lock().unwrap();
+                    let mut app = app.lock();
 
                     draw::draw(&mut terminal, &mut app);
                 }
                 // Default redraw on every duration
                 default(Duration::from_millis(500)) => {
-                    let mut app = app.lock().unwrap();
+                    let mut app = app.lock();
 
                     // Drive animation of loading icon
                     for stock in app.stocks.iter_mut() {
@@ -138,7 +138,7 @@ fn main() {
             // Notified that new data has been fetched from API, update widgets
             // so they can update their state with this new information
             recv(data_received) -> _ => {
-                let mut app = app.lock().unwrap();
+                let mut app = app.lock();
 
                 app.update();
 
@@ -151,11 +151,11 @@ fn main() {
                 }
             }
             recv(ui_events) -> message => {
-                let mut app = app.lock().unwrap();
+                let mut app = app.lock();
 
                 if app.debug.enabled {
-                    if let Ok(event) = message {
-                        app.debug.last_event = Some(event);
+                    if let Ok(ref event) = message {
+                        app.debug.last_event = Some(event.clone());
                     }
                 }
 

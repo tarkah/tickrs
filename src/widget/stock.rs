@@ -69,16 +69,12 @@ impl Hash for StockState {
         }
 
         // Hash globals since they affect "state" of how widget is rendered
-        DEFAULT_TIMESTAMPS
-            .read()
-            .unwrap()
-            .get(&self.time_frame)
-            .hash(state);
-        ENABLE_PRE_POST.read().unwrap().hash(state);
+        DEFAULT_TIMESTAMPS.read().get(&self.time_frame).hash(state);
+        ENABLE_PRE_POST.read().hash(state);
         HIDE_PREV_CLOSE.hash(state);
         HIDE_TOGGLE.hash(state);
-        SHOW_VOLUMES.read().unwrap().hash(state);
-        SHOW_X_LABELS.read().unwrap().hash(state);
+        SHOW_VOLUMES.read().hash(state);
+        SHOW_X_LABELS.read().hash(state);
         TRUNC_PRE.hash(state);
     }
 }
@@ -145,7 +141,7 @@ impl StockState {
         let max_time = prices.last().map(|p| p.date).unwrap_or(end);
 
         let default_timestamps = {
-            let defaults = DEFAULT_TIMESTAMPS.read().unwrap();
+            let defaults = DEFAULT_TIMESTAMPS.read();
             defaults.get(&self.time_frame).cloned()
         };
 
@@ -224,7 +220,7 @@ impl StockState {
     }
 
     pub fn current_price(&self) -> f64 {
-        let enable_pre_post = { *ENABLE_PRE_POST.read().unwrap() };
+        let enable_pre_post = { *ENABLE_PRE_POST.read() };
 
         if enable_pre_post && self.current_post_price.is_some() {
             self.current_post_price
@@ -311,7 +307,7 @@ impl StockState {
     }
 
     pub fn start_end(&self) -> (i64, i64) {
-        let enable_pre_post = { *ENABLE_PRE_POST.read().unwrap() };
+        let enable_pre_post = { *ENABLE_PRE_POST.read() };
 
         let pre = self
             .chart_meta
@@ -602,9 +598,9 @@ impl CachableWidget<StockState> for StockWidget {
         let pct_change = state.pct_change(&data);
 
         let chart_type = state.chart_type;
-        let show_x_labels = SHOW_X_LABELS.read().map_or(false, |l| *l);
-        let enable_pre_post = *ENABLE_PRE_POST.read().unwrap();
-        let show_volumes = *SHOW_VOLUMES.read().unwrap() && chart_type != ChartType::Kagi;
+        let show_x_labels = *SHOW_X_LABELS.read();
+        let enable_pre_post = *ENABLE_PRE_POST.read();
+        let show_volumes = *SHOW_VOLUMES.read() && chart_type != ChartType::Kagi;
 
         let loaded = state.loaded();
 

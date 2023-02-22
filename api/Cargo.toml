@@ -2,24 +2,19 @@
 name = "tickrs-api"
 version = "0.14.6"
 authors = ["tarkah <admin@tarkah.dev>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "API for tickrs"
 repository = "https://github.com/tarkah/tickrs"
 
-
 [dependencies]
 anyhow = "1.0"
-chrono = { version = "0.4", features = ["serde"] }
-serde_urlencoded = "0.6"
-serde_json = "1.0"
-serde = { version = "1.0", features=["derive"] }
-
 futures = "0.3"
-
-http = "0.1"
-curl = { version = "0.4", default-features=false, features = ["static-ssl"] }
-isahc = "0.8"
+http = "0.2"
+isahc = "1.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_urlencoded = "0.7"
 
 [dev-dependencies]
 async-std = { version = "1", features = ["attributes"] }
