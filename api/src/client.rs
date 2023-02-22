@@ -187,7 +187,7 @@ impl Default for Client {
 
         #[cfg(target_os = "android")]
         {
-            use isahc::config::SslOption;
+            use isahc::config::{Configurable, SslOption};
 
             builder = builder.ssl_options(SslOption::DANGER_ACCEPT_INVALID_CERTS);
         }
