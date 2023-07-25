@@ -272,16 +272,10 @@ mod tests {
 
         let symbols = vec!["SPY", "AAPL", "AMD", "TSLA", "ES=F", "BTC-USD", "DX-Y.NYB"];
 
+        let crumb = client.get_crumb().await.unwrap();
+
         for symbol in symbols {
-            let data = client
-                .get_company_data(
-                    symbol,
-                    CrumbData {
-                        cookie: "".into(),
-                        crumb: "".into(),
-                    },
-                )
-                .await;
+            let data = client.get_company_data(symbol, crumb.clone()).await;
 
             if let Err(e) = data {
                 println!("{}", e);
