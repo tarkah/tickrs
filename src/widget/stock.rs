@@ -537,9 +537,7 @@ impl StockState {
     }
 
     pub fn loaded(&self) -> bool {
-        !self.prices[self.time_frame.idx()].is_empty()
-            && self.current_price() > 0.0
-            && self.profile.is_some()
+        !self.prices[self.time_frame.idx()].is_empty() && self.current_price() > 0.0
     }
 
     pub fn loading_tick(&mut self) {
