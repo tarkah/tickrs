@@ -405,7 +405,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
     }
 }
 
-fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
+fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &App, area: Rect) {
     let mut layout = area;
 
     if layout.width < HELP_WIDTH as u16 || layout.height < HELP_HEIGHT as u16 {

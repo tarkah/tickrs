@@ -3,6 +3,7 @@ use futures::future::BoxFuture;
 
 use super::*;
 use crate::api::model::CompanyData;
+use crate::YAHOO_CRUMB;
 
 /// Returns a companies profile information. Only needs to be returned once.
 pub struct Company {
@@ -31,7 +32,13 @@ impl AsyncTask for Company {
         Box::pin(async move {
             let symbol = input.as_ref();
 
-            crate::CLIENT.get_company_data(symbol).await.ok()
+            let crumb = YAHOO_CRUMB.read().clone();
+
+            if let Some(crumb) = crumb {
+                crate::CLIENT.get_company_data(symbol, crumb).await.ok()
+            } else {
+                None
+            }
         })
     }
 }

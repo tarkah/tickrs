@@ -326,7 +326,7 @@ impl CachableWidget<ChartConfigurationState> for ChartConfigurationWidget {
     }
 }
 
-fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &mut ChartConfigurationState) {
+fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurationState) {
     Block::default()
         .style(style())
         .title(vec![Span::styled(

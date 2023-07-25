@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use std::{io, panic, thread};
 
+use api::model::CrumbData;
 use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
 use crossterm::event::{Event, MouseEvent, MouseEventKind};
 use crossterm::{cursor, execute, terminal};
@@ -42,6 +43,7 @@ lazy_static! {
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
     pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
+    pub static ref YAHOO_CRUMB: RwLock<Option<CrumbData>> = RwLock::default();
 }
 
 fn main() {
@@ -77,6 +79,8 @@ fn main() {
     };
 
     let default_timestamp_service = DefaultTimestampService::new();
+
+    set_crumb();
 
     let app = Arc::new(Mutex::new(app::App {
         mode: starting_mode,
@@ -228,4 +232,12 @@ fn setup_panic_hook() {
         cleanup_terminal();
         better_panic::Settings::auto().create_panic_handler()(panic_info);
     }));
+}
+
+fn set_crumb() {
+    async_std::task::spawn(async move {
+        if let Ok(crumb) = CLIENT.get_crumb().await {
+            *YAHOO_CRUMB.write() = Some(crumb);
+        }
+    });
 }

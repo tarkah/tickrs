@@ -6,6 +6,12 @@ use anyhow::Result;
 use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 
+#[derive(Debug, Clone)]
+pub struct CrumbData {
+    pub cookie: String,
+    pub crumb: String,
+}
+
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Chart {

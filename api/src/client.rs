@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use anyhow::{bail, Context, Result};
 use futures::AsyncReadExt;
-use http::Uri;
-use isahc::HttpClient;
+use http::{header, Request, Uri};
+use isahc::{AsyncReadResponseExt, HttpClient};
 use serde::de::DeserializeOwned;
 
-use crate::model::{Chart, ChartData, Company, CompanyData, Options, OptionsHeader};
+use crate::model::{Chart, ChartData, Company, CompanyData, CrumbData, Options, OptionsHeader};
 use crate::{Interval, Range};
 
 #[derive(Debug)]
@@ -36,10 +36,16 @@ impl Client {
         }
     }
 
-    async fn get<T: DeserializeOwned>(&self, url: Uri) -> Result<T> {
+    async fn get<T: DeserializeOwned>(&self, url: Uri, cookie: Option<String>) -> Result<T> {
+        let mut req = Request::builder().method(http::Method::GET).uri(url);
+
+        if let Some(cookie) = cookie {
+            req = req.header(header::COOKIE, cookie);
+        }
+
         let res = self
             .client
-            .get_async(url)
+            .send_async(req.body(())?)
             .await
             .context("Failed to get request")?;
 
@@ -73,7 +79,7 @@ impl Client {
             Some(params),
         )?;
 
-        let response: Chart = self.get(url).await?;
+        let response: Chart = self.get(url, None).await?;
 
         if let Some(err) = response.chart.error {
             bail!(
@@ -92,9 +98,14 @@ impl Client {
         bail!("Failed to get chart data for {}", symbol);
     }
 
-    pub async fn get_company_data(&self, symbol: &str) -> Result<CompanyData> {
+    pub async fn get_company_data(
+        &self,
+        symbol: &str,
+        crumb_data: CrumbData,
+    ) -> Result<CompanyData> {
         let mut params = HashMap::new();
         params.insert("modules", "price,assetProfile".to_string());
+        params.insert("crumb", crumb_data.crumb);
 
         let url = self.get_url(
             Version::V10,
@@ -102,7 +113,7 @@ impl Client {
             Some(params),
         )?;
 
-        let response: Company = self.get(url).await?;
+        let response: Company = self.get(url, Some(crumb_data.cookie)).await?;
 
         if let Some(err) = response.company.error {
             bail!(
@@ -124,7 +135,7 @@ impl Client {
     pub async fn get_options_expiration_dates(&self, symbol: &str) -> Result<Vec<i64>> {
         let url = self.get_url(Version::V7, &format!("finance/options/{}", symbol), None)?;
 
-        let response: Options = self.get(url).await?;
+        let response: Options = self.get(url, None).await?;
 
         if let Some(err) = response.option_chain.error {
             bail!(
@@ -158,7 +169,7 @@ impl Client {
             Some(params),
         )?;
 
-        let response: Options = self.get(url).await?;
+        let response: Options = self.get(url, None).await?;
 
         if let Some(err) = response.option_chain.error {
             bail!(
@@ -177,6 +188,38 @@ impl Client {
         }
 
         bail!("Failed to get options data for {}", symbol);
+    }
+
+    pub async fn get_crumb(&self) -> Result<CrumbData> {
+        let res = self
+            .client
+            .get_async("https://fc.yahoo.com")
+            .await
+            .context("Failed to get request")?;
+
+        let Some(cookie) = res
+            .headers()
+            .get(header::SET_COOKIE)
+            .and_then(|header| header.to_str().ok())
+            .and_then(|s| s.split_once(';').map(|(value, _)| value))
+        else {
+            bail!("Couldn't fetch cookie");
+        };
+
+        let request = Request::builder()
+            .uri(self.get_url(Version::V1, "test/getcrumb", None)?)
+            .header(header::USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
+            .header(header::COOKIE, cookie)
+            .method(http::Method::GET)
+            .body(())?;
+        let mut res = self.client.send_async(request).await?;
+
+        let crumb = res.text().await?;
+
+        Ok(CrumbData {
+            cookie: cookie.to_string(),
+            crumb,
+        })
     }
 }
 
@@ -202,6 +245,7 @@ impl Default for Client {
 
 #[derive(Debug, Clone)]
 pub enum Version {
+    V1,
     V7,
     V8,
     V10,
@@ -210,6 +254,7 @@ pub enum Version {
 impl Version {
     fn as_str(&self) -> &'static str {
         match self {
+            Version::V1 => "v1",
             Version::V7 => "v7",
             Version::V8 => "v8",
             Version::V10 => "v10",
@@ -227,8 +272,10 @@ mod tests {
 
         let symbols = vec!["SPY", "AAPL", "AMD", "TSLA", "ES=F", "BTC-USD", "DX-Y.NYB"];
 
+        let crumb = client.get_crumb().await.unwrap();
+
         for symbol in symbols {
-            let data = client.get_company_data(symbol).await;
+            let data = client.get_company_data(symbol, crumb.clone()).await;
 
             if let Err(e) = data {
                 println!("{}", e);
