@@ -7,7 +7,7 @@ use crate::common::ChartType;
 use crate::widget::options;
 use crate::{cleanup_terminal, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
 
-fn handle_keys_add_stock(keycode: KeyCode, mut app: &mut app::App) {
+fn handle_keys_add_stock(keycode: KeyCode, app: &mut app::App) {
     match keycode {
         KeyCode::Enter => {
             let mut stock = app.add_stock.enter(app.chart_type);
@@ -38,7 +38,7 @@ fn handle_keys_add_stock(keycode: KeyCode, mut app: &mut app::App) {
     }
 }
 
-fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app: &mut app::App) {
+fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mut app::App) {
     match (keycode, modifiers) {
         (KeyCode::Left, KeyModifiers::CONTROL) => {
             let new_idx = if app.current_tab == 0 {
@@ -113,7 +113,7 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, mut app:
     }
 }
 
-fn handle_keys_display_summary(keycode: KeyCode, mut app: &mut app::App) {
+fn handle_keys_display_summary(keycode: KeyCode, app: &mut app::App) {
     match keycode {
         KeyCode::Left => {
             app.summary_time_frame = app.summary_time_frame.down();
@@ -146,7 +146,7 @@ fn handle_keys_display_summary(keycode: KeyCode, mut app: &mut app::App) {
     }
 }
 
-fn handle_keys_display_options(keycode: KeyCode, mut app: &mut app::App) {
+fn handle_keys_display_options(keycode: KeyCode, app: &mut app::App) {
     match keycode {
         KeyCode::Esc | KeyCode::Char('o') | KeyCode::Char('q') => {
             app.stocks[app.current_tab].toggle_options();
@@ -231,11 +231,7 @@ fn handle_keys_display_options(keycode: KeyCode, mut app: &mut app::App) {
     }
 }
 
-pub fn handle_keys_configure_chart(
-    keycode: KeyCode,
-    modifiers: KeyModifiers,
-    mut app: &mut app::App,
-) {
+pub fn handle_keys_configure_chart(keycode: KeyCode, modifiers: KeyModifiers, app: &mut app::App) {
     match (keycode, modifiers) {
         (keycode, _)
             if matches!(
@@ -284,7 +280,7 @@ pub fn handle_keys_configure_chart(
 pub fn handle_key_bindings(
     mode: Mode,
     key_event: KeyEvent,
-    mut app: &mut app::App,
+    app: &mut app::App,
     request_redraw: &Sender<()>,
 ) {
     match (mode, key_event.modifiers, key_event.code) {
