@@ -206,13 +206,9 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
                     let state = &mut stock.chart_configuration;
 
                     let chart_type = stock.chart_type;
-                    let time_frame = stock.time_frame;
 
                     frame.render_stateful_widget(
-                        ChartConfigurationWidget {
-                            chart_type,
-                            time_frame,
-                        },
+                        ChartConfigurationWidget { chart_type },
                         main_chunks[1],
                         state,
                     );
