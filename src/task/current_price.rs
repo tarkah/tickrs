@@ -31,7 +31,7 @@ impl AsyncTask for CurrentPrice {
         Box::pin(async move {
             let symbol = input.as_ref();
 
-            let crumb = YAHOO_CRUMB.read().clone();
+            let crumb = YAHOO_CRUMB.read().await.clone();
 
             if let Some(crumb) = crumb {
                 if let Ok(response) = crate::CLIENT.get_company_data(symbol, crumb).await {

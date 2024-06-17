@@ -14,6 +14,10 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Race condition preventing data from loading if a long update interval was defined
+
 ## [0.14.9] - 2023-07-25
 
 ### Fixed
