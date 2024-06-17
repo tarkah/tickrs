@@ -260,7 +260,6 @@ pub enum KagiSelection {
 
 pub struct ChartConfigurationWidget {
     pub chart_type: ChartType,
-    pub time_frame: TimeFrame,
 }
 
 impl StatefulWidget for ChartConfigurationWidget {
