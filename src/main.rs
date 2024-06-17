@@ -43,7 +43,7 @@ lazy_static! {
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
     pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
-    pub static ref YAHOO_CRUMB: RwLock<Option<CrumbData>> = RwLock::default();
+    pub static ref YAHOO_CRUMB: async_std::sync::RwLock<Option<CrumbData>> = Default::default();
 }
 
 fn main() {
@@ -56,6 +56,7 @@ fn main() {
 
     setup_panic_hook();
     setup_terminal();
+    set_crumb();
 
     let request_redraw = REDRAW_REQUEST.0.clone();
     let data_received = DATA_RECEIVED.1.clone();
@@ -79,8 +80,6 @@ fn main() {
     };
 
     let default_timestamp_service = DefaultTimestampService::new();
-
-    set_crumb();
 
     let app = Arc::new(Mutex::new(app::App {
         mode: starting_mode,
@@ -236,8 +235,10 @@ fn setup_panic_hook() {
 
 fn set_crumb() {
     async_std::task::spawn(async move {
+        let mut _guard = YAHOO_CRUMB.write().await;
+
         if let Ok(crumb) = CLIENT.get_crumb().await {
-            *YAHOO_CRUMB.write() = Some(crumb);
+            *_guard = Some(crumb);
         }
     });
 }
