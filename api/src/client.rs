@@ -37,7 +37,10 @@ impl Client {
     }
 
     async fn get<T: DeserializeOwned>(&self, url: Uri, cookie: Option<String>) -> Result<T> {
-        let mut req = Request::builder().method(http::Method::GET).uri(url);
+        let mut req = Request::builder()
+            .method(http::Method::GET)
+            .uri(url)
+            .header(header::USER_AGENT, "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36");
 
         if let Some(cookie) = cookie {
             req = req.header(header::COOKIE, cookie);
