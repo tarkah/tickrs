@@ -83,7 +83,7 @@ mod de {
     {
         struct ColorVisitor;
 
-        impl<'de> Visitor<'de> for ColorVisitor {
+        impl Visitor<'_> for ColorVisitor {
             type Value = Option<Color>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

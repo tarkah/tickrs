@@ -320,7 +320,7 @@ mod tests {
     async fn test_chart_data() {
         let client = Client::new();
 
-        let combinations = vec![
+        let combinations = [
             (Range::Year5, Interval::Minute1),
             (Range::Day1, Interval::Minute1),
             (Range::Day5, Interval::Minute5),

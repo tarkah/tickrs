@@ -26,7 +26,7 @@ pub struct PricesCandlestickChart<'a> {
     pub show_x_labels: bool,
 }
 
-impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
+impl StatefulWidget for PricesCandlestickChart<'_> {
     type State = StockState;
 
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -148,7 +148,7 @@ impl<'a> StatefulWidget for PricesCandlestickChart<'a> {
                     return None;
                 }
 
-                let open = prices.get(0).unwrap().open;
+                let open = prices.first().unwrap().open;
                 let close = prices.iter().last().unwrap().close;
                 let high = prices
                     .iter()

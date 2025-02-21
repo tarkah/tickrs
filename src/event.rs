@@ -233,12 +233,7 @@ fn handle_keys_display_options(keycode: KeyCode, app: &mut app::App) {
 
 pub fn handle_keys_configure_chart(keycode: KeyCode, modifiers: KeyModifiers, app: &mut app::App) {
     match (keycode, modifiers) {
-        (keycode, _)
-            if matches!(
-                keycode,
-                KeyCode::Esc | KeyCode::Char('e') | KeyCode::Char('q')
-            ) =>
-        {
+        (KeyCode::Esc | KeyCode::Char('e') | KeyCode::Char('q'), _) => {
             app.stocks[app.current_tab].toggle_configure();
             app.mode = app::Mode::DisplayStock;
         }

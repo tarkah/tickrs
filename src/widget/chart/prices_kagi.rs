@@ -115,7 +115,7 @@ fn calculate_trends(
         return trends;
     }
 
-    let first_price = **data.get(0).unwrap();
+    let first_price = **data.first().unwrap();
 
     // Find initial trend direction
     let mut initial_direction = TrendDirection::Up;
@@ -248,7 +248,7 @@ pub struct PricesKagiChart<'a> {
     pub kagi_options: KagiOptions,
 }
 
-impl<'a> PricesKagiChart<'a> {
+impl PricesKagiChart<'_> {
     fn min_max(
         &self,
         data: &[Trend],
@@ -302,7 +302,7 @@ impl<'a> PricesKagiChart<'a> {
     }
 }
 
-impl<'a> StatefulWidget for PricesKagiChart<'a> {
+impl StatefulWidget for PricesKagiChart<'_> {
     type State = StockState;
 
     fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {

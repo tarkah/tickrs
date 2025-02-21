@@ -19,7 +19,7 @@ pub struct PricesLineChart<'a> {
     pub data: &'a [Price],
 }
 
-impl<'a> StatefulWidget for PricesLineChart<'a> {
+impl StatefulWidget for PricesLineChart<'_> {
     type State = StockState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
