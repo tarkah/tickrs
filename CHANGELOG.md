@@ -14,6 +14,12 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.14.11] - 2025-02-21
+
+### Fixed
+
+- User agent added to fix failing yahoo finance API requests
+
 ## [0.14.10] - 2024-06-17
 
 ### Fixed
