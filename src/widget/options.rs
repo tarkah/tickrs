@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use chrono::NaiveDateTime;
-use tui::buffer::Buffer;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::Modifier;
-use tui::text::{Span, Spans};
-use tui::widgets::{
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::style::Modifier;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{
     Block, Borders, Cell, List, ListItem, ListState, Paragraph, Row, StatefulWidget, Table,
     TableState, Widget,
 };
@@ -254,7 +254,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
         // chunks[0] - call / put selector
         // chunks[1] - option info
         // chunks[2] - remainder (date selector | option selector)
-        let mut chunks = Layout::default()
+        let mut chunks: Vec<Rect> = Layout::default()
             .constraints(
                 [
                     Constraint::Length(2),
@@ -263,7 +263,8 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 ]
                 .as_ref(),
             )
-            .split(area);
+            .split(area)
+            .to_vec();
 
         // Draw call / put selector
         {
@@ -301,7 +302,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
 
             chunks[0] = add_padding(chunks[0], 1, PaddingDirection::Bottom);
 
-            Paragraph::new(Spans::from(call_put_selector))
+            Paragraph::new(Line::from(call_put_selector))
                 .style(style().fg(THEME.text_normal()))
                 .alignment(Alignment::Center)
                 .render(chunks[0], buf);
@@ -309,10 +310,11 @@ impl CachableWidget<OptionsState> for OptionsWidget {
 
         // selector_chunks[0] - date selector
         // selector_chunks[1] - option selector
-        let mut selector_chunks = Layout::default()
+        let mut selector_chunks: Vec<Rect> = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Length(12), Constraint::Min(0)].as_ref())
-            .split(chunks[2]);
+            .split(chunks[2])
+            .to_vec();
 
         // Draw date selector
         {
@@ -380,30 +382,31 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                     } else {
                         THEME.loss()
                     }))
-                });
+                }).collect::<Vec<_>>();
 
-                let table = Table::new(rows)
-                    .header(
-                        Row::new(vec!["Strike", "Price", "% Change"])
-                            .style(style().fg(THEME.text_secondary()))
-                            .bottom_margin(1),
-                    )
-                    .style(style().fg(THEME.text_normal()))
-                    .highlight_style(
-                        style()
-                            .bg(if state.selection_mode == SelectionMode::Options {
-                                THEME.highlight_focused()
-                            } else {
-                                THEME.highlight_unfocused()
-                            })
-                            .fg(THEME.text_normal()),
-                    )
-                    .widths(&[
+                let header = Row::new(vec!["Strike", "Price", "% Change"])
+                    .style(style().fg(THEME.text_secondary()))
+                    .bottom_margin(1);
+                let table = Table::new(
+                    rows,
+                    [
                         Constraint::Length(8),
                         Constraint::Length(8),
                         Constraint::Min(0),
-                    ])
-                    .column_spacing(2);
+                    ],
+                )
+                .header(header)
+                .style(style().fg(THEME.text_normal()))
+                .highlight_style(
+                    style()
+                        .bg(if state.selection_mode == SelectionMode::Options {
+                            THEME.highlight_focused()
+                        } else {
+                            THEME.highlight_unfocused()
+                        })
+                        .fg(THEME.text_normal()),
+                )
+                .column_spacing(2);
 
                 let mut table_state = TableState::default();
                 if let Some(idx) = state.selected_option {
@@ -436,10 +439,11 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 };
 
                 if let Some(option) = option_range.get(idx) {
-                    let mut columns = Layout::default()
+                    let mut columns: Vec<Rect> = Layout::default()
                         .direction(Direction::Horizontal)
                         .constraints([Constraint::Length(20), Constraint::Length(20)].as_ref())
-                        .split(chunks[1]);
+                        .split(chunks[1])
+                        .to_vec();
 
                     columns[1] = add_padding(columns[1], 2, PaddingDirection::Left);
 
@@ -462,7 +466,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                             + 11);
 
                     let column_0 = vec![
-                        Spans::from(Span::styled(
+                        Line::from(Span::styled(
                             format!(
                                 "Strike:{}{:.2} {}",
                                 " ".repeat(gap_strike),
@@ -471,13 +475,13 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                             ),
                             style(),
                         )),
-                        Spans::default(),
-                        Spans::from(Span::styled(
+                        Line::default(),
+                        Line::from(Span::styled(
                             format!("Price:{}{:.2}", " ".repeat(gap_last), option.last_price,),
                             style(),
                         )),
-                        Spans::default(),
-                        Spans::from(Span::styled(
+                        Line::default(),
+                        Line::from(Span::styled(
                             format!(
                                 "Bid:{}{:.2}",
                                 " ".repeat(gap_ask),
@@ -485,8 +489,8 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                             ),
                             style(),
                         )),
-                        Spans::default(),
-                        Spans::from(Span::styled(
+                        Line::default(),
+                        Line::from(Span::styled(
                             format!(
                                 "Ask:{}{:.2}",
                                 " ".repeat(gap_bid),
@@ -497,7 +501,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                     ];
 
                     let column_1 = vec![
-                        Spans::from(Span::styled(
+                        Line::from(Span::styled(
                             format!(
                                 "Volume:{}{}",
                                 " ".repeat(gap_volume),
@@ -505,8 +509,8 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                             ),
                             style(),
                         )),
-                        Spans::default(),
-                        Spans::from(Span::styled(
+                        Line::default(),
+                        Line::from(Span::styled(
                             format!(
                                 "Open Int:{}{}",
                                 " ".repeat(gap_open_int),
@@ -514,8 +518,8 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                             ),
                             style(),
                         )),
-                        Spans::default(),
-                        Spans::from(Span::styled(
+                        Line::default(),
+                        Line::from(Span::styled(
                             format!(
                                 "Implied Vol:{}{:.0}%",
                                 " ".repeat(gap_impl_vol),

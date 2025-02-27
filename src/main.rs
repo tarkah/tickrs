@@ -11,8 +11,8 @@ use parking_lot::{Mutex, RwLock};
 use rclite::Arc;
 use service::default_timestamps::DefaultTimestampService;
 use tickrs_api as api;
-use tui::backend::CrosstermBackend;
-use tui::Terminal;
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
 
 use crate::app::DebugInfo;
 use crate::common::{ChartType, TimeFrame};

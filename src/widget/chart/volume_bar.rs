@@ -1,8 +1,8 @@
 use itertools::Itertools;
-use tui::buffer::Buffer;
-use tui::layout::Rect;
-use tui::symbols::bar;
-use tui::widgets::{BarChart, Block, Borders, StatefulWidget, Widget};
+use ratatui::buffer::Buffer;
+use ratatui::layout::Rect;
+use ratatui::symbols::bar;
+use ratatui::widgets::{BarChart, Block, Borders, StatefulWidget, Widget};
 
 use crate::common::{Price, TimeFrame};
 use crate::theme::style;

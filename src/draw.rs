@@ -1,8 +1,8 @@
-use tui::backend::Backend;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::text::{Span, Spans, Text};
-use tui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
-use tui::{Frame, Terminal};
+use ratatui::backend::Backend;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
+use ratatui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
 use crate::common::{ChartType, TimeFrame};
@@ -14,7 +14,7 @@ use crate::widget::{
 };
 use crate::{SHOW_VOLUMES, THEME};
 
-pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
+pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
     let current_size = terminal.size().unwrap_or_default();
 
     if current_size.width <= 10 || current_size.height <= 10 {
@@ -35,14 +35,11 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                 // layout[1] - Add Stock window
                 // layout[2] - Debug window
                 let layout = Layout::default()
-                    .constraints(
-                        [
-                            Constraint::Min(0),
-                            Constraint::Length(3),
-                            Constraint::Length(5),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([
+                        Constraint::Min(0),
+                        Constraint::Length(3),
+                        Constraint::Length(5),
+                    ])
                     .split(frame.size());
 
                 if !app.stocks.is_empty() {
@@ -58,7 +55,7 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                 // layout[0] - Main window
                 // layout[1] - Debug window
                 let layout = Layout::default()
-                    .constraints([Constraint::Min(0), Constraint::Length(5)].as_ref())
+                    .constraints([Constraint::Min(0), Constraint::Length(5)])
                     .split(frame.size());
 
                 match app.mode {
@@ -72,7 +69,7 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
                 // layout[0] - Main window
                 // layout[1] - Add Stock window
                 let layout = Layout::default()
-                    .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
+                    .constraints([Constraint::Min(0), Constraint::Length(3)])
                     .split(frame.size());
 
                 if !app.stocks.is_empty() {
@@ -97,31 +94,34 @@ pub fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) {
         .unwrap();
 }
 
-fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
+fn draw_main(frame: &mut Frame, app: &mut App, area: Rect) {
     // layout[0] - Header
     // layout[1] - Main widget
     let mut layout = Layout::default()
-        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
-        .split(area);
+        .constraints([Constraint::Length(3), Constraint::Min(0)])
+        .split(area)
+        .to_vec();
 
     if !app.stocks.is_empty() {
         frame.render_widget(crate::widget::block::new(" Tabs "), layout[0]);
-        layout[0] = add_padding(layout[0], 1, PaddingDirection::All);
+        let padded = add_padding(layout[0], 1, PaddingDirection::All);
+        layout[0] = padded;
 
         // header[0] - Stock symbol tabs
         // header[1] - (Optional) help icon
         let header = if app.hide_help {
             vec![layout[0]]
         } else {
-            Layout::default()
+            let split = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Constraint::Min(0), Constraint::Length(10)].as_ref())
-                .split(layout[0])
+                .constraints([Constraint::Min(0), Constraint::Length(10)])
+                .split(layout[0]);
+            split.to_vec()
         };
 
         // Draw tabs
         {
-            let tabs: Vec<_> = app.stocks.iter().map(|w| Spans::from(w.symbol())).collect();
+            let tabs: Vec<_> = app.stocks.iter().map(|w| Line::from(w.symbol())).collect();
 
             frame.render_widget(
                 Tabs::new(tabs)
@@ -135,7 +135,7 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
         // Draw help icon
         if !app.hide_help {
             frame.render_widget(
-                Paragraph::new(Text::styled("Help '?'", style()))
+                Paragraph::new(Line::from(Span::styled("Help '?'", style())))
                     .style(style().fg(THEME.text_normal()))
                     .alignment(Alignment::Center),
                 header[1],
@@ -160,8 +160,9 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
             if app.mode == Mode::DisplayOptions || app.mode == Mode::ConfigureChart {
                 Layout::default()
                     .direction(Direction::Horizontal)
-                    .constraints([Constraint::Min(0), Constraint::Length(44)].as_ref())
+                    .constraints([Constraint::Min(0), Constraint::Length(44)])
                     .split(layout[1])
+                    .to_vec()
             } else {
                 vec![layout[1]]
             };
@@ -188,13 +189,17 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
                     if main_chunks[1].width >= 44 && main_chunks[1].height >= 14 {
                         frame.render_stateful_widget(OptionsWidget {}, main_chunks[1], options);
                     } else {
-                        main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Left);
-                        main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Top);
+                        let mut padded = main_chunks[1];
+                        padded = add_padding(padded, 1, PaddingDirection::Left);
+                        padded = add_padding(padded, 1, PaddingDirection::Top);
+                        main_chunks[1] = padded;
 
                         frame.render_widget(
-                            Paragraph::new(Text::styled(
-                                "Increase screen size to display options",
-                                style(),
+                            Paragraph::new(Line::from(
+                                Span::styled(
+                                    "Increase screen size to display options",
+                                    style(),
+                                )
                             )),
                             main_chunks[1],
                         );
@@ -213,13 +218,17 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
                         state,
                     );
                 } else {
-                    main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Left);
-                    main_chunks[1] = add_padding(main_chunks[1], 1, PaddingDirection::Top);
+                    let mut padded = main_chunks[1];
+                    padded = add_padding(padded, 1, PaddingDirection::Left);
+                    padded = add_padding(padded, 1, PaddingDirection::Top);
+                    main_chunks[1] = padded;
 
                     frame.render_widget(
-                        Paragraph::new(Text::styled(
-                            "Increase screen size to display configuration screen",
-                            style(),
+                        Paragraph::new(Line::from(
+                            Span::styled(
+                                "Increase screen size to display configuration screen",
+                                style(),
+                            )
                         ))
                         .wrap(Wrap { trim: false }),
                         main_chunks[1],
@@ -231,11 +240,11 @@ fn draw_main<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
     }
 }
 
-fn draw_add_stock<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
+fn draw_add_stock(frame: &mut Frame, app: &mut App, area: Rect) {
     frame.render_stateful_widget(AddStockWidget {}, area, &mut app.add_stock);
 }
 
-fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect) {
+fn draw_summary(frame: &mut Frame, app: &mut App, mut area: Rect) {
     let border = block::new(" Summary ");
     frame.render_widget(border, area);
     area = add_padding(area, 1, PaddingDirection::All);
@@ -285,29 +294,31 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
                 Constraint::Length(1),
                 Constraint::Length((num_to_render * stock_widget_height as usize) as u16),
                 Constraint::Min(0),
-            ]
-            .as_ref(),
+            ],
         )
-        .split(area);
+        .split(area)
+        .to_vec();
 
     // header[0]
     // header[1] - (Optional) help icon
     let header = if app.hide_help {
         Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(0)].as_ref())
+            .constraints([Constraint::Min(0)])
             .split(layout[0])
+            .to_vec()
     } else {
         Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(0), Constraint::Length(8)].as_ref())
+            .constraints([Constraint::Min(0), Constraint::Length(8)])
             .split(layout[0])
+            .to_vec()
     };
 
     // Draw help icon
     if !app.hide_help {
         frame.render_widget(
-            Paragraph::new(Text::styled("Help '?'", style()))
+            Paragraph::new(Line::from(Span::styled("Help '?'", style())))
                 .style(style().fg(THEME.text_normal()))
                 .alignment(Alignment::Center),
             header[1],
@@ -319,7 +330,7 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         .map(|_| Constraint::Length(stock_widget_height))
         .collect::<Vec<_>>();
 
-    let stock_layout = Layout::default().constraints(contraints).split(layout[1]);
+    let stock_layout = Layout::default().constraints(contraints).split(layout[1]).to_vec();
 
     // Make sure only displayed stocks have network activity
     app.stocks.iter().enumerate().for_each(|(idx, s)| {
@@ -339,33 +350,36 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
 
     // Draw time frame & paging
     {
-        layout[2] = add_padding(layout[2], 1, PaddingDirection::Left);
-        frame.render_widget(Clear, layout[2]);
-        frame.render_widget(Block::default().style(style()), layout[2]);
+        let mut current = layout[2];
+        current = add_padding(current, 1, PaddingDirection::Left);
+        frame.render_widget(Clear, current);
+        frame.render_widget(Block::default().style(style()), current);
 
-        let offset = layout[2].height - 2;
-        layout[2] = add_padding(layout[2], offset, PaddingDirection::Top);
+        let offset = current.height - 2;
+        current = add_padding(current, offset, PaddingDirection::Top);
 
         frame.render_widget(
             Block::default()
                 .borders(Borders::TOP)
                 .border_style(style().fg(THEME.border_secondary())),
-            layout[2],
+            current,
         );
 
-        layout[2] = add_padding(layout[2], 1, PaddingDirection::Top);
+        current = add_padding(current, 1, PaddingDirection::Top);
+        layout[2] = current;
 
         let time_frames = TimeFrame::tab_names()
             .iter()
-            .map(|s| Spans::from(*s))
+            .map(|s| Line::from(*s))
             .collect::<Vec<_>>();
 
         // botton_layout[0] - time frame
         // botton_layout[1] - paging indicator
         let bottom_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
-            .split(layout[2]);
+            .constraints([Constraint::Min(0), Constraint::Length(3)])
+            .split(layout[2])
+            .to_vec();
 
         let tabs = Tabs::new(time_frames)
             .select(app.summary_time_frame.idx())
@@ -395,20 +409,22 @@ fn draw_summary<B: Backend>(frame: &mut Frame<B>, app: &mut App, mut area: Rect)
         );
 
         frame.render_widget(
-            Paragraph::new(Spans::from(vec![up_arrow, Span::raw(" "), down_arrow])),
+            Paragraph::new(Line::from(vec![up_arrow, Span::raw(" "), down_arrow])),
             bottom_layout[1],
         );
     }
 }
 
-fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &App, area: Rect) {
+fn draw_help(frame: &mut Frame, app: &App, area: Rect) {
     let mut layout = area;
 
     if layout.width < HELP_WIDTH as u16 || layout.height < HELP_HEIGHT as u16 {
         frame.render_widget(
-            Paragraph::new(Text::styled(
-                "Increase screen size to display help",
-                style(),
+            Paragraph::new(Line::from(
+                Span::styled(
+                    "Increase screen size to display help",
+                    style(),
+                )
             )),
             layout,
         );
@@ -419,10 +435,10 @@ fn draw_help<B: Backend>(frame: &mut Frame<B>, app: &App, area: Rect) {
     }
 }
 
-fn draw_debug<B: Backend>(frame: &mut Frame<B>, app: &mut App, area: Rect) {
+fn draw_debug(frame: &mut Frame, app: &mut App, area: Rect) {
     app.debug.mode = app.mode;
 
-    let debug_text = Text::styled(format!("{:?}", app.debug), style());
+    let debug_text = Line::from(Span::styled(format!("{:?}", app.debug), style()));
     let debug_paragraph = Paragraph::new(debug_text).wrap(Wrap { trim: true });
 
     frame.render_widget(debug_paragraph, area);
