@@ -195,12 +195,10 @@ fn draw_main(frame: &mut Frame, app: &mut App, area: Rect) {
                         main_chunks[1] = padded;
 
                         frame.render_widget(
-                            Paragraph::new(Line::from(
-                                Span::styled(
-                                    "Increase screen size to display options",
-                                    style(),
-                                )
-                            )),
+                            Paragraph::new(Line::from(Span::styled(
+                                "Increase screen size to display options",
+                                style(),
+                            ))),
                             main_chunks[1],
                         );
                     }
@@ -224,12 +222,10 @@ fn draw_main(frame: &mut Frame, app: &mut App, area: Rect) {
                     main_chunks[1] = padded;
 
                     frame.render_widget(
-                        Paragraph::new(Line::from(
-                            Span::styled(
-                                "Increase screen size to display configuration screen",
-                                style(),
-                            )
-                        ))
+                        Paragraph::new(Line::from(Span::styled(
+                            "Increase screen size to display configuration screen",
+                            style(),
+                        )))
                         .wrap(Wrap { trim: false }),
                         main_chunks[1],
                     );
@@ -289,13 +285,11 @@ fn draw_summary(frame: &mut Frame, app: &mut App, mut area: Rect) {
     // layouy[1] - Summary window
     // layouy[2] - Empty
     let mut layout = Layout::default()
-        .constraints(
-            [
-                Constraint::Length(1),
-                Constraint::Length((num_to_render * stock_widget_height as usize) as u16),
-                Constraint::Min(0),
-            ],
-        )
+        .constraints([
+            Constraint::Length(1),
+            Constraint::Length((num_to_render * stock_widget_height as usize) as u16),
+            Constraint::Min(0),
+        ])
         .split(area)
         .to_vec();
 
@@ -330,7 +324,10 @@ fn draw_summary(frame: &mut Frame, app: &mut App, mut area: Rect) {
         .map(|_| Constraint::Length(stock_widget_height))
         .collect::<Vec<_>>();
 
-    let stock_layout = Layout::default().constraints(contraints).split(layout[1]).to_vec();
+    let stock_layout = Layout::default()
+        .constraints(contraints)
+        .split(layout[1])
+        .to_vec();
 
     // Make sure only displayed stocks have network activity
     app.stocks.iter().enumerate().for_each(|(idx, s)| {
@@ -420,12 +417,10 @@ fn draw_help(frame: &mut Frame, app: &App, area: Rect) {
 
     if layout.width < HELP_WIDTH as u16 || layout.height < HELP_HEIGHT as u16 {
         frame.render_widget(
-            Paragraph::new(Line::from(
-                Span::styled(
-                    "Increase screen size to display help",
-                    style(),
-                )
-            )),
+            Paragraph::new(Line::from(Span::styled(
+                "Increase screen size to display help",
+                style(),
+            ))),
             layout,
         );
     } else {

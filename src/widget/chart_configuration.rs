@@ -2,11 +2,11 @@ use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
 use crossterm::terminal;
-use serde::Deserialize;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
+use serde::Deserialize;
 
 use super::chart::prices_kagi::{self, ReversalOption};
 use super::{block, CachableWidget, CacheState};
@@ -346,13 +346,11 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
     // layout[2] - Right Column
     let layout = Layout::default()
         .direction(ratatui::layout::Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Length(16),
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ],
-        )
+        .constraints([
+            Constraint::Length(16),
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ])
         .split(area)
         .to_vec();
 

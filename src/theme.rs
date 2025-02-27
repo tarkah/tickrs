@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use ratatui::style::{Color, Style};
+use serde::Deserialize;
 
 use self::de::deserialize_option_color_hex_string;
 use crate::THEME;

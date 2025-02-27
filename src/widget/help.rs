@@ -1,6 +1,6 @@
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::text::{Span, Line};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Paragraph, Widget};
 
 use super::block;
@@ -87,7 +87,7 @@ impl Widget for HelpWidget {
         let left_text: Vec<_> = LEFT_TEXT
             .lines()
             .map(|line| {
-              Line::from(Span::styled(
+                Line::from(Span::styled(
                     format!("{}\n", line),
                     style().fg(THEME.text_normal()),
                 ))
@@ -97,7 +97,7 @@ impl Widget for HelpWidget {
         let right_text: Vec<_> = RIGHT_TEXT
             .lines()
             .map(|line| {
-              Line::from(Span::styled(
+                Line::from(Span::styled(
                     format!("{}\n", line),
                     style().fg(THEME.text_normal()),
                 ))

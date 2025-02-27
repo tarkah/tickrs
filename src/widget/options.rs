@@ -371,18 +371,21 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                     &data.puts[..]
                 };
 
-                let rows = selected_data.iter().map(|d| {
-                    Row::new(vec![
-                        Cell::from(format!("{: <7.2}", d.strike)),
-                        Cell::from(format!("{: <7.2}", d.last_price)),
-                        Cell::from(format!("{: >7.2}%", d.percent_change)),
-                    ])
-                    .style(style().fg(if d.percent_change >= 0.0 {
-                        THEME.profit()
-                    } else {
-                        THEME.loss()
-                    }))
-                }).collect::<Vec<_>>();
+                let rows = selected_data
+                    .iter()
+                    .map(|d| {
+                        Row::new(vec![
+                            Cell::from(format!("{: <7.2}", d.strike)),
+                            Cell::from(format!("{: <7.2}", d.last_price)),
+                            Cell::from(format!("{: >7.2}%", d.percent_change)),
+                        ])
+                        .style(style().fg(if d.percent_change >= 0.0 {
+                            THEME.profit()
+                        } else {
+                            THEME.loss()
+                        }))
+                    })
+                    .collect::<Vec<_>>();
 
                 let header = Row::new(vec!["Strike", "Price", "% Change"])
                     .style(style().fg(THEME.text_secondary()))

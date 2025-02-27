@@ -1,7 +1,7 @@
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::Modifier;
-use ratatui::text::{Span, Line};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 
 use super::chart::{PricesCandlestickChart, PricesKagiChart, PricesLineChart, VolumeBarChart};

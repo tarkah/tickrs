@@ -1,11 +1,11 @@
 use std::hash::{Hash, Hasher};
 
-use serde::Deserialize;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::text::Span;
 use ratatui::widgets::canvas::{Canvas, Line};
 use ratatui::widgets::{Block, Borders, StatefulWidget, Widget};
+use serde::Deserialize;
 
 use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
@@ -52,10 +52,10 @@ enum BreakpointKind {
 #[derive(Debug, Clone, Copy, Deserialize)]
 #[serde(tag = "type", content = "value")]
 pub enum ReversalOption {
-        #[serde(rename = "pct")]
-        Pct(f64),
-        #[serde(rename = "amount")]
-        Amount(f64),
+    #[serde(rename = "pct")]
+    Pct(f64),
+    #[serde(rename = "amount")]
+    Amount(f64),
 }
 
 impl Hash for ReversalOption {
