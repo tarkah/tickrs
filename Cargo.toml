@@ -36,4 +36,4 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 structopt = "0.3"
 tickrs-api = { path = "api/", version = "0.14.11" }
-tui = { version = "0.19", default-features = false, features = ["crossterm","serde"] }
+ratatui = { version = "0.25.0", default-features = false, features = ["crossterm", "serde"] }

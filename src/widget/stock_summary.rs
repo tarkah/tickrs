@@ -1,8 +1,8 @@
-use tui::buffer::Buffer;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::Modifier;
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::style::Modifier;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 
 use super::chart::{PricesCandlestickChart, PricesKagiChart, PricesLineChart, VolumeBarChart};
 use super::stock::StockState;
@@ -75,10 +75,11 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             .render(area, buf);
         area = add_padding(area, 1, PaddingDirection::Top);
 
-        let mut layout = Layout::default()
+        let mut layout: Vec<Rect> = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Length(25), Constraint::Min(0)].as_ref())
-            .split(area);
+            .split(area)
+            .to_vec();
 
         {
             layout[0] = add_padding(layout[0], 1, PaddingDirection::Left);
@@ -92,7 +93,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let prices = vec![
-                Spans::from(vec![
+                Line::from(vec![
                     Span::styled("C: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded {
@@ -105,22 +106,22 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                             .fg(THEME.text_primary()),
                     ),
                 ]),
-                Spans::from(vec![
+                Line::from(vec![
                     Span::styled("H: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded { high_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
-                Spans::from(vec![
+                Line::from(vec![
                     Span::styled("L: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded { low_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
-                Spans::default(),
-                Spans::from(vec![
+                Line::default(),
+                Line::from(vec![
                     Span::styled("Volume: ", style().fg(THEME.text_normal())),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
@@ -149,7 +150,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
                 .alignment(Alignment::Left)
                 .render(layout[0], buf);
 
-            Paragraph::new(Spans::from(pct))
+            Paragraph::new(Line::from(pct))
                 .style(style())
                 .alignment(Alignment::Right)
                 .render(layout[0], buf);
@@ -157,14 +158,16 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
         // graph_chunks[0] = prices
         // graph_chunks[1] = volume
-        let graph_chunks = if show_volumes {
+        let graph_chunks: Vec<Rect> = if show_volumes {
             Layout::default()
                 .constraints([Constraint::Min(5), Constraint::Length(1)].as_ref())
                 .split(layout[1])
+                .to_vec()
         } else {
             Layout::default()
                 .constraints([Constraint::Min(0)].as_ref())
                 .split(layout[1])
+                .to_vec()
         };
 
         // Draw prices line chart

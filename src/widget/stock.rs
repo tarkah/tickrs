@@ -1,10 +1,10 @@
 use std::hash::{Hash, Hasher};
 
-use tui::buffer::Buffer;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::Modifier;
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::style::Modifier;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Borders, Paragraph, StatefulWidget, Tabs, Widget, Wrap};
 
 use super::chart::{
     ChartState, PricesCandlestickChart, PricesKagiChart, PricesLineChart, VolumeBarChart,
@@ -634,7 +634,7 @@ impl CachableWidget<StockState> for StockWidget {
         // chunks[0] - Company Info
         // chunks[1] - Graph - fill remaining space
         // chunks[2] - Time Frame Tabs
-        let mut chunks = Layout::default()
+        let mut chunks: Vec<Rect> = Layout::default()
             .constraints(
                 [
                     Constraint::Length(6),
@@ -643,16 +643,18 @@ impl CachableWidget<StockState> for StockWidget {
                 ]
                 .as_ref(),
             )
-            .split(area);
+            .split(area)
+            .to_vec();
 
         // Draw company info
         {
             // info_chunks[0] - Prices / volumes
             // info_chunks[1] - Toggle block
-            let mut info_chunks = Layout::default()
+            let mut info_chunks: Vec<Rect> = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Min(23), Constraint::Length(29)].as_ref())
-                .split(chunks[0]);
+                .split(chunks[0])
+                .to_vec();
             info_chunks[0] = add_padding(info_chunks[0], 1, PaddingDirection::Top);
 
             let (high, low) = state.high_low(&data);
@@ -663,7 +665,7 @@ impl CachableWidget<StockState> for StockWidget {
             let vol = state.reg_mkt_volume.clone().unwrap_or_default();
 
             let company_info = vec![
-                Spans::from(vec![
+                Line::from(vec![
                     Span::styled("C: ", style()),
                     Span::styled(
                         if loaded {
@@ -690,22 +692,22 @@ impl CachableWidget<StockState> for StockWidget {
                             }),
                     ),
                 ]),
-                Spans::from(vec![
+                Line::from(vec![
                     Span::styled("H: ", style()),
                     Span::styled(
                         if loaded { high_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
-                Spans::from(vec![
+                Line::from(vec![
                     Span::styled("L: ", style()),
                     Span::styled(
                         if loaded { low_fmt } else { "".to_string() },
                         style().fg(THEME.text_secondary()),
                     ),
                 ]),
-                Spans::default(),
-                Spans::from(vec![
+                Line::default(),
+                Line::from(vec![
                     Span::styled("Volume: ", style()),
                     Span::styled(
                         if loaded { vol } else { "".to_string() },
@@ -727,25 +729,26 @@ impl CachableWidget<StockState> for StockWidget {
                 info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::All);
                 info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Left);
 
-                let toggle_chunks = Layout::default()
+                let toggle_chunks: Vec<Rect> = Layout::default()
                     .direction(Direction::Horizontal)
                     .constraints([
                         Constraint::Length(12),
                         Constraint::Length(2),
                         Constraint::Length(12),
                     ])
-                    .split(info_chunks[1]);
+                    .split(info_chunks[1])
+                    .to_vec();
 
-                let mut left_info = vec![Spans::from(Span::styled("Summary  's'", style()))];
+                let mut left_info = vec![Line::from(Span::styled("Summary  's'", style()))];
                 let mut right_info = vec![];
 
                 if loaded {
-                    left_info.push(Spans::from(Span::styled(
+                    left_info.push(Line::from(Span::styled(
                         format!("{: <8} 'c'", chart_type.as_str()),
                         style(),
                     )));
 
-                    left_info.push(Spans::from(Span::styled(
+                    left_info.push(Line::from(Span::styled(
                         "Volumes  'v'",
                         style()
                             .bg(if show_volumes {
@@ -760,7 +763,7 @@ impl CachableWidget<StockState> for StockWidget {
                             }),
                     )));
 
-                    left_info.push(Spans::from(Span::styled(
+                    left_info.push(Line::from(Span::styled(
                         "X Labels 'x'",
                         style().bg(if show_x_labels {
                             THEME.highlight_unfocused()
@@ -769,7 +772,7 @@ impl CachableWidget<StockState> for StockWidget {
                         }),
                     )));
 
-                    right_info.push(Spans::from(Span::styled(
+                    right_info.push(Line::from(Span::styled(
                         "Pre Post 'p'",
                         style().bg(if enable_pre_post {
                             THEME.highlight_unfocused()
@@ -778,7 +781,7 @@ impl CachableWidget<StockState> for StockWidget {
                         }),
                     )));
 
-                    right_info.push(Spans::from(Span::styled(
+                    right_info.push(Line::from(Span::styled(
                         "Edit     'e'",
                         style()
                             .bg(if state.show_configure {
@@ -795,7 +798,7 @@ impl CachableWidget<StockState> for StockWidget {
                 }
 
                 if state.options_enabled() && loaded {
-                    right_info.push(Spans::from(Span::styled(
+                    right_info.push(Line::from(Span::styled(
                         "Options  'o'",
                         style().bg(if state.show_options {
                             THEME.highlight_unfocused()
@@ -819,14 +822,16 @@ impl CachableWidget<StockState> for StockWidget {
 
         // graph_chunks[0] = prices
         // graph_chunks[1] = volume
-        let graph_chunks = if show_volumes {
+        let graph_chunks: Vec<Rect> = if show_volumes {
             Layout::default()
                 .constraints([Constraint::Min(6), Constraint::Length(5)].as_ref())
                 .split(chunks[1])
+                .to_vec()
         } else {
             Layout::default()
                 .constraints([Constraint::Min(0)].as_ref())
                 .split(chunks[1])
+                .to_vec()
         };
 
         // Draw prices line chart
@@ -883,18 +888,19 @@ impl CachableWidget<StockState> for StockWidget {
 
             // layout[0] - timeframe
             // layout[1] - scroll indicators
-            let layout = Layout::default()
+            let layout: Vec<Rect> = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(if state.chart_state.is_some() {
                     [Constraint::Min(0), Constraint::Length(3)].as_ref()
                 } else {
                     [Constraint::Min(0)].as_ref()
                 })
-                .split(chunks[2]);
+                .split(chunks[2])
+                .to_vec();
 
             let tab_names = TimeFrame::tab_names()
                 .iter()
-                .map(|s| Spans::from(*s))
+                .map(|s| Line::from(*s))
                 .collect();
 
             Tabs::new(tab_names)
@@ -925,7 +931,7 @@ impl CachableWidget<StockState> for StockWidget {
                     }),
                 );
 
-                Paragraph::new(Spans::from(vec![left_arrow, Span::raw(" "), right_arrow]))
+                Paragraph::new(Line::from(vec![left_arrow, Span::raw(" "), right_arrow]))
                     .render(layout[1], buf);
             }
         }

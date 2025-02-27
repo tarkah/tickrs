@@ -1,7 +1,7 @@
-use tui::buffer::Buffer;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::text::{Span, Spans};
-use tui::widgets::{Paragraph, Widget};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Paragraph, Widget};
 
 use super::block;
 use crate::draw::{add_padding, PaddingDirection};
@@ -87,7 +87,7 @@ impl Widget for HelpWidget {
         let left_text: Vec<_> = LEFT_TEXT
             .lines()
             .map(|line| {
-                Spans::from(Span::styled(
+                Line::from(Span::styled(
                     format!("{}\n", line),
                     style().fg(THEME.text_normal()),
                 ))
@@ -97,7 +97,7 @@ impl Widget for HelpWidget {
         let right_text: Vec<_> = RIGHT_TEXT
             .lines()
             .map(|line| {
-                Spans::from(Span::styled(
+                Line::from(Span::styled(
                     format!("{}\n", line),
                     style().fg(THEME.text_normal()),
                 ))

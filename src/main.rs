@@ -8,11 +8,11 @@ use crossterm::event::{Event, MouseEvent, MouseEventKind};
 use crossterm::{cursor, execute, terminal};
 use lazy_static::lazy_static;
 use parking_lot::{Mutex, RwLock};
+use ratatui::backend::CrosstermBackend;
+use ratatui::Terminal;
 use rclite::Arc;
 use service::default_timestamps::DefaultTimestampService;
 use tickrs_api as api;
-use tui::backend::CrosstermBackend;
-use tui::Terminal;
 
 use crate::app::DebugInfo;
 use crate::common::{ChartType, TimeFrame};

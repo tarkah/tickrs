@@ -2,11 +2,11 @@ use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
 use crossterm::terminal;
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 use serde::Deserialize;
-use tui::buffer::Buffer;
-use tui::layout::{Constraint, Layout, Rect};
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
 
 use super::chart::prices_kagi::{self, ReversalOption};
 use super::{block, CachableWidget, CacheState};
@@ -285,28 +285,31 @@ impl CachableWidget<ChartConfigurationState> for ChartConfigurationWidget {
         // layout[1] - Kagi options
         let mut layout = Layout::default()
             .constraints([Constraint::Length(6), Constraint::Min(0)])
-            .split(area);
+            .split(area)
+            .to_vec();
 
-        layout[0] = add_padding(layout[0], 1, PaddingDirection::Top);
-        layout[0] = add_padding(layout[0], 1, PaddingDirection::Bottom);
+        let mut padded = layout[0];
+        padded = add_padding(padded, 1, PaddingDirection::Top);
+        padded = add_padding(padded, 1, PaddingDirection::Bottom);
+        layout[0] = padded;
 
         let info_error = if let Some(msg) = state.error_message.as_ref() {
-            vec![Spans::from(Span::styled(msg, style().fg(THEME.loss())))]
+            vec![Line::from(Span::styled(msg, style().fg(THEME.loss())))]
         } else {
             vec![
-                Spans::from(Span::styled(
+                Line::from(Span::styled(
                     "  <Up / Down>: move up / down",
                     style().fg(THEME.text_normal()),
                 )),
-                Spans::from(Span::styled(
+                Line::from(Span::styled(
                     "  <Tab / Shift+Tab>: move up / down",
                     style().fg(THEME.text_normal()),
                 )),
-                Spans::from(Span::styled(
+                Line::from(Span::styled(
                     "  <Left / Right>: toggle option",
                     style().fg(THEME.text_normal()),
                 )),
-                Spans::from(Span::styled(
+                Line::from(Span::styled(
                     "  <Enter>: submit changes",
                     style().fg(THEME.text_normal()),
                 )),
@@ -342,20 +345,18 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
     // layout[1] - Divider
     // layout[2] - Right Column
     let layout = Layout::default()
-        .direction(tui::layout::Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Length(16),
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        )
-        .split(area);
+        .direction(ratatui::layout::Direction::Horizontal)
+        .constraints([
+            Constraint::Length(16),
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ])
+        .split(area)
+        .to_vec();
 
     let left_column = vec![
-        Spans::default(),
-        Spans::from(vec![
+        Line::default(),
+        Line::from(vec![
             Span::styled(
                 if state.selection == Some(KagiSelection::PriceType) {
                     "> "
@@ -366,8 +367,8 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
             ),
             Span::styled("Price Type", style().fg(THEME.text_normal())),
         ]),
-        Spans::default(),
-        Spans::from(vec![
+        Line::default(),
+        Line::from(vec![
             Span::styled(
                 if state.selection == Some(KagiSelection::ReversalType) {
                     "> "
@@ -378,8 +379,8 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
             ),
             Span::styled("Reversal Type", style().fg(THEME.text_normal())),
         ]),
-        Spans::default(),
-        Spans::from(vec![
+        Line::default(),
+        Line::from(vec![
             Span::styled(
                 if state.selection == Some(KagiSelection::ReversalValue) {
                     "> "
@@ -393,8 +394,8 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
     ];
 
     let right_column = vec![
-        Spans::default(),
-        Spans::from(vec![
+        Line::default(),
+        Line::from(vec![
             Span::styled(
                 "Close",
                 style().fg(THEME.text_normal()).bg(
@@ -417,8 +418,8 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
                 ),
             ),
         ]),
-        Spans::default(),
-        Spans::from(vec![
+        Line::default(),
+        Line::from(vec![
             Span::styled(
                 "Pct",
                 style().fg(THEME.text_normal()).bg(
@@ -441,8 +442,8 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
                 ),
             ),
         ]),
-        Spans::default(),
-        Spans::from(vec![Span::styled(
+        Line::default(),
+        Line::from(vec![Span::styled(
             format!("{: <22}", &state.input.kagi_reversal_value),
             style()
                 .fg(if state.selection == Some(KagiSelection::ReversalValue) {

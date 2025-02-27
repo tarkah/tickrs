@@ -1,9 +1,9 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use tui::buffer::{Buffer, Cell};
-use tui::layout::Rect;
-use tui::widgets::StatefulWidget;
+use ratatui::buffer::{Buffer, Cell};
+use ratatui::layout::Rect;
+use ratatui::widgets::StatefulWidget;
 
 pub use self::add_stock::{AddStockState, AddStockWidget};
 pub use self::chart_configuration::{ChartConfigurationWidget, KagiOptions};

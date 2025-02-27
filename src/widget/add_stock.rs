@@ -1,8 +1,8 @@
-use tui::buffer::Buffer;
-use tui::layout::{Alignment, Rect};
-use tui::style::Modifier;
-use tui::text::{Span, Spans};
-use tui::widgets::{Paragraph, StatefulWidget, Widget, Wrap};
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Alignment, Rect};
+use ratatui::style::Modifier;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Paragraph, StatefulWidget, Widget, Wrap};
 
 use super::block;
 use crate::common::ChartType;
@@ -51,7 +51,7 @@ impl StatefulWidget for AddStockWidget {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let spans = if !state.has_user_input && state.error_msg.is_some() {
-            Spans::from(vec![
+            Line::from(vec![
                 Span::styled("> ", style().fg(THEME.text_normal())),
                 Span::styled(
                     state.error_msg.as_ref().unwrap(),
@@ -59,7 +59,7 @@ impl StatefulWidget for AddStockWidget {
                 ),
             ])
         } else {
-            Spans::from(vec![
+            Line::from(vec![
                 Span::styled("> ", style().fg(THEME.text_normal())),
                 Span::styled(
                     &state.search_string,

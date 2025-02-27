@@ -1,11 +1,11 @@
 use std::hash::{Hash, Hasher};
 
+use ratatui::buffer::Buffer;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::text::Span;
+use ratatui::widgets::canvas::{Canvas, Line};
+use ratatui::widgets::{Block, Borders, StatefulWidget, Widget};
 use serde::Deserialize;
-use tui::buffer::Buffer;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::text::Span;
-use tui::widgets::canvas::{Canvas, Line};
-use tui::widgets::{Block, Borders, StatefulWidget, Widget};
 
 use crate::common::{Price, TimeFrame};
 use crate::draw::{add_padding, PaddingDirection};
@@ -342,17 +342,18 @@ impl StatefulWidget for PricesKagiChart<'_> {
 
         // x_layout[0] - chart + y labels
         // x_layout[1] - (x labels)
-        let x_layout = Layout::default()
+        let x_layout: Vec<Rect> = Layout::default()
             .constraints(if self.show_x_labels {
                 &[Constraint::Min(0), Constraint::Length(1)][..]
             } else {
                 &[Constraint::Min(0)][..]
             })
-            .split(area);
+            .split(area)
+            .to_vec();
 
         // layout[0] - Y lables
         // layout[1] - chart
-        let mut layout = Layout::default()
+        let mut layout: Vec<Rect> = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
                 Constraint::Length(if !self.loaded {
@@ -368,7 +369,8 @@ impl StatefulWidget for PricesKagiChart<'_> {
                 }),
                 Constraint::Min(0),
             ])
-            .split(x_layout[0]);
+            .split(x_layout[0])
+            .to_vec();
 
         // Fix for border render
         layout[1].x = layout[1].x.saturating_sub(1);
@@ -405,13 +407,13 @@ impl StatefulWidget for PricesKagiChart<'_> {
 
         // Draw x labels
         if self.show_x_labels && self.loaded {
-            // Fix for y label render
-            layout[0] = add_padding(layout[0], 1, PaddingDirection::Bottom);
-
             // Plot labels on
             let mut x_area = x_layout[1];
             x_area.x = layout[1].x + 1;
             x_area.width = (num_trends_can_render.min(num_trends) * 1.5).floor() as u16;
+
+            // Fix for y label render
+            layout[0] = add_padding(layout[0], 1, PaddingDirection::Bottom);
 
             let labels = x_labels(
                 x_area.width + x_area.left(),

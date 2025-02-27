@@ -1,5 +1,5 @@
-use tui::text::Span;
-use tui::widgets::{Block, Borders};
+use ratatui::text::Span;
+use ratatui::widgets::{Block, Borders};
 
 use crate::theme::style;
 use crate::THEME;
