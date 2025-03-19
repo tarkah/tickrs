@@ -31,7 +31,7 @@ futures = "0.3"
 itertools = "0.10"
 lazy_static = "1.4"
 parking_lot = "0.12.1"
-rclite = "0.1.5"
+rclite = "0.2.6"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 structopt = "0.3"
