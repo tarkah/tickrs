@@ -648,13 +648,39 @@ impl CachableWidget<StockState> for StockWidget {
 
         // Draw company info
         {
-            // info_chunks[0] - Prices / volumes
-            // info_chunks[1] - Toggle block
-            let mut info_chunks: Vec<Rect> = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Min(23), Constraint::Length(29)].as_ref())
-                .split(chunks[0])
-                .to_vec();
+            // Check if portfolio is configured and has this ticker
+            let show_portfolio = crate::OPTS
+                .portfolio
+                .as_ref()
+                .and_then(|p| p.items.get(&state.symbol));
+
+            // info_chunks layout depends on whether portfolio is shown
+            let mut info_chunks: Vec<Rect> = if show_portfolio.is_some() {
+                // info_chunks[0] - Prices / volumes
+                // info_chunks[1] - Portfolio info
+                // info_chunks[2] - Toggle block
+                Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints(
+                        [
+                            Constraint::Min(23),
+                            Constraint::Length(25),
+                            Constraint::Length(29),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks[0])
+                    .to_vec()
+            } else {
+                // info_chunks[0] - Prices / volumes
+                // info_chunks[1] - Toggle block
+                Layout::default()
+                    .direction(Direction::Horizontal)
+                    .constraints([Constraint::Min(23), Constraint::Length(29)].as_ref())
+                    .split(chunks[0])
+                    .to_vec()
+            };
+
             info_chunks[0] = add_padding(info_chunks[0], 1, PaddingDirection::Top);
 
             let (high, low) = state.high_low(&data);
@@ -722,12 +748,64 @@ impl CachableWidget<StockState> for StockWidget {
                 .wrap(Wrap { trim: true })
                 .render(info_chunks[0], buf);
 
-            if !*HIDE_TOGGLE {
-                let toggle_block = block::new(" Toggle ");
-                toggle_block.render(info_chunks[1], buf);
+            // Render portfolio info if available
+            if let Some(portfolio_item) = show_portfolio {
+                let mut portfolio_area = info_chunks[1];
+                portfolio_area = add_padding(portfolio_area, 1, PaddingDirection::Top);
 
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::All);
-                info_chunks[1] = add_padding(info_chunks[1], 1, PaddingDirection::Left);
+                let (profit_loss, profit_loss_pct) =
+                    portfolio_item.calculate_ticker_profit_loss(state.current_price());
+
+                let profit_loss_color = if profit_loss >= 0.0 {
+                    THEME.profit()
+                } else {
+                    THEME.loss()
+                };
+
+                let portfolio_info = vec![
+                    Line::from(vec![
+                        Span::styled("Qty: ", style().fg(THEME.text_normal())),
+                        Span::styled(
+                            format_decimals(portfolio_item.quantity),
+                            style().fg(THEME.text_secondary()),
+                        ),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("Avg: ", style().fg(THEME.text_normal())),
+                        Span::styled(
+                            format_decimals(portfolio_item.average_price),
+                            style().fg(THEME.text_secondary()),
+                        ),
+                    ]),
+                    Line::from(vec![
+                        Span::styled("P/L: ", style()),
+                        Span::styled(
+                            format!("{}", format_decimals(profit_loss)),
+                            style().add_modifier(Modifier::BOLD).fg(profit_loss_color),
+                        ),
+                        Span::styled(
+                            format!("  {:.2}%", profit_loss_pct),
+                            style().add_modifier(Modifier::BOLD).fg(profit_loss_color),
+                        ),
+                    ]),
+                ];
+
+                Paragraph::new(portfolio_info)
+                    .style(style().fg(THEME.text_normal()))
+                    .alignment(Alignment::Left)
+                    .wrap(Wrap { trim: true })
+                    .render(portfolio_area, buf);
+            }
+
+            if !*HIDE_TOGGLE {
+                let toggle_idx = if show_portfolio.is_some() { 2 } else { 1 };
+                let toggle_block = block::new(" Toggle ");
+                toggle_block.render(info_chunks[toggle_idx], buf);
+
+                info_chunks[toggle_idx] =
+                    add_padding(info_chunks[toggle_idx], 1, PaddingDirection::All);
+                info_chunks[toggle_idx] =
+                    add_padding(info_chunks[toggle_idx], 1, PaddingDirection::Left);
 
                 let toggle_chunks: Vec<Rect> = Layout::default()
                     .direction(Direction::Horizontal)
@@ -736,7 +814,7 @@ impl CachableWidget<StockState> for StockWidget {
                         Constraint::Length(2),
                         Constraint::Length(12),
                     ])
-                    .split(info_chunks[1])
+                    .split(info_chunks[toggle_idx])
                     .to_vec();
 
                 let mut left_info = vec![Line::from(Span::styled("Summary  's'", style()))];
