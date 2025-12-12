@@ -14,6 +14,11 @@ and `Removed`.
 
 ## [Unreleased]
 
+### Added
+
+- Portfolio tracking feature to display holdings, average price, and profit/loss for each ticker
+- Configuration support for portfolio holdings in `config.yml`
+
 ## [0.14.11] - 2025-02-21
 
 ### Fixed
