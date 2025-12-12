@@ -8,6 +8,7 @@ use structopt::StructOpt;
 use crate::common::{ChartType, TimeFrame};
 use crate::theme::Theme;
 use crate::widget::KagiOptions;
+use crate::portfolio::Portfolio;
 
 pub fn resolve_opts() -> Opts {
     let mut opts = get_cli_opts();
@@ -34,6 +35,9 @@ pub fn resolve_opts() -> Opts {
 
         // Kagi Options
         opts.kagi_options = config_opts.kagi_options;
+
+        // Portfolio
+        opts.portfolio = config_opts.portfolio;
     }
 
     opts
@@ -129,6 +133,8 @@ pub struct Opts {
     pub theme: Option<Theme>,
     #[structopt(skip)]
     pub kagi_options: HashMap<String, KagiOptions>,
+    #[structopt(skip)]
+    pub portfolio: Option<Portfolio>,
 }
 
 const DEFAULT_CONFIG: &str = "---
@@ -226,4 +232,18 @@ const DEFAULT_CONFIG: &str = "---
 #  border_axis: '#FC9766'
 #  highlight_focused: '#FC9766'
 #  highlight_unfocused: '#727072'
+
+# Portfolio tracking
+#
+# Track your portfolio holdings to see profit/loss
+# Each ticker is tracked with quantity and average purchase price
+# Ticker symbols must match those in the symbols list in order to be visible
+#
+#portfolio:
+#  AMD:
+#    quantity: 1.3
+#    average_price: 221
+#  SPY:
+#    quantity: 100
+#    average_price: 450.25
 ";

@@ -22,6 +22,7 @@ mod common;
 mod draw;
 mod event;
 mod opts;
+mod portfolio;
 mod service;
 mod task;
 mod theme;
