@@ -6,9 +6,9 @@ use serde::Deserialize;
 use structopt::StructOpt;
 
 use crate::common::{ChartType, TimeFrame};
+use crate::portfolio::Portfolio;
 use crate::theme::Theme;
 use crate::widget::KagiOptions;
-use crate::portfolio::Portfolio;
 
 pub fn resolve_opts() -> Opts {
     let mut opts = get_cli_opts();
