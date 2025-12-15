@@ -68,7 +68,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           # TODO: Update for future releases
-          toolchain: 1.67.0
+          toolchain: 1.78.0
           target: ${{ matrix.target.target }}
           override: true
 
