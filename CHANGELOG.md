@@ -14,6 +14,8 @@ and `Removed`.
 
 ## [Unreleased]
 
+## [0.15.0] - 2025-12-15
+
 ### Added
 
 - Portfolio tracking feature to display holdings, average price, and profit/loss for each ticker
