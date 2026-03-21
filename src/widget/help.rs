@@ -19,18 +19,18 @@ Change Tab:
   - <Tab>: next stock
   - <Shift+Tab>: previous stock
 Reorder Current Tab:
-  - <Ctrl+Left>: move 1 tab left
-  - <Ctrl+Right>: move 1 tab right
+  - <Ctrl+Left/h>: move 1 tab left
+  - <Ctrl+Right/l>: move 1 tab right
 Change Time Frame:
-  - <Right>: next time frame
-  - <Left>: previous time frame
+  - <Right / l>: next time frame
+  - <Left / h>: prev time frame
 Toggle Summary Pane:
   - s: toggle pane
-  - <Up / Down>: scroll pane
+  - <Up/k / Down/j>: scroll pane
 "#;
 
 const RIGHT_TEXT: &str = r#"
-Remove Stock: k
+Remove Stock: <Ctrl+w>
 Graphing Display:
   - c: switch chart type
   - p: toggle pre / post market

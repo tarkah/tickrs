@@ -38,7 +38,7 @@ fn handle_keys_add_stock(keycode: KeyCode, app: &mut app::App) {
 
 fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mut app::App) {
     match (keycode, modifiers) {
-        (KeyCode::Left, KeyModifiers::CONTROL) => {
+        (KeyCode::Left | KeyCode::Char('h'), KeyModifiers::CONTROL) => {
             let new_idx = if app.current_tab == 0 {
                 app.stocks.len() - 1
             } else {
@@ -47,7 +47,7 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mu
             app.stocks.swap(app.current_tab, new_idx);
             app.current_tab = new_idx;
         }
-        (KeyCode::Right, KeyModifiers::CONTROL) => {
+        (KeyCode::Right | KeyCode::Char('l'), KeyModifiers::CONTROL) => {
             let new_idx = (app.current_tab + 1) % app.stocks.len();
             app.stocks.swap(app.current_tab, new_idx);
             app.current_tab = new_idx;
@@ -59,17 +59,17 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mu
                 app.current_tab -= 1;
             }
         }
-        (KeyCode::Left, KeyModifiers::NONE) => {
+        (KeyCode::Left | KeyCode::Char('h'), KeyModifiers::NONE) => {
             app.time_frame_down();
         }
-        (KeyCode::Right, KeyModifiers::NONE) => {
+        (KeyCode::Right | KeyCode::Char('l'), KeyModifiers::NONE) => {
             app.time_frame_up();
         }
         (KeyCode::Char('/'), KeyModifiers::NONE) => {
             app.previous_mode = app.mode;
             app.mode = app::Mode::AddStock;
         }
-        (KeyCode::Char('k'), KeyModifiers::NONE) => {
+        (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
             app.stocks.remove(app.current_tab);
 
             if app.current_tab != 0 {
@@ -107,16 +107,16 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mu
 
 fn handle_keys_display_summary(keycode: KeyCode, app: &mut app::App) {
     match keycode {
-        KeyCode::Left => {
+        KeyCode::Left | KeyCode::Char('h') => {
             app.time_frame_down();
         }
-        KeyCode::Right => {
+        KeyCode::Right | KeyCode::Char('l') => {
             app.time_frame_up();
         }
-        KeyCode::Up => {
+        KeyCode::Up | KeyCode::Char('k') => {
             app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Up);
         }
-        KeyCode::Down => {
+        KeyCode::Down | KeyCode::Char('j') => {
             app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Down);
         }
         KeyCode::Char('s') => {
