@@ -135,17 +135,10 @@ impl StockState {
 
     pub fn prices(&self) -> impl Iterator<Item = Price> {
         let (start, end) = self.start_end();
+        let mut prices = self.prices[self.time_frame.idx()].clone();
 
-        let prices = self.prices[self.time_frame.idx()].clone();
-
-        let max_time = prices.last().map(|p| p.date).unwrap_or(end);
-
-        let default_timestamps = {
-            let defaults = DEFAULT_TIMESTAMPS.read();
-            defaults.get(&self.time_frame).cloned()
-        };
-
-        let prices = if self.time_frame == TimeFrame::Day1 {
+        if self.time_frame == TimeFrame::Day1 {
+            let max_time = prices.last().map(|p| p.date).unwrap_or(end);
             let times = MarketHours(
                 start,
                 if max_time < start {
@@ -155,7 +148,7 @@ impl StockState {
                 },
             );
 
-            times
+            prices = times
                 .map(|t| {
                     if let Some(p) = prices.iter().find(|p| {
                         let min_rounded = p.date - p.date % 60;
@@ -170,31 +163,8 @@ impl StockState {
                         }
                     }
                 })
-                .collect::<Vec<_>>()
-        } else if self.is_crypto() {
-            prices
-        } else if let Some(default_timestamps) = default_timestamps {
-            default_timestamps
-                .into_iter()
-                .map(|t| {
-                    if let Some(p) = prices.iter().find(|p| {
-                        let a_rounded = p.date - p.date % self.time_frame.round_by();
-                        let b_rounded = t - t % self.time_frame.round_by();
-
-                        a_rounded == b_rounded
-                    }) {
-                        *p
-                    } else {
-                        Price {
-                            date: t,
-                            ..Default::default()
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-        } else {
-            prices
-        };
+                .collect::<Vec<_>>();
+        }
 
         prices.into_iter()
     }
