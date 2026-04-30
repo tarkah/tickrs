@@ -902,7 +902,7 @@ impl CachableWidget<StockState> for StockWidget {
         // graph_chunks[1] = volume
         let graph_chunks: Vec<Rect> = if show_volumes {
             Layout::default()
-                .constraints([Constraint::Min(6), Constraint::Length(5)].as_ref())
+                .constraints([Constraint::Min(0), Constraint::Percentage(25)].as_ref())
                 .split(chunks[1])
                 .to_vec()
         } else {
