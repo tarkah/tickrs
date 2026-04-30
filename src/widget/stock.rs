@@ -1015,8 +1015,11 @@ pub fn get_chart_title(area: &Rect, state: &<StockWidget as StatefulWidget>::Sta
         None => state.symbol.clone(),
     };
 
+    // Take the loading indicator into account for the truncation calculation
+    let loading_indicator_overhead = !state.loaded() as usize * 2;
+
     // Constraint the title length to the screen area, add dots if it is truncated
-    let max_width = area.width as usize - 1;
+    let max_width = area.width as usize - 1 - loading_indicator_overhead;
     if title.len() > max_width {
         let width = (max_width - 3).max(0);
         title = format!("{}...", title[..width].trim_end());
