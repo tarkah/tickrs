@@ -10,6 +10,7 @@ use super::{CachableWidget, CacheState};
 use crate::common::{format_decimals, ChartType};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
+use crate::widget::stock;
 use crate::{ENABLE_PRE_POST, SHOW_VOLUMES, THEME};
 
 pub struct StockSummaryWidget {}
@@ -38,38 +39,15 @@ impl CachableWidget<StockState> for StockSummaryWidget {
 
         let loaded = state.loaded();
 
-        let (company_name, currency) = match state.profile.as_ref() {
-            Some(profile) => (
-                profile.price.short_name.as_str(),
-                profile.price.currency.as_deref().unwrap_or("USD"),
-            ),
-            None => ("", ""),
+        let currency = match state.profile.as_ref() {
+            Some(profile) => profile.price.currency.as_deref().unwrap_or("USD"),
+            None => "",
         };
 
-        let loading_indicator = ".".repeat(state.loading_tick);
+        let title = stock::get_chart_title(&area, state);
 
-        let title = &format!(
-            " {}{}",
-            state.symbol,
-            if state.profile.is_some() {
-                format!(" - {}", company_name)
-            } else {
-                "".to_string()
-            }
-        );
         Block::default()
-            .title(Span::styled(
-                format!(
-                    " {}{} ",
-                    &title[..24.min(title.len())],
-                    if loaded {
-                        "".to_string()
-                    } else {
-                        format!("{:<4}", loading_indicator)
-                    }
-                ),
-                style().fg(THEME.text_normal()),
-            ))
+            .title(Span::styled(title, style().fg(THEME.text_normal())))
             .borders(Borders::TOP)
             .border_style(style().fg(THEME.border_secondary()))
             .render(area, buf);

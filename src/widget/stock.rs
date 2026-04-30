@@ -21,7 +21,8 @@ use crate::{
     SHOW_X_LABELS, THEME, TIME_FRAME, TRUNC_PRE,
 };
 
-const NUM_LOADING_TICKS: usize = 4;
+const NUM_LOADING_TICKS: usize = 8;
+const ICON_LOADING_TICKS: [char; 8] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
 
 pub struct StockState {
     pub symbol: String,
@@ -104,7 +105,7 @@ impl StockState {
                 kagi_options,
                 ..Default::default()
             },
-            loading_tick: NUM_LOADING_TICKS,
+            loading_tick: 0,
             prev_state_loaded: false,
             chart_meta: None,
             cache_state: Default::default(),
@@ -539,10 +540,10 @@ impl StockState {
             // Reset tick
             if self.prev_state_loaded {
                 self.prev_state_loaded = false;
-                self.loading_tick = NUM_LOADING_TICKS;
+                self.loading_tick = 0;
             }
 
-            self.loading_tick = (self.loading_tick + 1) % (NUM_LOADING_TICKS + 1);
+            self.loading_tick = (self.loading_tick + 1) % NUM_LOADING_TICKS;
         } else if !self.prev_state_loaded {
             self.prev_state_loaded = true;
         }
@@ -594,30 +595,16 @@ impl CachableWidget<StockState> for StockWidget {
 
         let loaded = state.loaded();
 
-        let (company_name, currency) = match state.profile.as_ref() {
-            Some(profile) => (
-                profile.price.short_name.as_str(),
-                profile.price.currency.as_deref().unwrap_or("USD"),
-            ),
-            None => ("", ""),
+        let currency = match state.profile.as_ref() {
+            Some(profile) => profile.price.currency.as_deref().unwrap_or("USD"),
+            None => "",
         };
 
-        let loading_indicator = ".".repeat(state.loading_tick);
+        let title = get_chart_title(&area, state);
 
         // Draw widget block
         {
-            block::new(&format!(
-                " {}{:<4} ",
-                state.symbol,
-                if loaded {
-                    format!(" - {}", company_name)
-                } else if state.profile.is_some() {
-                    format!(" - {}{:<4}", company_name, loading_indicator)
-                } else {
-                    loading_indicator
-                }
-            ))
-            .render(area, buf);
+            block::new(&title).render(area, buf);
             area = add_padding(area, 1, PaddingDirection::All);
             area = add_padding(area, 1, PaddingDirection::Left);
             area = add_padding(area, 1, PaddingDirection::Right);
@@ -1007,4 +994,35 @@ impl CachableWidget<StockState> for StockWidget {
             }
         }
     }
+}
+
+pub fn get_chart_title(area: &Rect, state: &<StockWidget as StatefulWidget>::State) -> String {
+    let company_name = match state.profile.as_ref() {
+        Some(profile) => profile.price.short_name.as_str(),
+        None => "",
+    };
+
+    // Add the company name if it is available
+    let mut title = match state.profile {
+        Some(_) => format!("{} - {}", state.symbol, company_name),
+        None => state.symbol.clone(),
+    };
+
+    // Take the loading indicator into account for the truncation calculation
+    let loading_indicator_overhead = !state.loaded() as usize * 2;
+
+    // Constraint the title length to the screen area less padding & dots if it is truncated
+    let max_width = area.width as usize - 4 - loading_indicator_overhead;
+    if title.len() > max_width {
+        let width = (max_width - 3).max(0);
+        title = format!("{}...", title[..width].trim_end());
+    }
+
+    // Add padding and the loading indicator
+    title = match state.loaded() {
+        true => format!(" {} ", title),
+        false => format!(" {} {} ", title, ICON_LOADING_TICKS[state.loading_tick]),
+    };
+
+    title
 }
