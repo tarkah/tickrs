@@ -12,9 +12,7 @@ fn handle_keys_add_stock(keycode: KeyCode, app: &mut app::App) {
         KeyCode::Enter => {
             let mut stock = app.add_stock.enter(app.chart_type);
 
-            if app.previous_mode == app::Mode::DisplaySummary {
-                stock.set_time_frame(app.summary_time_frame);
-            }
+            stock.set_time_frame(app.time_frame);
 
             app.stocks.push(stock);
             app.current_tab = app.stocks.len() - 1;
@@ -62,10 +60,10 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mu
             }
         }
         (KeyCode::Left, KeyModifiers::NONE) => {
-            app.stocks[app.current_tab].time_frame_down();
+            app.time_frame_down();
         }
         (KeyCode::Right, KeyModifiers::NONE) => {
-            app.stocks[app.current_tab].time_frame_up();
+            app.time_frame_up();
         }
         (KeyCode::Char('/'), KeyModifiers::NONE) => {
             app.previous_mode = app.mode;
@@ -85,12 +83,6 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mu
         }
         (KeyCode::Char('s'), KeyModifiers::NONE) => {
             app.mode = app::Mode::DisplaySummary;
-
-            for stock in app.stocks.iter_mut() {
-                if stock.time_frame != app.summary_time_frame {
-                    stock.set_time_frame(app.summary_time_frame);
-                }
-            }
         }
         (KeyCode::Char('o'), KeyModifiers::NONE) => {
             if app.stocks[app.current_tab].toggle_options() {
@@ -116,18 +108,10 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mu
 fn handle_keys_display_summary(keycode: KeyCode, app: &mut app::App) {
     match keycode {
         KeyCode::Left => {
-            app.summary_time_frame = app.summary_time_frame.down();
-
-            for stock in app.stocks.iter_mut() {
-                stock.set_time_frame(app.summary_time_frame);
-            }
+            app.time_frame_down();
         }
         KeyCode::Right => {
-            app.summary_time_frame = app.summary_time_frame.up();
-
-            for stock in app.stocks.iter_mut() {
-                stock.set_time_frame(app.summary_time_frame);
-            }
+            app.time_frame_up();
         }
         KeyCode::Up => {
             app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Up);

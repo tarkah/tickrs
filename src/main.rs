@@ -101,7 +101,7 @@ fn main() {
         } else {
             app::Mode::DisplayStock
         },
-        summary_time_frame: opts.time_frame.unwrap_or(TimeFrame::Day1),
+        time_frame: opts.time_frame.unwrap_or(TimeFrame::Day1),
         default_timestamp_service,
         summary_scroll_state: Default::default(),
         chart_type: starting_chart_type,

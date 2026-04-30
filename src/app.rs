@@ -24,7 +24,7 @@ pub struct App {
     pub hide_help: bool,
     pub debug: DebugInfo,
     pub previous_mode: Mode,
-    pub summary_time_frame: TimeFrame,
+    pub time_frame: TimeFrame,
     pub default_timestamp_service: DefaultTimestampService,
     pub summary_scroll_state: SummaryScrollState,
     pub chart_type: ChartType,
@@ -36,6 +36,22 @@ impl App {
 
         if let Some(new_defaults) = timestamp_updates.pop() {
             *DEFAULT_TIMESTAMPS.write() = new_defaults;
+        }
+    }
+
+    pub fn time_frame_up(&mut self) {
+        self.set_time_frame(self.time_frame.up());
+    }
+
+    pub fn time_frame_down(&mut self) {
+        self.set_time_frame(self.time_frame.down());
+    }
+
+    pub fn set_time_frame(&mut self, time_frame: TimeFrame) {
+        self.time_frame = time_frame;
+
+        for stock in self.stocks.iter_mut() {
+            stock.set_time_frame(time_frame);
         }
     }
 }

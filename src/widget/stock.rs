@@ -116,14 +116,6 @@ impl StockState {
         &self.symbol
     }
 
-    pub fn time_frame_up(&mut self) {
-        self.set_time_frame(self.time_frame.up());
-    }
-
-    pub fn time_frame_down(&mut self) {
-        self.set_time_frame(self.time_frame.down());
-    }
-
     pub fn set_time_frame(&mut self, time_frame: TimeFrame) {
         self.time_frame = time_frame;
 
