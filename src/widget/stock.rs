@@ -600,7 +600,7 @@ impl CachableWidget<StockState> for StockWidget {
             None => "",
         };
 
-        let title = get_chart_title(&area, state);
+        let title = get_chart_title(&area, state, false);
 
         // Draw widget block
         {
@@ -996,7 +996,11 @@ impl CachableWidget<StockState> for StockWidget {
     }
 }
 
-pub fn get_chart_title(area: &Rect, state: &<StockWidget as StatefulWidget>::State) -> String {
+pub fn get_chart_title(
+    area: &Rect,
+    state: &<StockWidget as StatefulWidget>::State,
+    summary: bool,
+) -> String {
     let company_name = match state.profile.as_ref() {
         Some(profile) => profile.price.short_name.as_str(),
         None => "",
@@ -1010,12 +1014,22 @@ pub fn get_chart_title(area: &Rect, state: &<StockWidget as StatefulWidget>::Sta
 
     // Take the loading indicator into account for the truncation calculation
     let loading_indicator_overhead = !state.loaded() as usize * 2;
+    // Summary has no outer block so its only our title padding of 2, otherwise
+    // we must add the outer block padding of 2 as well
+    let padding = if summary { 2 } else { 4 };
 
     // Constraint the title length to the screen area less padding & dots if it is truncated
-    let max_width = area.width as usize - 4 - loading_indicator_overhead;
+    let max_width = area.width as usize - padding - loading_indicator_overhead;
     if title.len() > max_width {
         let width = (max_width - 3).max(0);
-        title = format!("{}...", title[..width].trim_end());
+        let truncated = &title[..width];
+        let trimmed = truncated.trim_end();
+
+        // Move trimmed spaces, if any, after elipsis so we still fill
+        // the total space (prevents exposing border after elipsis)
+        let trimmed_spaces = " ".repeat(truncated.len() - trimmed.len());
+
+        title = format!("{trimmed}...{trimmed_spaces}");
     }
 
     // Add padding and the loading indicator

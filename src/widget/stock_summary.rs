@@ -44,7 +44,7 @@ impl CachableWidget<StockState> for StockSummaryWidget {
             None => "",
         };
 
-        let title = stock::get_chart_title(&area, state);
+        let title = stock::get_chart_title(&area, state, true);
 
         Block::default()
             .title(Span::styled(title, style().fg(THEME.text_normal())))
