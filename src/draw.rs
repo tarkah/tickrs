@@ -380,7 +380,7 @@ fn draw_summary(frame: &mut Frame, app: &mut App, mut area: Rect) {
             .to_vec();
 
         let tabs = Tabs::new(time_frames)
-            .select(app.summary_time_frame.idx())
+            .select(app.time_frame.idx())
             .style(style().fg(THEME.text_secondary()))
             .highlight_style(style().fg(THEME.text_primary()));
 
