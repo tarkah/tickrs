@@ -410,7 +410,7 @@ impl StatefulWidget for PricesKagiChart<'_> {
             // Plot labels on
             let mut x_area = x_layout[1];
             x_area.x = layout[1].x + 1;
-            x_area.width = (num_trends_can_render.min(num_trends) * 1.5).floor() as u16;
+            x_area.width = layout[1].width - 1;
 
             // Fix for y label render
             layout[0] = add_padding(layout[0], 1, PaddingDirection::Bottom);

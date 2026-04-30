@@ -1,11 +1,13 @@
 use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::symbols::Marker;
+use ratatui::text::Span;
 use ratatui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, StatefulWidget, Widget};
 
 use crate::common::{
     cast_as_dataset, cast_historical_as_price, zeros_as_pre, Price, TimeFrame, TradingPeriod,
 };
+use crate::draw::{add_padding, PaddingDirection};
 use crate::theme::style;
 use crate::widget::StockState;
 use crate::{HIDE_PREV_CLOSE, THEME};
@@ -22,7 +24,19 @@ pub struct PricesLineChart<'a> {
 impl StatefulWidget for PricesLineChart<'_> {
     type State = StockState;
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+    fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        if area.width <= 9 || area.height <= 3 {
+            return;
+        }
+
+        if !self.is_summary {
+            Block::default()
+                .borders(Borders::TOP)
+                .border_style(style().fg(THEME.border_secondary()))
+                .render(area, buf);
+            area = add_padding(area, 1, PaddingDirection::Top);
+        }
+
         let (min, max) = state.min_max(self.data);
         let (start, end) = state.start_end();
 
@@ -37,12 +51,6 @@ impl StatefulWidget for PricesLineChart<'_> {
             GraphType::Scatter
         } else {
             GraphType::Line
-        };
-
-        let x_labels = if self.show_x_labels {
-            state.x_labels(area.width, start, end, self.data)
-        } else {
-            vec![]
         };
 
         let trading_period = state.current_trading_period(self.data);
@@ -191,33 +199,101 @@ impl StatefulWidget for PricesLineChart<'_> {
             );
         }
 
-        let mut chart = Chart::new(datasets)
-            .style(style())
-            .x_axis({
-                let axis = Axis::default().bounds(state.x_bounds(start, end, self.data));
-
-                if self.show_x_labels && self.loaded && !self.is_summary {
-                    axis.labels(x_labels).style(style().fg(THEME.border_axis()))
-                } else {
-                    axis
-                }
-            })
-            .y_axis(
-                Axis::default()
-                    .bounds(state.y_bounds(min, max))
-                    .labels(state.y_labels(min, max))
-                    .style(style().fg(THEME.border_axis())),
-            );
-
-        if !self.is_summary {
-            chart = chart.block(
+        let chart = Chart::new(datasets)
+            .block(
                 Block::default()
-                    .style(style().fg(THEME.border_secondary()))
-                    .borders(Borders::TOP)
-                    .border_style(style()),
-            );
+                    .style(style())
+                    .borders(if self.show_x_labels {
+                        Borders::LEFT | Borders::BOTTOM
+                    } else {
+                        Borders::LEFT
+                    })
+                    .border_style(style().fg(THEME.border_axis())),
+            )
+            .style(style())
+            .x_axis(Axis::default().bounds(state.x_bounds(start, end, self.data)))
+            .y_axis(Axis::default().bounds(state.y_bounds(min, max)));
+
+        // x_layout[0] - chart + y labels
+        // x_layout[1] - (x labels)
+        let x_layout: Vec<Rect> = Layout::default()
+            .constraints(if self.show_x_labels {
+                &[Constraint::Min(0), Constraint::Length(1)][..]
+            } else {
+                &[Constraint::Min(0)][..]
+            })
+            .split(area)
+            .to_vec();
+
+        // layout[0] - Y lables
+        // layout[1] - chart
+        let mut layout: Vec<Rect> = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Length(if !self.loaded {
+                    8
+                } else if self.show_x_labels {
+                    match state.time_frame {
+                        TimeFrame::Day1 => 9,
+                        TimeFrame::Week1 => 12,
+                        _ => 11,
+                    }
+                } else {
+                    9
+                }),
+                Constraint::Min(0),
+            ])
+            .split(x_layout[0])
+            .to_vec();
+
+        // Fix for border render
+        layout[1].x = layout[1].x.saturating_sub(1);
+        layout[1].width += 1;
+
+        // Draw x labels
+        if self.show_x_labels && self.loaded {
+            // Fix for y label render
+            layout[0] = add_padding(layout[0], 1, PaddingDirection::Bottom);
+
+            let mut x_area = x_layout[1];
+            x_area.x = layout[1].x + 1;
+            x_area.width = layout[1].width - 1;
+
+            let labels = state.x_labels(area.width, start, end, self.data);
+            let total_width = labels.iter().map(Span::width).sum::<usize>() as u16;
+            let labels_len = labels.len() as u16;
+            if total_width < x_area.width && labels_len > 1 {
+                for (i, label) in labels.iter().enumerate() {
+                    buf.set_span(
+                        x_area.left() + i as u16 * (x_area.width - 1) / (labels_len - 1)
+                            - label.width() as u16,
+                        x_area.top(),
+                        label,
+                        label.width() as u16,
+                    );
+                }
+            }
         }
 
-        chart.render(area, buf);
+        // Draw y labels
+        if self.loaded {
+            let y_area = layout[0];
+
+            let labels = state.y_labels(min, max);
+            let labels_len = labels.len() as u16;
+            for (i, label) in labels.iter().enumerate() {
+                let dy = i as u16 * (y_area.height - 1) / (labels_len - 1);
+                if dy < y_area.bottom() {
+                    buf.set_span(
+                        y_area.left(),
+                        y_area.bottom() - 1 - dy,
+                        label,
+                        label.width() as u16,
+                    );
+                }
+            }
+        }
+
+        chart.render(layout[1], buf);
     }
 }
