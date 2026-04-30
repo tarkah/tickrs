@@ -822,7 +822,8 @@ impl CachableWidget<StockState> for StockWidget {
 
                 if loaded {
                     left_info.push(Line::from(Span::styled(
-                        format!("{: <8} 'c'", chart_type.as_str()),
+                        // We're calling toggle() since that returns the next chart type
+                        format!("{: <8} 'c'", chart_type.toggle().as_str()),
                         style(),
                     )));
 
@@ -842,7 +843,7 @@ impl CachableWidget<StockState> for StockWidget {
                     )));
 
                     left_info.push(Line::from(Span::styled(
-                        "X Labels 'x'",
+                        "Date     'x'",
                         style().bg(if show_x_labels {
                             THEME.highlight_unfocused()
                         } else {
@@ -902,7 +903,7 @@ impl CachableWidget<StockState> for StockWidget {
         // graph_chunks[1] = volume
         let graph_chunks: Vec<Rect> = if show_volumes {
             Layout::default()
-                .constraints([Constraint::Min(6), Constraint::Length(5)].as_ref())
+                .constraints([Constraint::Min(0), Constraint::Percentage(25)].as_ref())
                 .split(chunks[1])
                 .to_vec()
         } else {

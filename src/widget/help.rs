@@ -32,10 +32,10 @@ Toggle Summary Pane:
 const RIGHT_TEXT: &str = r#"
 Remove Stock: k
 Graphing Display:
-  - c: toggle candlestick chart
+  - c: switch chart type
   - p: toggle pre / post market
   - v: toggle volumes graph
-  - x: toggle labels
+  - x: toggle date labels
 Toggle Options Pane:
   - o: toggle pane
   - <Escape>: close pane
