@@ -5,14 +5,14 @@ use ratatui::widgets::{Block, Borders, Clear, Paragraph, Tabs, Wrap};
 use ratatui::{Frame, Terminal};
 
 use crate::app::{App, Mode, ScrollDirection};
-use crate::common::{ChartType, TimeFrame};
+use crate::common::TimeFrame;
 use crate::service::Service;
 use crate::theme::style;
 use crate::widget::{
     block, AddStockWidget, ChartConfigurationWidget, OptionsWidget, StockSummaryWidget,
     StockWidget, HELP_HEIGHT, HELP_WIDTH,
 };
-use crate::{SHOW_VOLUMES, THEME};
+use crate::THEME;
 
 pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
     let current_size = terminal.size().unwrap_or_default();
@@ -246,11 +246,12 @@ fn draw_summary(frame: &mut Frame, app: &mut App, mut area: Rect) {
     area = add_padding(area, 1, PaddingDirection::All);
     area = add_padding(area, 1, PaddingDirection::Right);
 
-    let show_volumes = *SHOW_VOLUMES.read() && app.chart_type != ChartType::Kagi;
-    let stock_widget_height = if show_volumes { 7 } else { 6 };
+    // Space available for the stocks after taking borders and such into account
+    let height = area.height - 3 + app.hide_help as u16;
 
-    let height = area.height;
-    let num_to_render = (((height - 3) / stock_widget_height) as usize).min(app.stocks.len());
+    // The minimum height a stock chart will use
+    let stock_widget_height = (height / app.stocks.len() as u16).max(6);
+    let num_to_render = ((height / stock_widget_height) as usize).min(app.stocks.len());
 
     // If the user queued an up / down scroll, calculate the new offset, store it in
     // state and use it for this render. Otherwise use stored offset from state.
@@ -281,13 +282,13 @@ fn draw_summary(frame: &mut Frame, app: &mut App, mut area: Rect) {
         app.summary_scroll_state.offset = scroll_offset;
     }
 
-    // layouy[0] - Header
-    // layouy[1] - Summary window
+    // layouy[0] - Header. 1 if shown, 0 if not
+    // layouy[1] - Summary window, use all available space
     // layouy[2] - Empty
     let mut layout = Layout::default()
         .constraints([
-            Constraint::Length(1),
-            Constraint::Length((num_to_render * stock_widget_height as usize) as u16),
+            Constraint::Length(!app.hide_help as u16),
+            Constraint::Length(height),
             Constraint::Min(0),
         ])
         .split(area)
