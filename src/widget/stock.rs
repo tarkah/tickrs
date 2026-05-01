@@ -154,7 +154,7 @@ impl StockState {
         times
             .map(|t| {
                 *prices
-                    .into_iter()
+                    .iter()
                     .find(|p| p.date - p.date % delta == t)
                     .unwrap_or(&Price::new(t))
             })
@@ -720,7 +720,7 @@ impl CachableWidget<StockState> for StockWidget {
                     Line::from(vec![
                         Span::styled("P/L: ", style()),
                         Span::styled(
-                            format!("{}", format_decimals(profit_loss)),
+                            format_decimals(profit_loss).to_string(),
                             style().add_modifier(Modifier::BOLD).fg(profit_loss_color),
                         ),
                         Span::styled(
@@ -982,7 +982,7 @@ pub fn get_chart_title(
     // Constraint the title length to the screen area less padding & dots if it is truncated
     let max_width = area.width as usize - padding - loading_indicator_overhead;
     if title.len() > max_width {
-        let width = (max_width - 3).max(0);
+        let width = max_width - 3;
         let truncated = &title[..width];
         let trimmed = truncated.trim_end();
 

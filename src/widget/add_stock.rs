@@ -50,25 +50,26 @@ impl StatefulWidget for AddStockWidget {
     type State = AddStockState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let spans = if !state.has_user_input && state.error_msg.is_some() {
-            Line::from(vec![
-                Span::styled("> ", style().fg(THEME.text_normal())),
-                Span::styled(
-                    state.error_msg.as_ref().unwrap(),
-                    style().add_modifier(Modifier::BOLD).fg(THEME.loss()),
-                ),
-            ])
-        } else {
-            Line::from(vec![
-                Span::styled("> ", style().fg(THEME.text_normal())),
-                Span::styled(
-                    &state.search_string,
-                    style()
-                        .add_modifier(Modifier::BOLD)
-                        .fg(THEME.text_secondary()),
-                ),
-            ])
-        };
+        let spans =
+            if let (false, Some(error_msg)) = (state.has_user_input, state.error_msg.clone()) {
+                Line::from(vec![
+                    Span::styled("> ", style().fg(THEME.text_normal())),
+                    Span::styled(
+                        error_msg,
+                        style().add_modifier(Modifier::BOLD).fg(THEME.loss()),
+                    ),
+                ])
+            } else {
+                Line::from(vec![
+                    Span::styled("> ", style().fg(THEME.text_normal())),
+                    Span::styled(
+                        &state.search_string,
+                        style()
+                            .add_modifier(Modifier::BOLD)
+                            .fg(THEME.text_secondary()),
+                    ),
+                ])
+            };
 
         Paragraph::new(spans)
             .block(block::new(" Add Ticker "))
