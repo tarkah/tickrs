@@ -12,7 +12,7 @@ use super::chart::{
 use super::chart_configuration::ChartConfigurationState;
 use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
-use crate::common::*;
+use crate::common::{self, *};
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::theme::style;
@@ -128,22 +128,27 @@ impl StockState {
 
     // Get the actual start and end times used for building the chart
     fn adjusted_start_end(&self, prices: &[Price]) -> (i64, i64) {
-        let (mut start, end) = self.start_end();
-        let max_time = prices.last().map(|p| p.date).unwrap_or(end);
-        let day = 60 * 60 * 24;
+        let (mut start, mut end) = self.start_end();
+        end = prices.last().map(|p| p.date).unwrap_or(end);
 
-        // Start at X seconds before market opening
+        // Market open time is fine as is as the start time for 1D
+        if self.time_frame == TimeFrame::Day1 {
+            return (start, end);
+        }
+
+        // Go to the next business day and then travel back one time frame
+        start += common::get_next_business_day_delta(start);
         start -= match self.time_frame {
             TimeFrame::Day1 => 0,
-            TimeFrame::Week1 => 7 * day,
-            TimeFrame::Month1 => 30 * day,
-            TimeFrame::Month3 => 30 * 3 * day,
-            TimeFrame::Month6 => 30 * 6 * day,
-            TimeFrame::Year1 => 365 * day,
-            TimeFrame::Year5 => 365 * 5 * day,
-        };
+            TimeFrame::Week1 => 7,
+            TimeFrame::Month1 => 30,
+            TimeFrame::Month3 => 30 * 3,
+            TimeFrame::Month6 => 30 * 6,
+            TimeFrame::Year1 => 365,
+            TimeFrame::Year5 => 365 * 5,
+        } * DAY;
 
-        (start, max_time)
+        (start, end)
     }
 
     fn get_matching_prices(&self, prices: &[Price]) -> Vec<Price> {

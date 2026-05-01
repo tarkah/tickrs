@@ -10,6 +10,8 @@ use tickrs_api::Interval;
 use crate::api::model::ChartData;
 use crate::api::Range;
 
+pub const DAY: i64 = 60 * 60 * 24;
+
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash, Deserialize)]
 pub enum ChartType {
     #[serde(rename = "line")]
@@ -271,10 +273,9 @@ impl Iterator for MarketTimes {
         }
 
         // Elapsed time since 00:00
-        let day = 60 * 60 * 24;
-        let start_time = start % day;
-        let end_time = end % day;
-        let current_time = current % day;
+        let start_time = start % DAY;
+        let end_time = end % DAY;
+        let current_time = current % DAY;
 
         self.current = current;
         if current_time >= end_time {
@@ -283,17 +284,9 @@ impl Iterator for MarketTimes {
             // Go back to today's market opening time
             self.current += start_time - current_time;
 
-            // Advance 1 day if the next day isn't Sat or Sun.
+            // Advance 1 day if the current day isn't Fri or Sat.
             // Otherwise skip the weekend
-            self.current += match get_weekday(current) {
-                Weekday::Mon => day,
-                Weekday::Tue => day,
-                Weekday::Wed => day,
-                Weekday::Thu => day,
-                Weekday::Fri => day * 3,
-                Weekday::Sat => day * 2,
-                Weekday::Sun => day,
-            };
+            self.current += get_next_business_day_delta(self.current);
         } else {
             // Market hasn't closed yet, advance by delta
             self.current += self.delta;
@@ -370,6 +363,14 @@ pub fn format_decimals(value: f64) -> String {
         let n = max_chars.saturating_sub(abs.log10() as usize + 2);
 
         format!("{:.*}", n, value)
+    }
+}
+
+pub fn get_next_business_day_delta(epoch: i64) -> i64 {
+    DAY * match get_weekday(epoch) {
+        Weekday::Fri => 3,
+        Weekday::Sat => 2,
+        _ => 1,
     }
 }
 
