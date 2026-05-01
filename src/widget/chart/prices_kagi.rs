@@ -590,7 +590,7 @@ impl StatefulWidget for PricesKagiChart<'_> {
     }
 }
 
-fn x_labels(width: u16, trends: &[Trend], time_frame: TimeFrame) -> Vec<Span> {
+fn x_labels(width: u16, trends: &'_ [Trend], time_frame: TimeFrame) -> Vec<Span<'_>> {
     let mut labels = vec![];
 
     let trends = trends
