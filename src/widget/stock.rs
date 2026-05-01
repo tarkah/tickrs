@@ -131,13 +131,12 @@ impl StockState {
         let (mut start, mut end) = self.start_end();
         end = prices.last().map(|p| p.date).unwrap_or(end);
 
-        // Market open time is fine as is as the start time for 1D
-        if self.time_frame == TimeFrame::Day1 {
-            return (start, end);
+        // Market open time is fine as is as the start time for 1D & crypto
+        if self.time_frame != TimeFrame::Day1 && !self.is_crypto() {
+            start += common::get_next_business_day_delta(start);
         }
 
-        // Go to the next business day and then travel back one time frame
-        start += common::get_next_business_day_delta(start);
+        // Then travel back one time frame
         start -= match self.time_frame {
             TimeFrame::Day1 => 0,
             TimeFrame::Week1 => 7,
@@ -167,8 +166,12 @@ impl StockState {
     }
 
     pub fn prices(&self) -> impl Iterator<Item = Price> {
-        let prices = self.prices[self.time_frame.idx()].clone();
-        self.get_matching_prices(&prices).into_iter()
+        let mut prices = self.prices[self.time_frame.idx()].clone();
+        if !self.is_crypto() {
+            prices = self.get_matching_prices(&prices);
+        }
+
+        prices.into_iter()
     }
 
     pub fn volumes(&self, prices: &[Price]) -> Vec<u64> {
