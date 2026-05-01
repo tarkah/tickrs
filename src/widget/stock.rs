@@ -151,6 +151,11 @@ impl StockState {
     }
 
     fn get_matching_prices(&self, prices: &[Price]) -> Vec<Price> {
+        // Crypto doesn't need price matching
+        if self.is_crypto() {
+            return prices.to_vec();
+        }
+
         let (start, end) = self.adjusted_start_end(prices);
         let delta = self.time_frame.round_by();
         let times = MarketTimes::new(start, end, delta);
@@ -166,12 +171,8 @@ impl StockState {
     }
 
     pub fn prices(&self) -> impl Iterator<Item = Price> {
-        let mut prices = self.prices[self.time_frame.idx()].clone();
-        if !self.is_crypto() {
-            prices = self.get_matching_prices(&prices);
-        }
-
-        prices.into_iter()
+        let prices = self.prices[self.time_frame.idx()].clone();
+        self.get_matching_prices(&prices).into_iter()
     }
 
     pub fn volumes(&self, prices: &[Price]) -> Vec<u64> {
@@ -405,14 +406,14 @@ impl StockState {
         }
     }
 
-    pub fn x_labels(&'_ self, width: u16, start: i64, end: i64, data: &[Price]) -> Vec<Span<'_>> {
+    pub fn x_labels(&'_ self, width: u16, prices: &[Price]) -> Vec<Span<'_>> {
         let mut labels = vec![];
 
-        let dates = if self.time_frame == TimeFrame::Day1 {
-            MarketTimes::new(start, end.max(start), 60).collect()
-        } else {
-            data.iter().map(|p| p.date).collect::<Vec<_>>()
-        };
+        let dates: Vec<i64> = self
+            .get_matching_prices(prices)
+            .into_iter()
+            .map(|i| i.date)
+            .collect();
 
         if dates.is_empty() {
             return labels;
