@@ -38,7 +38,7 @@ impl StatefulWidget for PricesLineChart<'_> {
         }
 
         let (min, max) = state.min_max(self.data);
-        let (start, end) = state.start_end();
+        let x_bounds = state.x_bounds(self.data);
 
         let mut prices: Vec<_> = self.data.iter().map(cast_historical_as_price).collect();
 
@@ -130,13 +130,10 @@ impl StatefulWidget for PricesLineChart<'_> {
             && !*HIDE_PREV_CLOSE
             && state.prev_close_price.is_some()
         {
-            let num_points = (end - start) / 60 + 1;
-
-            Some(
-                (0..num_points)
-                    .map(|i| ((i + 1) as f64, state.prev_close_price.unwrap()))
-                    .collect::<Vec<_>>(),
-            )
+            Some(vec![
+                (x_bounds[0], state.prev_close_price.unwrap()),
+                (x_bounds[1], state.prev_close_price.unwrap()),
+            ])
         } else {
             None
         };
@@ -211,7 +208,7 @@ impl StatefulWidget for PricesLineChart<'_> {
                     .border_style(style().fg(THEME.border_axis())),
             )
             .style(style())
-            .x_axis(Axis::default().bounds(state.x_bounds(start, end, self.data)))
+            .x_axis(Axis::default().bounds(x_bounds))
             .y_axis(Axis::default().bounds(state.y_bounds(min, max)));
 
         // x_layout[0] - chart + y labels

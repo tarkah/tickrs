@@ -52,8 +52,7 @@ impl StatefulWidget for PricesCandlestickChart<'_> {
         });
 
         let (min, max) = state.min_max(&data);
-        let (start, end) = state.start_end();
-        let x_bounds = state.x_bounds(start, end, &data);
+        let x_bounds = state.x_bounds(&data);
 
         // x_layout[0] - chart + y labels
         // x_layout[1] - (x labels)

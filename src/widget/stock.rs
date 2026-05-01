@@ -12,7 +12,7 @@ use super::chart::{
 use super::chart_configuration::ChartConfigurationState;
 use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
-use crate::common::{self, *};
+use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
 use crate::service::{self, Service};
 use crate::theme::style;
@@ -128,46 +128,69 @@ impl StockState {
 
     // Get the actual start and end times used for building the chart
     fn adjusted_start_end(&self, prices: &[Price]) -> (i64, i64) {
-        let (mut start, mut end) = self.start_end();
-        end = prices.last().map(|p| p.date).unwrap_or(end);
+        let (mut start, mut end) = self.current_trading_start_end();
 
-        // Market open time is fine as is as the start time for 1D & crypto
-        if self.time_frame != TimeFrame::Day1 && !self.is_crypto() {
-            start += common::get_next_business_day_delta(start);
+        // We can't use current trading directly for non-1D. We
+        // need to find the start / end for the timeframe which
+        // is effectively min(start, normalized_spy_proxy_start)..end
+        if !matches!(self.time_frame, TimeFrame::Day1) {
+            let default_start = DEFAULT_TIMESTAMPS
+                .read()
+                .get(&self.time_frame)
+                .and_then(|timestamps| timestamps.first().copied())
+                .unwrap_or(start);
+            let default_start_date = default_start - default_start % DAY;
+
+            let start_time = start % DAY;
+
+            start = default_start_date + start_time;
+
+            if let Some(first_price) = prices.first() {
+                start = start.min(first_price.date);
+            }
+
+            if let Some(last_price) = prices.last() {
+                end = last_price.date;
+            }
         }
-
-        // Then travel back one time frame
-        start -= match self.time_frame {
-            TimeFrame::Day1 => 0,
-            TimeFrame::Week1 => 7,
-            TimeFrame::Month1 => 30,
-            TimeFrame::Month3 => 30 * 3,
-            TimeFrame::Month6 => 30 * 6,
-            TimeFrame::Year1 => 365,
-            TimeFrame::Year5 => 365 * 5,
-        } * DAY;
 
         (start, end)
     }
 
     fn get_matching_prices(&self, prices: &[Price]) -> Vec<Price> {
+        if prices.is_empty() {
+            return vec![];
+        }
+
         // Crypto doesn't need price matching
         if self.is_crypto() {
             return prices.to_vec();
         }
 
-        let (start, end) = self.adjusted_start_end(prices);
-        let delta = self.time_frame.round_by();
-        let times = MarketTimes::new(start, end, delta);
+        let (adj_start, adj_end) = self.adjusted_start_end(prices);
 
-        times
-            .map(|t| {
-                *prices
-                    .iter()
-                    .find(|p| p.date - p.date % delta == t)
-                    .unwrap_or(&Price::new(t))
-            })
-            .collect()
+        if matches!(self.time_frame, TimeFrame::Day1) {
+            prices
+                .iter()
+                // Needed to filter out pre / post market data if pre / post is disabled
+                .filter(|p| p.date >= adj_start && p.date < adj_end)
+                .copied()
+                .collect::<Vec<_>>()
+        } else {
+            let start = prices.first().unwrap().date;
+            let end = prices.last().unwrap().date;
+
+            let delta = self.time_frame.round_by();
+
+            let fill_before = MarketTimes::new(adj_start, start, delta);
+            let fill_after = MarketTimes::new(end, adj_end, delta);
+
+            fill_before
+                .map(Price::new)
+                .chain(prices.iter().copied())
+                .chain(fill_after.map(Price::new))
+                .collect()
+        }
     }
 
     pub fn prices(&self) -> impl Iterator<Item = Price> {
@@ -269,7 +292,7 @@ impl StockState {
         true
     }
 
-    pub fn start_end(&self) -> (i64, i64) {
+    fn current_trading_start_end(&self) -> (i64, i64) {
         let enable_pre_post = { *ENABLE_PRE_POST.read() };
 
         let pre = self
@@ -300,13 +323,17 @@ impl StockState {
             pre_start = reg_start - 1800;
         }
 
-        let start = if !enable_pre_post {
-            reg_start
-        } else {
+        let start = if matches!(self.time_frame, TimeFrame::Day1) && enable_pre_post {
             pre_start
+        } else {
+            reg_start
         };
 
-        let end = if !enable_pre_post { reg_end } else { post_end };
+        let end = if matches!(self.time_frame, TimeFrame::Day1) && enable_pre_post {
+            post_end
+        } else {
+            reg_end
+        };
 
         (start, end)
     }
@@ -397,11 +424,14 @@ impl StockState {
         (high, low)
     }
 
-    pub fn x_bounds(&self, start: i64, end: i64, data: &[Price]) -> [f64; 2] {
-        let num_points = ((end - start) / 60) as f64;
-
+    pub fn x_bounds(&self, data: &[Price]) -> [f64; 2] {
         match self.time_frame {
-            TimeFrame::Day1 => [0.0, num_points],
+            TimeFrame::Day1 => {
+                let (start, end) = self.current_trading_start_end();
+                let num_points = ((end - start) / 60) as f64;
+
+                [0.0, num_points]
+            }
             _ => [0.0, (data.len() + 1) as f64],
         }
     }
@@ -409,11 +439,7 @@ impl StockState {
     pub fn x_labels(&'_ self, width: u16, prices: &[Price]) -> Vec<Span<'_>> {
         let mut labels = vec![];
 
-        let dates: Vec<i64> = self
-            .get_matching_prices(prices)
-            .into_iter()
-            .map(|i| i.date)
-            .collect();
+        let dates: Vec<i64> = prices.iter().map(|i| i.date).collect();
 
         if dates.is_empty() {
             return labels;
