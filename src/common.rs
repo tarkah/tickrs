@@ -277,19 +277,19 @@ impl Iterator for MarketTimes {
         let end_time = end % DAY;
         let current_time = current % DAY;
 
-        self.current = current;
-        if current_time >= end_time {
+        if (start_time < end_time && (start_time <= current_time && current_time < end_time))
+            || (start_time > end_time && (current_time < end_time || start_time <= current_time))
+        {
+            // Market hasn't closed yet, advance by delta
+            self.current = current + self.delta;
+        } else {
             // We're post the market closing time
 
             // Go back to today's market opening time
-            self.current += start_time - current_time;
+            self.current = current - current_time + start_time;
 
-            // Advance 1 day if the current day isn't Fri or Sat.
-            // Otherwise skip the weekend
+            // Advance one day and skip the weekend
             self.current += get_next_business_day_delta(self.current);
-        } else {
-            // Market hasn't closed yet, advance by delta
-            self.current += self.delta;
         }
 
         Some(current)
