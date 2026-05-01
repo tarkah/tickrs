@@ -2,7 +2,7 @@ use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::time::Duration;
 
-use chrono::{Local, TimeZone, Utc};
+use chrono::{Datelike, Local, NaiveDateTime, TimeZone, Utc, Weekday};
 use itertools::izip;
 use serde::Deserialize;
 use tickrs_api::Interval;
@@ -200,32 +200,6 @@ impl TimeFrame {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct MarketHours(pub i64, pub i64);
-
-impl Default for MarketHours {
-    fn default() -> Self {
-        MarketHours(52200, 75600)
-    }
-}
-
-impl Iterator for MarketHours {
-    type Item = i64;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let min_rounded_0 = self.0 - self.0 % 60;
-        let min_rounded_1 = self.1 - self.1 % 60;
-
-        if min_rounded_0 == min_rounded_1 {
-            None
-        } else {
-            let result = Some(min_rounded_0);
-            self.0 = min_rounded_0 + 60;
-            result
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TradingPeriod {
     Pre,
@@ -243,6 +217,23 @@ pub struct Price {
     pub date: i64,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct MarketTimes {
+    pub start: i64,
+    pub end: i64,
+    pub delta: i64,
+    pub current: i64,
+}
+
+impl Price {
+    pub fn new(date: i64) -> Self {
+        Price {
+            date,
+            ..Default::default()
+        }
+    }
+}
+
 impl Hash for Price {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.close.to_bits().hash(state);
@@ -251,6 +242,64 @@ impl Hash for Price {
         self.low.to_bits().hash(state);
         self.open.to_bits().hash(state);
         self.date.hash(state);
+    }
+}
+
+impl MarketTimes {
+    pub fn new(start: i64, end: i64, delta: i64) -> Self {
+        MarketTimes {
+            start,
+            end,
+            delta,
+            current: start,
+        }
+    }
+}
+
+impl Iterator for MarketTimes {
+    type Item = i64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Round to the last value divisible by delta
+        let start = self.start - self.start % self.delta;
+        let end = self.end - self.end % self.delta;
+        let current = self.current - self.current % self.delta;
+
+        // We exceeded the end time, stop the iteration
+        if current >= end {
+            return None;
+        }
+
+        // Elapsed time since 00:00
+        let day = 60 * 60 * 24;
+        let start_time = start % day;
+        let end_time = end % day;
+        let current_time = current % day;
+
+        self.current = current;
+        if current_time >= end_time {
+            // We're post the market closing time
+
+            // Go back to today's market opening time
+            self.current += start_time - current_time;
+
+            // Advance 1 day if the next day isn't Sat or Sun.
+            // Otherwise skip the weekend
+            self.current += match get_weekday(current) {
+                Weekday::Mon => day,
+                Weekday::Tue => day,
+                Weekday::Wed => day,
+                Weekday::Thu => day,
+                Weekday::Fri => day * 3,
+                Weekday::Sat => day * 2,
+                Weekday::Sun => day,
+            };
+        } else {
+            // Market hasn't closed yet, advance by delta
+            self.current += self.delta;
+        }
+
+        Some(current)
     }
 }
 
@@ -322,4 +371,10 @@ pub fn format_decimals(value: f64) -> String {
 
         format!("{:.*}", n, value)
     }
+}
+
+fn get_weekday(epoch: i64) -> Weekday {
+    NaiveDateTime::from_timestamp_opt(epoch, 0)
+        .unwrap_or_default()
+        .weekday()
 }

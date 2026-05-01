@@ -126,90 +126,51 @@ impl StockState {
         self.set_chart_type(self.chart_type);
     }
 
-    pub fn prices(&self) -> impl Iterator<Item = Price> {
-        let (start, end) = self.start_end();
-
-        let prices = self.prices[self.time_frame.idx()].clone();
-
+    // Get the actual start and end times used for building the chart
+    fn adjusted_start_end(&self, prices: &[Price]) -> (i64, i64) {
+        let (mut start, end) = self.start_end();
         let max_time = prices.last().map(|p| p.date).unwrap_or(end);
+        let day = 60 * 60 * 24;
 
-        let default_timestamps = {
-            let defaults = DEFAULT_TIMESTAMPS.read();
-            defaults.get(&self.time_frame).cloned()
+        // Start at X seconds before market opening
+        start -= match self.time_frame {
+            TimeFrame::Day1 => 0,
+            TimeFrame::Week1 => 7 * day,
+            TimeFrame::Month1 => 30 * day,
+            TimeFrame::Month3 => 30 * 3 * day,
+            TimeFrame::Month6 => 30 * 6 * day,
+            TimeFrame::Year1 => 365 * day,
+            TimeFrame::Year5 => 365 * 5 * day,
         };
 
-        let prices = if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(
-                start,
-                if max_time < start {
-                    end.max(start)
-                } else {
-                    max_time.min(end)
-                },
-            );
-
-            times
-                .map(|t| {
-                    if let Some(p) = prices.iter().find(|p| {
-                        let min_rounded = p.date - p.date % 60;
-
-                        min_rounded == t
-                    }) {
-                        *p
-                    } else {
-                        Price {
-                            date: t,
-                            ..Default::default()
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-        } else if self.is_crypto() {
-            prices
-        } else if let Some(default_timestamps) = default_timestamps {
-            default_timestamps
-                .into_iter()
-                .map(|t| {
-                    if let Some(p) = prices.iter().find(|p| {
-                        let a_rounded = p.date - p.date % self.time_frame.round_by();
-                        let b_rounded = t - t % self.time_frame.round_by();
-
-                        a_rounded == b_rounded
-                    }) {
-                        *p
-                    } else {
-                        Price {
-                            date: t,
-                            ..Default::default()
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-        } else {
-            prices
-        };
-
-        prices.into_iter()
+        (start, max_time)
     }
 
-    pub fn volumes(&self, data: &[Price]) -> Vec<u64> {
-        let (start, end) = self.start_end();
+    fn get_matching_prices(&self, prices: &[Price]) -> Vec<Price> {
+        let (start, end) = self.adjusted_start_end(prices);
+        let delta = self.time_frame.round_by();
+        let times = MarketTimes::new(start, end, delta);
 
-        if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(start, end.max(start));
+        times
+            .map(|t| {
+                *prices
+                    .into_iter()
+                    .find(|p| p.date - p.date % delta == t)
+                    .unwrap_or(&Price::new(t))
+            })
+            .collect()
+    }
 
-            times
-                .map(|t| {
-                    if let Some(p) = data.iter().find(|p| p.date == t) {
-                        p.volume
-                    } else {
-                        0
-                    }
-                })
-                .collect()
-        } else {
-            data.iter().map(|p| p.volume).collect()
-        }
+    pub fn prices(&self) -> impl Iterator<Item = Price> {
+        let prices = self.prices[self.time_frame.idx()].clone();
+        self.get_matching_prices(&prices).into_iter()
+    }
+
+    pub fn volumes(&self, prices: &[Price]) -> Vec<u64> {
+        self.get_matching_prices(prices)
+            .into_iter()
+            .map(|i| i.volume)
+            .collect()
     }
 
     pub fn current_price(&self) -> f64 {
@@ -440,7 +401,7 @@ impl StockState {
         let mut labels = vec![];
 
         let dates = if self.time_frame == TimeFrame::Day1 {
-            MarketHours(start, end.max(start)).collect()
+            MarketTimes::new(start, end.max(start), 60).collect()
         } else {
             data.iter().map(|p| p.date).collect::<Vec<_>>()
         };
