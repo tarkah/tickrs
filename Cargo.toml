@@ -21,19 +21,19 @@ members = [
 
 [dependencies]
 anyhow = "1.0"
-async-std = "1.12"
+async-std = "1.13"
 better-panic = "0.3"
 chrono = "0.4"
 crossbeam-channel = "0.5"
-crossterm = "0.25" # use the same version as tui
+crossterm = "0.29" # use the same version as tui
 dirs-next = "2.0.0"
 futures = "0.3"
-itertools = "0.10"
-lazy_static = "1.4"
-parking_lot = "0.12.1"
-rclite = "0.1.5"
+itertools = "0.14"
+lazy_static = "1.5"
+parking_lot = "0.12.5"
+rclite = "0.4.1"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 structopt = "0.3"
 tickrs-api = { path = "api/", version = "0.15.0" }
-ratatui = { version = "0.25.0", default-features = false, features = ["crossterm", "serde"] }
+ratatui = { version = "0.30.0", default-features = false, features = ["crossterm", "serde"] }

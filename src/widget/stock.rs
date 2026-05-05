@@ -956,7 +956,7 @@ impl CachableWidget<StockState> for StockWidget {
                 .split(chunks[2])
                 .to_vec();
 
-            let tab_names = TimeFrame::tab_names()
+            let tab_names: Vec<_> = TimeFrame::tab_names()
                 .iter()
                 .map(|s| Line::from(*s))
                 .collect();
