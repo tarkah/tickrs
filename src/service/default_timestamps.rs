@@ -9,8 +9,8 @@ pub struct DefaultTimestampService {
 }
 
 impl DefaultTimestampService {
-    pub fn new() -> DefaultTimestampService {
-        let task = DefaultTimestamps::new();
+    pub fn new(symbol: &str) -> DefaultTimestampService {
+        let task = DefaultTimestamps::new(symbol);
         let handle = task.connect();
 
         DefaultTimestampService { handle }

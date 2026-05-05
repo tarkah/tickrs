@@ -1,9 +1,7 @@
 use crossterm::event::Event;
 
 use crate::common::{ChartType, TimeFrame};
-use crate::service::default_timestamps::DefaultTimestampService;
-use crate::service::Service;
-use crate::{widget, DEFAULT_TIMESTAMPS};
+use crate::widget;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Mode {
@@ -25,20 +23,11 @@ pub struct App {
     pub debug: DebugInfo,
     pub previous_mode: Mode,
     pub time_frame: TimeFrame,
-    pub default_timestamp_service: DefaultTimestampService,
     pub summary_scroll_state: SummaryScrollState,
     pub chart_type: ChartType,
 }
 
 impl App {
-    pub fn update(&self) {
-        let mut timestamp_updates = self.default_timestamp_service.updates();
-
-        if let Some(new_defaults) = timestamp_updates.pop() {
-            *DEFAULT_TIMESTAMPS.write() = new_defaults;
-        }
-    }
-
     pub fn time_frame_up(&mut self) {
         self.set_time_frame(self.time_frame.up());
     }

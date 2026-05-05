@@ -8,27 +8,33 @@ use crate::common::TimeFrame;
 
 /// Default timestamps to reference for stocks that haven't been around as long
 /// as the interval we are trying to graph
-pub struct DefaultTimestamps {}
+pub struct DefaultTimestamps {
+    pub symbol: String,
+}
 
 impl DefaultTimestamps {
-    pub fn new() -> DefaultTimestamps {
-        DefaultTimestamps {}
+    pub fn new(symbol: &str) -> DefaultTimestamps {
+        DefaultTimestamps {
+            symbol: symbol.to_string(),
+        }
     }
 }
 
 impl AsyncTask for DefaultTimestamps {
-    type Input = ();
+    type Input = String;
     type Response = HashMap<TimeFrame, Vec<i64>>;
 
     fn update_interval(&self) -> Option<Duration> {
         Some(Duration::from_secs(60 * 15))
     }
 
-    fn input(&self) -> Self::Input {}
+    fn input(&self) -> Self::Input {
+        self.symbol.clone()
+    }
 
-    fn task<'a>(_input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
+    fn task<'a>(input: Arc<Self::Input>) -> BoxFuture<'a, Option<Self::Response>> {
         Box::pin(async move {
-            let symbol = "SPY";
+            let symbol = input.as_str();
 
             let tasks = TimeFrame::ALL[1..].iter().map(|timeframe| async move {
                 let interval = timeframe.api_interval();
