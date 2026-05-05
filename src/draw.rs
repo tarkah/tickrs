@@ -28,7 +28,7 @@ pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
     terminal
         .draw(|frame| {
             // Set background color
-            frame.render_widget(Block::default().style(style()), frame.size());
+            frame.render_widget(Block::default().style(style()), frame.area());
 
             if app.debug.enabled && app.mode == Mode::AddStock {
                 // layout[0] - Main window
@@ -40,7 +40,7 @@ pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
                         Constraint::Length(3),
                         Constraint::Length(5),
                     ])
-                    .split(frame.size());
+                    .split(frame.area());
 
                 if !app.stocks.is_empty() {
                     match app.previous_mode {
@@ -56,7 +56,7 @@ pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
                 // layout[1] - Debug window
                 let layout = Layout::default()
                     .constraints([Constraint::Min(0), Constraint::Length(5)])
-                    .split(frame.size());
+                    .split(frame.area());
 
                 match app.mode {
                     Mode::DisplaySummary => draw_summary(frame, app, layout[0]),
@@ -70,7 +70,7 @@ pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
                 // layout[1] - Add Stock window
                 let layout = Layout::default()
                     .constraints([Constraint::Min(0), Constraint::Length(3)])
-                    .split(frame.size());
+                    .split(frame.area());
 
                 if !app.stocks.is_empty() {
                     match app.previous_mode {
@@ -82,7 +82,7 @@ pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
                 draw_add_stock(frame, app, layout[1]);
             } else {
                 // layout - Main window
-                let layout = frame.size();
+                let layout = frame.area();
 
                 match app.mode {
                     Mode::DisplaySummary => draw_summary(frame, app, layout),

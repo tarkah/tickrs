@@ -471,18 +471,16 @@ impl StatefulWidget for PricesKagiChart<'_> {
                 .x_bounds([0.0, chart_width])
                 .y_bounds(state.y_bounds(min, max))
                 .paint(move |ctx| {
-                    if state.time_frame == TimeFrame::Day1
-                        && self.loaded
-                        && !*HIDE_PREV_CLOSE
-                        && state.prev_close_price.is_some()
-                    {
-                        ctx.draw(&Line {
-                            x1: 0.0,
-                            x2: chart_width,
-                            y1: state.prev_close_price.unwrap(),
-                            y2: state.prev_close_price.unwrap(),
-                            color: THEME.gray(),
-                        });
+                    if state.time_frame == TimeFrame::Day1 && self.loaded && !*HIDE_PREV_CLOSE {
+                        if let Some(prev_close_price) = state.prev_close_price {
+                            ctx.draw(&Line {
+                                x1: 0.0,
+                                x2: chart_width,
+                                y1: prev_close_price,
+                                y2: prev_close_price,
+                                color: THEME.gray(),
+                            });
+                        }
                     }
 
                     ctx.layer();
@@ -590,7 +588,7 @@ impl StatefulWidget for PricesKagiChart<'_> {
     }
 }
 
-fn x_labels(width: u16, trends: &[Trend], time_frame: TimeFrame) -> Vec<Span> {
+fn x_labels(width: u16, trends: &[Trend], time_frame: TimeFrame) -> Vec<Span<'_>> {
     let mut labels = vec![];
 
     let trends = trends

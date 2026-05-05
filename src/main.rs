@@ -167,8 +167,8 @@ fn main() {
                     Ok(Event::Key(key_event)) => {
                         event::handle_key_bindings(app.mode, key_event, &mut app, &request_redraw);
                     }
-                    Ok(Event::Mouse(MouseEvent { kind, row, column,.. })) => {
-                        if app.debug.enabled {
+                    Ok(Event::Mouse(MouseEvent { kind, row, column,.. }))
+                        if app.debug.enabled => {
                             match kind {
                                 MouseEventKind::Down(_) => app.debug.cursor_location = Some((row, column)),
                                 MouseEventKind::Up(_) => app.debug.cursor_location = Some((row, column)),
@@ -176,7 +176,6 @@ fn main() {
                                 _ => {}
                             }
                         }
-                    }
                     Ok(Event::Resize(..)) => {
                         let _ = request_redraw.try_send(());
                     }
