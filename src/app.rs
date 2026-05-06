@@ -33,6 +33,12 @@ pub struct App {
 }
 
 impl App {
+    fn set_tab(&mut self, idx: usize) {
+        self.stocks[self.current_tab].selected = false;
+        self.stocks[idx].selected = true;
+        self.current_tab = idx;
+    }
+
     pub fn exit_app(&mut self) {
         cleanup_terminal();
         process::exit(0);
@@ -124,9 +130,9 @@ impl App {
             return;
         }
 
-        let new_idx = self.current_tab - 1;
-        self.stocks.swap(self.current_tab, new_idx);
-        self.current_tab = new_idx;
+        let idx = self.current_tab - 1;
+        self.stocks.swap(self.current_tab, idx);
+        self.set_tab(idx);
     }
 
     pub fn move_tab_right(&mut self) {
@@ -134,29 +140,32 @@ impl App {
             return;
         }
 
-        let new_idx = self.current_tab + 1;
-        self.stocks.swap(self.current_tab, new_idx);
-        self.current_tab = new_idx;
+        let idx = self.current_tab + 1;
+        self.stocks.swap(self.current_tab, idx);
+        self.set_tab(idx);
     }
 
     pub fn select_tab_left(&mut self) {
         if self.current_tab > 0 {
-            self.current_tab -= 1;
+            let idx = self.current_tab - 1;
+            self.set_tab(idx);
         }
     }
 
     pub fn select_tab_right(&mut self) {
         if self.current_tab < self.stocks.len().saturating_sub(1) {
-            self.current_tab += 1;
+            let idx = self.current_tab + 1;
+            self.set_tab(idx);
         }
     }
 
     pub fn select_tab_first(&mut self) {
-        self.current_tab = 0
+        self.set_tab(0);
     }
 
     pub fn select_tab_last(&mut self) {
-        self.current_tab = self.stocks.len().saturating_sub(1);
+        let idx = self.stocks.len().saturating_sub(1);
+        self.set_tab(idx);
     }
 
     pub fn scroll_top(&mut self) {

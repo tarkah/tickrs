@@ -27,6 +27,7 @@ const NUM_LOADING_TICKS: usize = 8;
 const ICON_LOADING_TICKS: [char; 8] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
 
 pub struct StockState {
+    pub selected: bool,
     pub default_timestamp_service: DefaultTimestampService,
     pub default_timestamps: HashMap<TimeFrame, Vec<i64>>,
     pub symbol: String,
@@ -52,6 +53,7 @@ pub struct StockState {
 
 impl Hash for StockState {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        self.selected.hash(state);
         self.symbol.hash(state);
         self.chart_type.hash(state);
         self.current_regular_price.to_bits().hash(state);
@@ -92,6 +94,7 @@ impl StockState {
         let default_timestamp_service = DefaultTimestampService::new(&symbol);
 
         StockState {
+            selected: false,
             default_timestamp_service,
             default_timestamps: HashMap::new(),
             symbol,
