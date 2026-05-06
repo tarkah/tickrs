@@ -33,10 +33,35 @@ pub struct App {
 }
 
 impl App {
+    fn update_scroll_state(&mut self) {
+        let selection = self.current_tab;
+        let view_start = self.summary_scroll_state.offset;
+        let view_end = (self.summary_scroll_state.offset + self.num_to_render).saturating_sub(1);
+
+        // The selected stock is already shown on the screen
+        if view_start <= selection && selection <= view_end {
+            return;
+        }
+
+        // Scroll the screen to the direction of the selection so that it is visible
+        self.summary_scroll_state.offset = if view_end < selection {
+            self.summary_scroll_state.offset.saturating_add(1)
+        } else {
+            self.summary_scroll_state.offset.saturating_sub(1)
+        }
+    }
+
     fn set_tab(&mut self, idx: usize) {
-        self.stocks[self.current_tab].selected = false;
-        self.stocks[idx].selected = true;
+        if self.current_tab < self.stocks.len() {
+            self.stocks[self.current_tab].selected = false;
+        }
+
+        if idx < self.stocks.len() {
+            self.stocks[idx].selected = true;
+        }
+
         self.current_tab = idx;
+        self.update_scroll_state();
     }
 
     pub fn exit_app(&mut self) {
@@ -105,7 +130,7 @@ impl App {
     }
 
     pub fn add_stock(&mut self) {
-        let mut stock = self.add_stock.enter(self.chart_type);
+        let mut stock = self.add_stock.enter(self.chart_type, self.stocks.len());
         stock.set_time_frame(self.time_frame);
         self.stocks.push(stock);
 
@@ -118,6 +143,8 @@ impl App {
 
         if self.current_tab > self.stocks.len().saturating_sub(1) {
             self.select_tab_last();
+        } else {
+            self.select_tab_current();
         }
 
         if self.stocks.is_empty() {
@@ -166,6 +193,10 @@ impl App {
     pub fn select_tab_last(&mut self) {
         let idx = self.stocks.len().saturating_sub(1);
         self.set_tab(idx);
+    }
+
+    pub fn select_tab_current(&mut self) {
+        self.set_tab(self.current_tab);
     }
 
     pub fn scroll_top(&mut self) {

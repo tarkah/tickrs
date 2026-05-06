@@ -40,9 +40,9 @@ impl AddStockState {
         self.error_msg = None;
     }
 
-    pub fn enter(&mut self, chart_type: ChartType) -> super::StockState {
+    pub fn enter(&mut self, chart_type: ChartType, stocks: usize) -> super::StockState {
         let search_string = self.search_string.clone();
-        StockState::new(search_string, chart_type)
+        StockState::new(search_string, chart_type, stocks)
     }
 }
 

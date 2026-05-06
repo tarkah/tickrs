@@ -86,7 +86,7 @@ impl Hash for StockState {
 }
 
 impl StockState {
-    pub fn new(symbol: String, chart_type: ChartType) -> StockState {
+    pub fn new(symbol: String, chart_type: ChartType, idx: usize) -> StockState {
         let time_frame = *TIME_FRAME;
 
         let stock_service = service::stock::StockService::new(symbol.clone(), time_frame);
@@ -94,7 +94,7 @@ impl StockState {
         let default_timestamp_service = DefaultTimestampService::new(&symbol);
 
         StockState {
-            selected: false,
+            selected: idx == 0,
             default_timestamp_service,
             default_timestamps: HashMap::new(),
             symbol,

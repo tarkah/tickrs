@@ -66,7 +66,8 @@ fn main() {
         .symbols
         .unwrap_or_default()
         .into_iter()
-        .map(|symbol| widget::StockState::new(symbol, starting_chart_type))
+        .enumerate()
+        .map(|(i, symbol)| widget::StockState::new(symbol, starting_chart_type, i))
         .collect();
 
     let starting_mode = if starting_stocks.is_empty() {
