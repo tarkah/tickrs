@@ -1,5 +1,4 @@
-use crossbeam_channel::Sender;
-use crossterm::event::{KeyCode::Char, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode::Char, KeyEvent, KeyModifiers, MouseEventKind};
 
 use crate::app::{App, Mode};
 
@@ -15,12 +14,7 @@ const CONTROL: KeyModifiers = KeyModifiers::CONTROL;
 const NONE: KeyModifiers = KeyModifiers::NONE;
 const SHIFT: KeyModifiers = KeyModifiers::SHIFT;
 
-pub fn handle_key_bindings(
-    mode: Mode,
-    key_event: KeyEvent,
-    app: &mut App,
-    request_redraw: &Sender<()>,
-) {
+pub fn handle_key_bindings(mode: Mode, key_event: KeyEvent, app: &mut App) {
     let modifiers = key_event.modifiers;
     let key = key_event.code;
 
@@ -36,6 +30,10 @@ pub fn handle_key_bindings(
         Mode::DisplaySummary => display_summary::handle_key_bindings(modifiers, key, app),
         Mode::Help => help::handle_key_bindings(modifiers, key, app),
     };
+}
 
-    let _ = request_redraw.try_send(());
+pub fn handle_mouse_events(mode: Mode, mouse_event: MouseEventKind, app: &mut App) {
+    if mode == Mode::DisplaySummary {
+        display_summary::handle_mouse_events(mouse_event, app);
+    }
 }

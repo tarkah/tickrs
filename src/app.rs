@@ -159,10 +159,6 @@ impl App {
         self.current_tab = self.stocks.len().saturating_sub(1);
     }
 
-    pub fn scroll_selection(&mut self) {
-        self.summary_scroll_state.offset = self.current_tab;
-    }
-
     pub fn scroll_top(&mut self) {
         self.summary_scroll_state.offset = 0;
     }
@@ -322,7 +318,6 @@ impl EnvConfig {
 pub struct DebugInfo {
     pub enabled: bool,
     pub dimensions: (u16, u16),
-    pub cursor_location: Option<(u16, u16)>,
     pub last_event: Option<Event>,
     pub mode: Mode,
 }

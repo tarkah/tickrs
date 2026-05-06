@@ -3,7 +3,7 @@ use std::{io, panic, thread};
 
 use api::model::CrumbData;
 use crossbeam_channel::{bounded, select, unbounded, Receiver, Sender};
-use crossterm::event::{Event, MouseEvent, MouseEventKind};
+use crossterm::event::{Event, MouseEvent};
 use crossterm::{cursor, execute, terminal};
 use lazy_static::lazy_static;
 use parking_lot::{Mutex, RwLock};
@@ -88,7 +88,6 @@ fn main() {
         debug: DebugInfo {
             enabled: DEBUG_LEVEL.show_debug,
             dimensions: (0, 0),
-            cursor_location: None,
             last_event: None,
             mode: starting_mode,
         },
@@ -158,17 +157,13 @@ fn main() {
 
                 match message {
                     Ok(Event::Key(key_event)) => {
-                        event::handle_key_bindings(app.mode, key_event, &mut app, &request_redraw);
+                        event::handle_key_bindings(app.mode, key_event, &mut app);
+                        let _ = request_redraw.try_send(());
                     }
-                    Ok(Event::Mouse(MouseEvent { kind, row, column,.. }))
-                        if app.debug.enabled => {
-                            match kind {
-                                MouseEventKind::Down(_) => app.debug.cursor_location = Some((row, column)),
-                                MouseEventKind::Up(_) => app.debug.cursor_location = Some((row, column)),
-                                MouseEventKind::Drag(_) => app.debug.cursor_location = Some((row, column)),
-                                _ => {}
-                            }
-                        }
+                    Ok(Event::Mouse(MouseEvent { kind,.. })) => {
+                        event::handle_mouse_events(app.mode, kind, &mut app);
+                        let _ = request_redraw.try_send(());
+                    }
                     Ok(Event::Resize(..)) => {
                         let _ = request_redraw.try_send(());
                     }
@@ -184,12 +179,8 @@ fn setup_terminal() {
 
     execute!(stdout, cursor::Hide).unwrap();
     execute!(stdout, terminal::EnterAlternateScreen).unwrap();
-
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
-
-    if DEBUG_LEVEL.debug_mouse {
-        execute!(stdout, crossterm::event::EnableMouseCapture).unwrap();
-    }
+    execute!(stdout, crossterm::event::EnableMouseCapture).unwrap();
 
     terminal::enable_raw_mode().unwrap();
 }
@@ -203,7 +194,7 @@ fn cleanup_terminal() {
 
     execute!(stdout, cursor::MoveTo(0, 0)).unwrap();
     execute!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
-
+    execute!(stdout, crossterm::event::DisableMouseCapture).unwrap();
     execute!(stdout, terminal::LeaveAlternateScreen).unwrap();
     execute!(stdout, cursor::Show).unwrap();
 
