@@ -444,7 +444,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
         ]),
         Line::default(),
         Line::from(vec![Span::styled(
-            format!("{: <22}", &state.input.kagi_reversal_value),
+            format!("{: <22}", state.input.kagi_reversal_value),
             style()
                 .fg(if state.selection == Some(KagiSelection::ReversalValue) {
                     THEME.text_secondary()

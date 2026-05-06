@@ -258,7 +258,8 @@ impl StockState {
     }
 
     fn options_enabled(&self) -> bool {
-        !self.is_crypto() && !self.is_index()
+        // Options are broken so we're just disabling them
+        false
     }
 
     fn configure_enabled(&self) -> bool {
@@ -270,13 +271,6 @@ impl StockState {
             .as_ref()
             .and_then(|m| m.instrument_type.as_deref())
             == Some("CRYPTOCURRENCY")
-    }
-
-    fn is_index(&self) -> bool {
-        self.chart_meta
-            .as_ref()
-            .and_then(|m| m.instrument_type.as_deref())
-            == Some("INDEX")
     }
 
     pub fn toggle_options(&mut self) -> bool {
@@ -861,16 +855,20 @@ impl CachableWidget<StockState> for StockWidget {
                                 THEME.gray()
                             }),
                     )));
-                }
 
-                if state.options_enabled() && loaded {
                     right_info.push(Line::from(Span::styled(
                         "Options  'o'",
-                        style().bg(if state.show_options {
-                            THEME.highlight_unfocused()
-                        } else {
-                            THEME.background()
-                        }),
+                        style()
+                            .bg(if state.show_options {
+                                THEME.highlight_unfocused()
+                            } else {
+                                THEME.background()
+                            })
+                            .fg(if state.options_enabled() {
+                                THEME.text_normal()
+                            } else {
+                                THEME.gray()
+                            }),
                     )));
                 }
 
