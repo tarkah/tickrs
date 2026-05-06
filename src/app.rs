@@ -110,7 +110,7 @@ impl App {
     pub fn remove_stock(&mut self) {
         self.stocks.remove(self.current_tab);
 
-        if self.current_tab > self.stocks.len() .saturating_sub(1) {
+        if self.current_tab > self.stocks.len().saturating_sub(1) {
             self.select_tab_last();
         }
 

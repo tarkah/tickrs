@@ -33,12 +33,12 @@ pub fn handle_key_bindings(modifiers: KeyModifiers, key: KeyCode, app: &mut App)
     }
 }
 
-fn goto_bottom(app: &mut App){
+fn goto_bottom(app: &mut App) {
     app.scroll_bottom();
     app.select_tab_last();
 }
 
-fn goto_top(app: &mut App){
-    app.scroll_top();  
+fn goto_top(app: &mut App) {
+    app.scroll_top();
     app.select_tab_first();
 }
