@@ -78,6 +78,7 @@ fn main() {
     };
 
     let app = Arc::new(Mutex::new(app::App {
+        num_to_render: 0,
         mode: starting_mode,
         stocks: starting_stocks,
         add_stock: widget::AddStockState::new(),

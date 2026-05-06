@@ -1,345 +1,41 @@
-use app::ScrollDirection;
 use crossbeam_channel::Sender;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode::Char, KeyEvent, KeyModifiers};
 
-use crate::app::{self, Mode};
-use crate::common::ChartType;
-use crate::widget::options;
-use crate::{cleanup_terminal, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
+use crate::app::{App, Mode};
 
-fn handle_keys_add_stock(keycode: KeyCode, app: &mut app::App) {
-    match keycode {
-        KeyCode::Enter => {
-            let mut stock = app.add_stock.enter(app.chart_type);
+mod add_stock;
+mod configure_chart;
+mod display_common;
+mod display_options;
+mod display_stock;
+mod display_summary;
+mod help;
 
-            stock.set_time_frame(app.time_frame);
-
-            app.stocks.push(stock);
-            app.current_tab = app.stocks.len() - 1;
-
-            app.add_stock.reset();
-            app.mode = app.previous_mode;
-        }
-        KeyCode::Char(c) => {
-            app.add_stock.add_char(c);
-        }
-        KeyCode::Backspace => {
-            app.add_stock.del_char();
-        }
-        KeyCode::Esc => {
-            app.add_stock.reset();
-            if !app.stocks.is_empty() {
-                app.mode = app.previous_mode;
-            }
-        }
-        _ => {}
-    }
-}
-
-fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mut app::App) {
-    match (keycode, modifiers) {
-        (KeyCode::Left, KeyModifiers::CONTROL) => {
-            let new_idx = if app.current_tab == 0 {
-                app.stocks.len() - 1
-            } else {
-                app.current_tab - 1
-            };
-            app.stocks.swap(app.current_tab, new_idx);
-            app.current_tab = new_idx;
-        }
-        (KeyCode::Right, KeyModifiers::CONTROL) => {
-            let new_idx = (app.current_tab + 1) % app.stocks.len();
-            app.stocks.swap(app.current_tab, new_idx);
-            app.current_tab = new_idx;
-        }
-        (KeyCode::BackTab, KeyModifiers::SHIFT) => {
-            if app.current_tab == 0 {
-                app.current_tab = app.stocks.len() - 1;
-            } else {
-                app.current_tab -= 1;
-            }
-        }
-        (KeyCode::Left, KeyModifiers::NONE) => {
-            app.time_frame_down();
-        }
-        (KeyCode::Right, KeyModifiers::NONE) => {
-            app.time_frame_up();
-        }
-        (KeyCode::Char('/'), KeyModifiers::NONE) => {
-            app.previous_mode = app.mode;
-            app.mode = app::Mode::AddStock;
-        }
-        (KeyCode::Char('k'), KeyModifiers::NONE) => {
-            app.stocks.remove(app.current_tab);
-
-            if app.current_tab != 0 {
-                app.current_tab -= 1;
-            }
-
-            if app.stocks.is_empty() {
-                app.previous_mode = app.mode;
-                app.mode = app::Mode::AddStock;
-            }
-        }
-        (KeyCode::Char('s'), KeyModifiers::NONE) => {
-            app.mode = app::Mode::DisplaySummary;
-        }
-        (KeyCode::Char('o'), KeyModifiers::NONE)
-            if app.stocks[app.current_tab].toggle_options() =>
-        {
-            app.mode = app::Mode::DisplayOptions;
-        }
-        (KeyCode::Char('e'), KeyModifiers::NONE)
-            if app.stocks[app.current_tab].toggle_configure() =>
-        {
-            app.mode = app::Mode::ConfigureChart;
-        }
-        (KeyCode::Tab, KeyModifiers::NONE) => {
-            if app.current_tab == app.stocks.len() - 1 {
-                app.current_tab = 0;
-            } else {
-                app.current_tab += 1;
-            }
-        }
-        _ => {}
-    }
-}
-
-fn handle_keys_display_summary(keycode: KeyCode, app: &mut app::App) {
-    match keycode {
-        KeyCode::Left => {
-            app.time_frame_down();
-        }
-        KeyCode::Right => {
-            app.time_frame_up();
-        }
-        KeyCode::Up => {
-            app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Up);
-        }
-        KeyCode::Down => {
-            app.summary_scroll_state.queued_scroll = Some(ScrollDirection::Down);
-        }
-        KeyCode::Char('s') => {
-            app.mode = app::Mode::DisplayStock;
-        }
-        KeyCode::Char('/') => {
-            app.previous_mode = app.mode;
-            app.mode = app::Mode::AddStock;
-        }
-        _ => {}
-    }
-}
-
-fn handle_keys_display_options(keycode: KeyCode, app: &mut app::App) {
-    match keycode {
-        KeyCode::Esc | KeyCode::Char('o') | KeyCode::Char('q') => {
-            app.stocks[app.current_tab].toggle_options();
-            app.mode = app::Mode::DisplayStock;
-        }
-        KeyCode::Tab => {
-            app.stocks[app.current_tab]
-                .options
-                .as_mut()
-                .unwrap()
-                .toggle_option_type();
-        }
-        KeyCode::Up => {
-            match app.stocks[app.current_tab]
-                .options
-                .as_mut()
-                .unwrap()
-                .selection_mode
-            {
-                options::SelectionMode::Dates => {
-                    app.stocks[app.current_tab]
-                        .options
-                        .as_mut()
-                        .unwrap()
-                        .previous_date();
-                }
-                options::SelectionMode::Options => {
-                    app.stocks[app.current_tab]
-                        .options
-                        .as_mut()
-                        .unwrap()
-                        .previous_option();
-                }
-            }
-        }
-        KeyCode::Down => {
-            match app.stocks[app.current_tab]
-                .options
-                .as_mut()
-                .unwrap()
-                .selection_mode
-            {
-                options::SelectionMode::Dates => {
-                    app.stocks[app.current_tab]
-                        .options
-                        .as_mut()
-                        .unwrap()
-                        .next_date();
-                }
-                options::SelectionMode::Options => {
-                    app.stocks[app.current_tab]
-                        .options
-                        .as_mut()
-                        .unwrap()
-                        .next_option();
-                }
-            }
-        }
-        KeyCode::Left => {
-            app.stocks[app.current_tab]
-                .options
-                .as_mut()
-                .unwrap()
-                .selection_mode_left();
-        }
-        KeyCode::Right
-            if app.stocks[app.current_tab]
-                .options
-                .as_mut()
-                .unwrap()
-                .data()
-                .is_some() =>
-        {
-            app.stocks[app.current_tab]
-                .options
-                .as_mut()
-                .unwrap()
-                .selection_mode_right();
-        }
-        _ => {}
-    }
-}
-
-pub fn handle_keys_configure_chart(keycode: KeyCode, modifiers: KeyModifiers, app: &mut app::App) {
-    match (keycode, modifiers) {
-        (KeyCode::Esc | KeyCode::Char('e') | KeyCode::Char('q'), _) => {
-            app.stocks[app.current_tab].toggle_configure();
-            app.mode = app::Mode::DisplayStock;
-        }
-        (KeyCode::Up, KeyModifiers::NONE) | (KeyCode::BackTab, KeyModifiers::SHIFT) => {
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.selection_up();
-        }
-        (KeyCode::Down, KeyModifiers::NONE) | (KeyCode::Tab, KeyModifiers::NONE) => {
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.selection_down();
-        }
-        (KeyCode::Left, KeyModifiers::NONE) => {
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.back_tab();
-        }
-        (KeyCode::Right, KeyModifiers::NONE) => {
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.tab();
-        }
-        (KeyCode::Enter, KeyModifiers::NONE) => {
-            let time_frame = app.stocks[app.current_tab].time_frame;
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.enter(time_frame);
-        }
-        (KeyCode::Char(c), KeyModifiers::NONE) if (c.is_numeric() || c == '.') => {
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.add_char(c);
-        }
-        (KeyCode::Backspace, KeyModifiers::NONE) => {
-            let config = app.stocks[app.current_tab].chart_config_mut();
-            config.del_char();
-        }
-        _ => {}
-    }
-}
+const CONTROL: KeyModifiers = KeyModifiers::CONTROL;
+const NONE: KeyModifiers = KeyModifiers::NONE;
+const SHIFT: KeyModifiers = KeyModifiers::SHIFT;
 
 pub fn handle_key_bindings(
     mode: Mode,
     key_event: KeyEvent,
-    app: &mut app::App,
+    app: &mut App,
     request_redraw: &Sender<()>,
 ) {
-    match (mode, key_event.modifiers, key_event.code) {
-        (_, KeyModifiers::CONTROL, KeyCode::Char('c')) => {
-            cleanup_terminal();
-            std::process::exit(0);
-        }
-        (Mode::AddStock, modifiers, keycode) => {
-            if modifiers.is_empty() || modifiers == KeyModifiers::SHIFT {
-                handle_keys_add_stock(keycode, app)
-            }
-        }
-        (Mode::Help, modifiers, keycode) => {
-            if modifiers.is_empty()
-                && (matches!(
-                    keycode,
-                    KeyCode::Esc | KeyCode::Char('?') | KeyCode::Char('q')
-                ))
-            {
-                app.mode = app.previous_mode;
-            }
-        }
-        (mode, KeyModifiers::NONE, KeyCode::Char('q'))
-            if !matches!(mode, Mode::DisplayOptions | Mode::ConfigureChart) =>
-        {
-            cleanup_terminal();
-            std::process::exit(0);
-        }
-        (_, KeyModifiers::NONE, KeyCode::Char('?')) => {
-            app.previous_mode = app.mode;
-            app.mode = app::Mode::Help;
-        }
-        (_, KeyModifiers::NONE, KeyCode::Char('c')) if mode != Mode::ConfigureChart => {
-            app.chart_type = app.chart_type.toggle();
+    let modifiers = key_event.modifiers;
+    let key = key_event.code;
 
-            for stock in app.stocks.iter_mut() {
-                stock.set_chart_type(app.chart_type);
-            }
-        }
-        (_, KeyModifiers::NONE, KeyCode::Char('v')) => {
-            if app.chart_type != ChartType::Kagi {
-                let mut show_volumes = SHOW_VOLUMES.write();
-                *show_volumes = !*show_volumes;
-            }
-        }
-        (_, KeyModifiers::NONE, KeyCode::Char('p')) => {
-            let mut guard = ENABLE_PRE_POST.write();
-            *guard = !*guard;
-        }
-        (Mode::DisplaySummary, modifiers, keycode) => {
-            if modifiers.is_empty() {
-                handle_keys_display_summary(keycode, app)
-            }
-        }
-        (_, KeyModifiers::NONE, KeyCode::Char('x')) => {
-            let mut show_x_labels = SHOW_X_LABELS.write();
-            *show_x_labels = !*show_x_labels;
-        }
-        (_, KeyModifiers::SHIFT, KeyCode::Left) | (_, KeyModifiers::NONE, KeyCode::Char('<')) => {
-            if let Some(stock) = app.stocks.get_mut(app.current_tab) {
-                if let Some(chart_state) = stock.chart_state_mut() {
-                    chart_state.scroll_left();
-                }
-            }
-        }
-        (_, KeyModifiers::SHIFT, KeyCode::Right) | (_, KeyModifiers::NONE, KeyCode::Char('>')) => {
-            if let Some(stock) = app.stocks.get_mut(app.current_tab) {
-                if let Some(chart_state) = stock.chart_state_mut() {
-                    chart_state.scroll_right();
-                }
-            }
-        }
-        (Mode::DisplayOptions, modifiers, keycode) => {
-            if modifiers.is_empty() {
-                handle_keys_display_options(keycode, app)
-            }
-        }
-        (Mode::ConfigureChart, modifiers, keycode) => {
-            handle_keys_configure_chart(keycode, modifiers, app)
-        }
-        (Mode::DisplayStock, modifiers, keycode) => {
-            handle_keys_display_stock(keycode, modifiers, app)
-        }
+    if let (CONTROL, Char('c')) = (modifiers, key) {
+        app.exit_app();
     }
+
+    match mode {
+        Mode::AddStock => add_stock::handle_key_bindings(modifiers, key, app),
+        Mode::ConfigureChart => configure_chart::handle_key_bindings(modifiers, key, app),
+        Mode::DisplayOptions => display_options::handle_key_bindings(modifiers, key, app),
+        Mode::DisplayStock => display_stock::handle_key_bindings(modifiers, key, app),
+        Mode::DisplaySummary => display_summary::handle_key_bindings(modifiers, key, app),
+        Mode::Help => help::handle_key_bindings(modifiers, key, app),
+    };
+
     let _ = request_redraw.try_send(());
 }

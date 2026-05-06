@@ -252,6 +252,7 @@ fn draw_summary(frame: &mut Frame, app: &mut App, mut area: Rect) {
     // The minimum height a stock chart will use
     let stock_widget_height = (height / app.stocks.len() as u16).max(6);
     let num_to_render = ((height / stock_widget_height) as usize).min(app.stocks.len());
+    app.num_to_render = num_to_render;
 
     // If the user queued an up / down scroll, calculate the new offset, store it in
     // state and use it for this render. Otherwise use stored offset from state.
