@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::time::Duration;
 use std::{io, panic, thread};
 
@@ -10,6 +11,7 @@ use parking_lot::{Mutex, RwLock};
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use rclite::Arc;
+use service::default_timestamps::DefaultTimestampService;
 use tickrs_api as api;
 
 use crate::app::DebugInfo;
@@ -40,6 +42,7 @@ lazy_static! {
     pub static ref ENABLE_PRE_POST: RwLock<bool> = RwLock::new(OPTS.enable_pre_post);
     pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
+    pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
     pub static ref YAHOO_CRUMB: async_std::sync::RwLock<Option<CrumbData>> = Default::default();
 }
@@ -77,6 +80,8 @@ fn main() {
         app::Mode::DisplayStock
     };
 
+    let default_timestamp_service = DefaultTimestampService::new();
+
     let app = Arc::new(Mutex::new(app::App {
         mode: starting_mode,
         stocks: starting_stocks,
@@ -97,6 +102,7 @@ fn main() {
             app::Mode::DisplayStock
         },
         time_frame: opts.time_frame.unwrap_or(TimeFrame::Day1),
+        default_timestamp_service,
         summary_scroll_state: Default::default(),
         chart_type: starting_chart_type,
     }));
@@ -137,6 +143,8 @@ fn main() {
             // so they can update their state with this new information
             recv(data_received) -> _ => {
                 let mut app = app.lock();
+
+                app.update();
 
                 for stock in app.stocks.iter_mut() {
                     stock.update();

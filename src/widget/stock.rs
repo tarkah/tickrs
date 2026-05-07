@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use ratatui::buffer::Buffer;
@@ -15,20 +14,17 @@ use super::{block, CachableWidget, CacheState, OptionsState};
 use crate::api::model::{ChartMeta, CompanyData};
 use crate::common::*;
 use crate::draw::{add_padding, PaddingDirection};
-use crate::service::default_timestamps::DefaultTimestampService;
 use crate::service::{self, Service};
 use crate::theme::style;
 use crate::{
-    ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, OPTS, SHOW_VOLUMES, SHOW_X_LABELS, THEME,
-    TIME_FRAME, TRUNC_PRE,
+    DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, HIDE_PREV_CLOSE, HIDE_TOGGLE, OPTS, SHOW_VOLUMES,
+    SHOW_X_LABELS, THEME, TIME_FRAME, TRUNC_PRE,
 };
 
 const NUM_LOADING_TICKS: usize = 8;
 const ICON_LOADING_TICKS: [char; 8] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
 
 pub struct StockState {
-    pub default_timestamp_service: DefaultTimestampService,
-    pub default_timestamps: HashMap<TimeFrame, Vec<i64>>,
     pub symbol: String,
     pub chart_type: ChartType,
     pub stock_service: service::stock::StockService,
@@ -74,6 +70,7 @@ impl Hash for StockState {
         }
 
         // Hash globals since they affect "state" of how widget is rendered
+        DEFAULT_TIMESTAMPS.read().get(&self.time_frame).hash(state);
         ENABLE_PRE_POST.read().hash(state);
         HIDE_PREV_CLOSE.hash(state);
         HIDE_TOGGLE.hash(state);
@@ -89,11 +86,8 @@ impl StockState {
 
         let stock_service = service::stock::StockService::new(symbol.clone(), time_frame);
         let kagi_options = OPTS.kagi_options.get(&symbol).cloned().unwrap_or_default();
-        let default_timestamp_service = DefaultTimestampService::new(&symbol);
 
         StockState {
-            default_timestamp_service,
-            default_timestamps: HashMap::new(),
             symbol,
             chart_type,
             stock_service,
@@ -139,7 +133,10 @@ impl StockState {
 
         let max_time = prices.last().map(|p| p.date).unwrap_or(end);
 
-        let default_timestamps = self.default_timestamps.get(&self.time_frame);
+        let default_timestamps = {
+            let defaults = DEFAULT_TIMESTAMPS.read();
+            defaults.get(&self.time_frame).cloned()
+        };
 
         let prices = if self.time_frame == TimeFrame::Day1 {
             let times = MarketHours(
@@ -171,7 +168,7 @@ impl StockState {
             prices
         } else if let Some(default_timestamps) = default_timestamps {
             default_timestamps
-                .iter()
+                .into_iter()
                 .map(|t| {
                     if let Some(p) = prices.iter().find(|p| {
                         let a_rounded = p.date - p.date % self.time_frame.round_by();
@@ -182,7 +179,7 @@ impl StockState {
                         *p
                     } else {
                         Price {
-                            date: *t,
+                            date: t,
                             ..Default::default()
                         }
                     }
@@ -228,11 +225,6 @@ impl StockState {
 
     pub fn update(&mut self) {
         let updates = self.stock_service.updates();
-
-        let mut timestamp_updates = self.default_timestamp_service.updates();
-        if let Some(new_defaults) = timestamp_updates.pop() {
-            self.default_timestamps = new_defaults;
-        }
 
         for update in updates {
             match update {
