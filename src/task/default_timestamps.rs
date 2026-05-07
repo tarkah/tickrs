@@ -18,7 +18,7 @@ impl DefaultTimestamps {
 
 impl AsyncTask for DefaultTimestamps {
     type Input = ();
-    type Response = HashMap<TimeFrame, Vec<i64>>;
+    type Response = HashMap<TimeFrame, (Vec<i64>, Option<i64>)>;
 
     fn update_interval(&self) -> Option<Duration> {
         Some(Duration::from_secs(60 * 15))
@@ -38,7 +38,8 @@ impl AsyncTask for DefaultTimestamps {
                     .get_chart_data(symbol, interval, range, false)
                     .await
                 {
-                    Some((*timeframe, chart.timestamp))
+                    let start = chart.meta.current_trading_period.map(|i| i.regular.start);
+                    Some((*timeframe, (chart.timestamp, start)))
                 } else {
                     None
                 }

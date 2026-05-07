@@ -166,10 +166,12 @@ impl StockState {
                 .collect::<Vec<_>>()
         } else if self.is_crypto() {
             prices
-        } else if let Some(default_timestamps) = default_timestamps {
+        } else if let Some((default_timestamps, default_start)) = default_timestamps {
+            let delta = self.get_time_delta(default_start).unwrap_or_default();
             default_timestamps
                 .into_iter()
-                .map(|t| {
+                .map(|mut t| {
+                    t -= delta;
                     if let Some(p) = prices.iter().find(|p| {
                         let a_rounded = p.date - p.date % self.time_frame.round_by();
                         let b_rounded = t - t % self.time_frame.round_by();
@@ -269,6 +271,18 @@ impl StockState {
             .as_ref()
             .and_then(|m| m.instrument_type.as_deref())
             == Some("INDEX")
+    }
+
+    fn get_time_delta(&self, default_start: Option<i64>) -> Option<i64> {
+        let start = self
+            .chart_meta
+            .as_ref()?
+            .current_trading_period
+            .as_ref()?
+            .regular
+            .start;
+
+        Some(default_start? - start)
     }
 
     pub fn toggle_options(&mut self) -> bool {

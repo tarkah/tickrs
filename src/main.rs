@@ -42,7 +42,8 @@ lazy_static! {
     pub static ref ENABLE_PRE_POST: RwLock<bool> = RwLock::new(OPTS.enable_pre_post);
     pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
-    pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
+    pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, (Vec<i64>, Option<i64>)>> =
+        Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
     pub static ref YAHOO_CRUMB: async_std::sync::RwLock<Option<CrumbData>> = Default::default();
 }

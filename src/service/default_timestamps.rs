@@ -5,7 +5,7 @@ use crate::common::TimeFrame;
 use crate::task::*;
 
 pub struct DefaultTimestampService {
-    handle: AsyncTaskHandle<HashMap<TimeFrame, Vec<i64>>>,
+    handle: AsyncTaskHandle<HashMap<TimeFrame, (Vec<i64>, Option<i64>)>>,
 }
 
 impl DefaultTimestampService {
@@ -18,7 +18,7 @@ impl DefaultTimestampService {
 }
 
 impl Service for DefaultTimestampService {
-    type Update = HashMap<TimeFrame, Vec<i64>>;
+    type Update = HashMap<TimeFrame, (Vec<i64>, Option<i64>)>;
 
     fn updates(&self) -> Vec<Self::Update> {
         self.handle.response().try_iter().collect()
