@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::time::Duration;
 use std::{io, panic, thread};
 
@@ -15,7 +14,7 @@ use service::default_timestamps::DefaultTimestampService;
 use tickrs_api as api;
 
 use crate::app::DebugInfo;
-use crate::common::{ChartType, TimeFrame};
+use crate::common::{ChartType, TimeFrame, Timestamps};
 
 mod app;
 mod common;
@@ -42,8 +41,7 @@ lazy_static! {
     pub static ref ENABLE_PRE_POST: RwLock<bool> = RwLock::new(OPTS.enable_pre_post);
     pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
-    pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, (Vec<i64>, Option<i64>)>> =
-        Default::default();
+    pub static ref DEFAULT_TIMESTAMPS: RwLock<Timestamps> = Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
     pub static ref YAHOO_CRUMB: async_std::sync::RwLock<Option<CrumbData>> = Default::default();
 }
