@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::time::Duration;
@@ -9,6 +10,8 @@ use tickrs_api::Interval;
 
 use crate::api::model::ChartData;
 use crate::api::Range;
+
+pub type Timestamps = HashMap<TimeFrame, (Vec<i64>, Option<i64>)>;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Hash, Deserialize)]
 pub enum ChartType {
@@ -201,11 +204,15 @@ impl TimeFrame {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct MarketHours(pub i64, pub i64);
+pub struct MarketHours {
+    pub start: i64,
+    pub end: i64,
+    pub delta: i64,
+}
 
-impl Default for MarketHours {
-    fn default() -> Self {
-        MarketHours(52200, 75600)
+impl MarketHours {
+    pub fn new(start: i64, end: i64, delta: i64) -> Self {
+        Self { start, end, delta }
     }
 }
 
@@ -213,14 +220,14 @@ impl Iterator for MarketHours {
     type Item = i64;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let min_rounded_0 = self.0 - self.0 % 60;
-        let min_rounded_1 = self.1 - self.1 % 60;
+        let min_rounded_0 = self.start - self.start % self.delta;
+        let min_rounded_1 = self.end - self.end % self.delta;
 
-        if min_rounded_0 == min_rounded_1 {
+        if min_rounded_0 >= min_rounded_1 {
             None
         } else {
             let result = Some(min_rounded_0);
-            self.0 = min_rounded_0 + 60;
+            self.start = min_rounded_0 + self.delta;
             result
         }
     }
@@ -241,6 +248,15 @@ pub struct Price {
     pub low: f64,
     pub open: f64,
     pub date: i64,
+}
+
+impl Price {
+    pub fn new(date: i64) -> Self {
+        Self {
+            date,
+            ..Default::default()
+        }
+    }
 }
 
 impl Hash for Price {

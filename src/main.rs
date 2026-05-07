@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::time::Duration;
 use std::{io, panic, thread};
 
@@ -15,7 +14,7 @@ use service::default_timestamps::DefaultTimestampService;
 use tickrs_api as api;
 
 use crate::app::DebugInfo;
-use crate::common::{ChartType, TimeFrame};
+use crate::common::{ChartType, TimeFrame, Timestamps};
 
 mod app;
 mod common;
@@ -42,7 +41,7 @@ lazy_static! {
     pub static ref ENABLE_PRE_POST: RwLock<bool> = RwLock::new(OPTS.enable_pre_post);
     pub static ref TRUNC_PRE: bool = OPTS.trunc_pre;
     pub static ref SHOW_VOLUMES: RwLock<bool> = RwLock::new(OPTS.show_volumes);
-    pub static ref DEFAULT_TIMESTAMPS: RwLock<HashMap<TimeFrame, Vec<i64>>> = Default::default();
+    pub static ref DEFAULT_TIMESTAMPS: RwLock<Timestamps> = Default::default();
     pub static ref THEME: theme::Theme = OPTS.theme.unwrap_or_default();
     pub static ref YAHOO_CRUMB: async_std::sync::RwLock<Option<CrumbData>> = Default::default();
 }
@@ -167,8 +166,8 @@ fn main() {
                     Ok(Event::Key(key_event)) => {
                         event::handle_key_bindings(app.mode, key_event, &mut app, &request_redraw);
                     }
-                    Ok(Event::Mouse(MouseEvent { kind, row, column,.. })) => {
-                        if app.debug.enabled {
+                    Ok(Event::Mouse(MouseEvent { kind, row, column,.. }))
+                        if app.debug.enabled => {
                             match kind {
                                 MouseEventKind::Down(_) => app.debug.cursor_location = Some((row, column)),
                                 MouseEventKind::Up(_) => app.debug.cursor_location = Some((row, column)),
@@ -176,7 +175,6 @@ fn main() {
                                 _ => {}
                             }
                         }
-                    }
                     Ok(Event::Resize(..)) => {
                         let _ = request_redraw.try_send(());
                     }

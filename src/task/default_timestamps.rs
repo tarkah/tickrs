@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
 use async_std::sync::Arc;
 use futures::future::{join_all, BoxFuture};
 
 use super::*;
-use crate::common::TimeFrame;
+use crate::common::{TimeFrame, Timestamps};
 
 /// Default timestamps to reference for stocks that haven't been around as long
 /// as the interval we are trying to graph
@@ -18,7 +16,7 @@ impl DefaultTimestamps {
 
 impl AsyncTask for DefaultTimestamps {
     type Input = ();
-    type Response = HashMap<TimeFrame, Vec<i64>>;
+    type Response = Timestamps;
 
     fn update_interval(&self) -> Option<Duration> {
         Some(Duration::from_secs(60 * 15))
@@ -38,7 +36,8 @@ impl AsyncTask for DefaultTimestamps {
                     .get_chart_data(symbol, interval, range, false)
                     .await
                 {
-                    Some((*timeframe, chart.timestamp))
+                    let start = chart.meta.current_trading_period.map(|i| i.regular.start);
+                    Some((*timeframe, (chart.timestamp, start)))
                 } else {
                     None
                 }

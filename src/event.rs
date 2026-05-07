@@ -84,15 +84,15 @@ fn handle_keys_display_stock(keycode: KeyCode, modifiers: KeyModifiers, app: &mu
         (KeyCode::Char('s'), KeyModifiers::NONE) => {
             app.mode = app::Mode::DisplaySummary;
         }
-        (KeyCode::Char('o'), KeyModifiers::NONE) => {
-            if app.stocks[app.current_tab].toggle_options() {
-                app.mode = app::Mode::DisplayOptions;
-            }
+        (KeyCode::Char('o'), KeyModifiers::NONE)
+            if app.stocks[app.current_tab].toggle_options() =>
+        {
+            app.mode = app::Mode::DisplayOptions;
         }
-        (KeyCode::Char('e'), KeyModifiers::NONE) => {
-            if app.stocks[app.current_tab].toggle_configure() {
-                app.mode = app::Mode::ConfigureChart;
-            }
+        (KeyCode::Char('e'), KeyModifiers::NONE)
+            if app.stocks[app.current_tab].toggle_configure() =>
+        {
+            app.mode = app::Mode::ConfigureChart;
         }
         (KeyCode::Tab, KeyModifiers::NONE) => {
             if app.current_tab == app.stocks.len() - 1 {
@@ -196,20 +196,19 @@ fn handle_keys_display_options(keycode: KeyCode, app: &mut app::App) {
                 .unwrap()
                 .selection_mode_left();
         }
-        KeyCode::Right => {
+        KeyCode::Right
             if app.stocks[app.current_tab]
                 .options
                 .as_mut()
                 .unwrap()
                 .data()
-                .is_some()
-            {
-                app.stocks[app.current_tab]
-                    .options
-                    .as_mut()
-                    .unwrap()
-                    .selection_mode_right();
-            }
+                .is_some() =>
+        {
+            app.stocks[app.current_tab]
+                .options
+                .as_mut()
+                .unwrap()
+                .selection_mode_right();
         }
         _ => {}
     }
@@ -242,11 +241,9 @@ pub fn handle_keys_configure_chart(keycode: KeyCode, modifiers: KeyModifiers, ap
             let config = app.stocks[app.current_tab].chart_config_mut();
             config.enter(time_frame);
         }
-        (KeyCode::Char(c), KeyModifiers::NONE) => {
-            if c.is_numeric() || c == '.' {
-                let config = app.stocks[app.current_tab].chart_config_mut();
-                config.add_char(c);
-            }
+        (KeyCode::Char(c), KeyModifiers::NONE) if (c.is_numeric() || c == '.') => {
+            let config = app.stocks[app.current_tab].chart_config_mut();
+            config.add_char(c);
         }
         (KeyCode::Backspace, KeyModifiers::NONE) => {
             let config = app.stocks[app.current_tab].chart_config_mut();

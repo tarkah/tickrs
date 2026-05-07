@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
 use super::*;
-use crate::common::TimeFrame;
+use crate::common::Timestamps;
 use crate::task::*;
 
 pub struct DefaultTimestampService {
-    handle: AsyncTaskHandle<HashMap<TimeFrame, Vec<i64>>>,
+    handle: AsyncTaskHandle<Timestamps>,
 }
 
 impl DefaultTimestampService {
@@ -18,7 +16,7 @@ impl DefaultTimestampService {
 }
 
 impl Service for DefaultTimestampService {
-    type Update = HashMap<TimeFrame, Vec<i64>>;
+    type Update = Timestamps;
 
     fn updates(&self) -> Vec<Self::Update> {
         self.handle.response().try_iter().collect()

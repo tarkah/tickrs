@@ -4,7 +4,7 @@ use ratatui::widgets::{Block, Borders};
 use crate::theme::style;
 use crate::THEME;
 
-pub fn new(title: &str) -> Block {
+pub fn new(title: &str) -> Block<'_> {
     Block::default()
         .borders(Borders::ALL)
         .border_style(style().fg(THEME.border_primary()))

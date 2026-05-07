@@ -127,67 +127,41 @@ impl StockState {
     }
 
     pub fn prices(&self) -> impl Iterator<Item = Price> {
-        let (start, end) = self.start_end();
-
         let prices = self.prices[self.time_frame.idx()].clone();
-
-        let max_time = prices.last().map(|p| p.date).unwrap_or(end);
+        if self.is_crypto() {
+            return prices.into_iter();
+        }
 
         let default_timestamps = {
             let defaults = DEFAULT_TIMESTAMPS.read();
             defaults.get(&self.time_frame).cloned()
         };
 
-        let prices = if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(
-                start,
-                if max_time < start {
-                    end.max(start)
-                } else {
-                    max_time.min(end)
-                },
-            );
+        if let Some((default_timestamps, exchange_open)) = default_timestamps {
+            if default_timestamps.is_empty() || prices.is_empty() {
+                return prices.into_iter();
+            }
 
-            times
-                .map(|t| {
-                    if let Some(p) = prices.iter().find(|p| {
-                        let min_rounded = p.date - p.date % 60;
+            // Get the amount of time between NYSE market opening and the opening time of the current stock's stock exchange
+            let delta_exchange = self.get_exchange_delta(exchange_open).unwrap_or_default();
+            let delta_time_frame = self.time_frame.round_by();
 
-                        min_rounded == t
-                    }) {
-                        *p
-                    } else {
-                        Price {
-                            date: t,
-                            ..Default::default()
-                        }
-                    }
-                })
+            let start_timestamp = default_timestamps.first().unwrap() - delta_exchange;
+            let end_timestamp = default_timestamps.last().unwrap() - delta_exchange;
+
+            let start_price = prices.first().unwrap().date;
+            let end_price = prices.last().unwrap().date;
+
+            let fill_before = MarketHours::new(start_timestamp, start_price, delta_time_frame);
+            let fill_after = MarketHours::new(end_price, end_timestamp, delta_time_frame);
+
+            return fill_before
+                .map(Price::new)
+                .chain(prices)
+                .chain(fill_after.map(Price::new))
                 .collect::<Vec<_>>()
-        } else if self.is_crypto() {
-            prices
-        } else if let Some(default_timestamps) = default_timestamps {
-            default_timestamps
-                .into_iter()
-                .map(|t| {
-                    if let Some(p) = prices.iter().find(|p| {
-                        let a_rounded = p.date - p.date % self.time_frame.round_by();
-                        let b_rounded = t - t % self.time_frame.round_by();
-
-                        a_rounded == b_rounded
-                    }) {
-                        *p
-                    } else {
-                        Price {
-                            date: t,
-                            ..Default::default()
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-        } else {
-            prices
-        };
+                .into_iter();
+        }
 
         prices.into_iter()
     }
@@ -196,7 +170,7 @@ impl StockState {
         let (start, end) = self.start_end();
 
         if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(start, end.max(start));
+            let times = MarketHours::new(start, end.max(start), self.time_frame.round_by());
 
             times
                 .map(|t| {
@@ -269,6 +243,18 @@ impl StockState {
             .as_ref()
             .and_then(|m| m.instrument_type.as_deref())
             == Some("INDEX")
+    }
+
+    fn get_exchange_delta(&self, default_start: Option<i64>) -> Option<i64> {
+        let start = self
+            .chart_meta
+            .as_ref()?
+            .current_trading_period
+            .as_ref()?
+            .regular
+            .start;
+
+        Some(default_start? - start)
     }
 
     pub fn toggle_options(&mut self) -> bool {
@@ -436,11 +422,11 @@ impl StockState {
         }
     }
 
-    pub fn x_labels(&self, width: u16, start: i64, end: i64, data: &[Price]) -> Vec<Span> {
+    pub fn x_labels(&self, width: u16, start: i64, end: i64, data: &[Price]) -> Vec<Span<'_>> {
         let mut labels = vec![];
 
         let dates = if self.time_frame == TimeFrame::Day1 {
-            MarketHours(start, end.max(start)).collect()
+            MarketHours::new(start, end.max(start), self.time_frame.round_by()).collect()
         } else {
             data.iter().map(|p| p.date).collect::<Vec<_>>()
         };
@@ -480,7 +466,7 @@ impl StockState {
         [(min), (max)]
     }
 
-    pub fn y_labels(&self, min: f64, max: f64) -> Vec<Span> {
+    pub fn y_labels(&self, min: f64, max: f64) -> Vec<Span<'_>> {
         if self.loaded() {
             vec![
                 Span::styled(
@@ -759,7 +745,7 @@ impl CachableWidget<StockState> for StockWidget {
                     Line::from(vec![
                         Span::styled("P/L: ", style()),
                         Span::styled(
-                            format!("{}", format_decimals(profit_loss)),
+                            format_decimals(profit_loss).to_string(),
                             style().add_modifier(Modifier::BOLD).fg(profit_loss_color),
                         ),
                         Span::styled(
@@ -956,7 +942,7 @@ impl CachableWidget<StockState> for StockWidget {
                 .split(chunks[2])
                 .to_vec();
 
-            let tab_names = TimeFrame::tab_names()
+            let tab_names: Vec<_> = TimeFrame::tab_names()
                 .iter()
                 .map(|s| Line::from(*s))
                 .collect();
@@ -1021,7 +1007,7 @@ pub fn get_chart_title(
     // Constraint the title length to the screen area less padding & dots if it is truncated
     let max_width = area.width as usize - padding - loading_indicator_overhead;
     if title.len() > max_width {
-        let width = (max_width - 3).max(0);
+        let width = max_width - 3;
         let truncated = &title[..width];
         let trimmed = truncated.trim_end();
 

@@ -400,7 +400,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 )
                 .header(header)
                 .style(style().fg(THEME.text_normal()))
-                .highlight_style(
+                .row_highlight_style(
                     style()
                         .bg(if state.selection_mode == SelectionMode::Options {
                             THEME.highlight_focused()
