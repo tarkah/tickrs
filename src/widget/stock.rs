@@ -135,87 +135,83 @@ impl StockState {
         self.set_chart_type(self.chart_type);
     }
 
-    pub fn prices(&self) -> impl Iterator<Item = Price> {
-        let (start, end) = self.start_end();
+    // Get the actual start and end times used for building the chart
+    fn adjusted_start_end(&self, prices: &[Price]) -> (i64, i64) {
+        let (mut start, mut end) = self.current_trading_start_end();
 
-        let prices = self.prices[self.time_frame.idx()].clone();
+        // We can't use current trading directly for non-1D. We
+        // need to find the start / end for the timeframe which
+        // is effectively min(start, normalized_spy_proxy_start)..end
+        if !matches!(self.time_frame, TimeFrame::Day1) {
+            let default_start = DEFAULT_TIMESTAMPS
+                .read()
+                .get(&self.time_frame)
+                .and_then(|timestamps| timestamps.first().copied())
+                .unwrap_or(start);
+            let default_start_date = default_start - default_start % DAY;
 
-        let max_time = prices.last().map(|p| p.date).unwrap_or(end);
+            let start_time = start % DAY;
 
-        let default_timestamps = self.default_timestamps.get(&self.time_frame);
+            start = default_start_date + start_time;
 
-        let prices = if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(
-                start,
-                if max_time < start {
-                    end.max(start)
-                } else {
-                    max_time.min(end)
-                },
-            );
+            if let Some(first_price) = prices.first() {
+                start = start.min(first_price.date);
+            }
 
-            times
-                .map(|t| {
-                    if let Some(p) = prices.iter().find(|p| {
-                        let min_rounded = p.date - p.date % 60;
+            if let Some(last_price) = prices.last() {
+                end = last_price.date;
+            }
+        }
 
-                        min_rounded == t
-                    }) {
-                        *p
-                    } else {
-                        Price {
-                            date: t,
-                            ..Default::default()
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-        } else if self.is_crypto() {
-            prices
-        } else if let Some(default_timestamps) = default_timestamps {
-            default_timestamps
-                .iter()
-                .map(|t| {
-                    if let Some(p) = prices.iter().find(|p| {
-                        let a_rounded = p.date - p.date % self.time_frame.round_by();
-                        let b_rounded = t - t % self.time_frame.round_by();
-
-                        a_rounded == b_rounded
-                    }) {
-                        *p
-                    } else {
-                        Price {
-                            date: *t,
-                            ..Default::default()
-                        }
-                    }
-                })
-                .collect::<Vec<_>>()
-        } else {
-            prices
-        };
-
-        prices.into_iter()
+        (start, end)
     }
 
-    pub fn volumes(&self, data: &[Price]) -> Vec<u64> {
-        let (start, end) = self.start_end();
-
-        if self.time_frame == TimeFrame::Day1 {
-            let times = MarketHours(start, end.max(start));
-
-            times
-                .map(|t| {
-                    if let Some(p) = data.iter().find(|p| p.date == t) {
-                        p.volume
-                    } else {
-                        0
-                    }
-                })
-                .collect()
-        } else {
-            data.iter().map(|p| p.volume).collect()
+    fn get_matching_prices(&self, prices: &[Price]) -> Vec<Price> {
+        if prices.is_empty() {
+            return vec![];
         }
+
+        // Crypto doesn't need price matching
+        if self.is_crypto() {
+            return prices.to_vec();
+        }
+
+        let (adj_start, adj_end) = self.adjusted_start_end(prices);
+
+        if matches!(self.time_frame, TimeFrame::Day1) {
+            prices
+                .iter()
+                // Needed to filter out pre / post market data if pre / post is disabled
+                .filter(|p| p.date >= adj_start && p.date < adj_end)
+                .copied()
+                .collect::<Vec<_>>()
+        } else {
+            let start = prices.first().unwrap().date;
+            let end = prices.last().unwrap().date;
+
+            let delta = self.time_frame.round_by();
+
+            let fill_before = MarketTimes::new(adj_start, start, delta);
+            let fill_after = MarketTimes::new(end, adj_end, delta);
+
+            fill_before
+                .map(Price::new)
+                .chain(prices.iter().copied())
+                .chain(fill_after.map(Price::new))
+                .collect()
+        }
+    }
+
+    pub fn prices(&self) -> impl Iterator<Item = Price> {
+        let prices = self.prices[self.time_frame.idx()].clone();
+        self.get_matching_prices(&prices).into_iter()
+    }
+
+    pub fn volumes(&self, prices: &[Price]) -> Vec<u64> {
+        self.get_matching_prices(prices)
+            .into_iter()
+            .map(|i| i.volume)
+            .collect()
     }
 
     pub fn current_price(&self) -> f64 {
@@ -304,7 +300,7 @@ impl StockState {
         true
     }
 
-    pub fn start_end(&self) -> (i64, i64) {
+    fn current_trading_start_end(&self) -> (i64, i64) {
         let enable_pre_post = { *ENABLE_PRE_POST.read() };
 
         let pre = self
@@ -335,13 +331,17 @@ impl StockState {
             pre_start = reg_start - 1800;
         }
 
-        let start = if !enable_pre_post {
-            reg_start
-        } else {
+        let start = if matches!(self.time_frame, TimeFrame::Day1) && enable_pre_post {
             pre_start
+        } else {
+            reg_start
         };
 
-        let end = if !enable_pre_post { reg_end } else { post_end };
+        let end = if matches!(self.time_frame, TimeFrame::Day1) && enable_pre_post {
+            post_end
+        } else {
+            reg_end
+        };
 
         (start, end)
     }
@@ -432,23 +432,22 @@ impl StockState {
         (high, low)
     }
 
-    pub fn x_bounds(&self, start: i64, end: i64, data: &[Price]) -> [f64; 2] {
-        let num_points = ((end - start) / 60) as f64;
-
+    pub fn x_bounds(&self, data: &[Price]) -> [f64; 2] {
         match self.time_frame {
-            TimeFrame::Day1 => [0.0, num_points],
+            TimeFrame::Day1 => {
+                let (start, end) = self.current_trading_start_end();
+                let num_points = ((end - start) / 60) as f64;
+
+                [0.0, num_points]
+            }
             _ => [0.0, (data.len() + 1) as f64],
         }
     }
 
-    pub fn x_labels(&self, width: u16, start: i64, end: i64, data: &[Price]) -> Vec<Span<'_>> {
+    pub fn x_labels(&'_ self, width: u16, prices: &[Price]) -> Vec<Span<'_>> {
         let mut labels = vec![];
 
-        let dates = if self.time_frame == TimeFrame::Day1 {
-            MarketHours(start, end.max(start)).collect()
-        } else {
-            data.iter().map(|p| p.date).collect::<Vec<_>>()
-        };
+        let dates: Vec<i64> = prices.iter().map(|i| i.date).collect();
 
         if dates.is_empty() {
             return labels;
@@ -485,7 +484,7 @@ impl StockState {
         [(min), (max)]
     }
 
-    pub fn y_labels(&self, min: f64, max: f64) -> Vec<Span<'_>> {
+    pub fn y_labels(&'_ self, min: f64, max: f64) -> Vec<Span<'_>> {
         if self.loaded() {
             vec![
                 Span::styled(
