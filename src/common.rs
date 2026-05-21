@@ -2,7 +2,7 @@ use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use std::time::Duration;
 
-use chrono::{Datelike, Local, NaiveDateTime, TimeZone, Utc, Weekday};
+use chrono::{DateTime, Datelike, Local, TimeZone, Utc, Weekday};
 use itertools::izip;
 use serde::Deserialize;
 use tickrs_api::Interval;
@@ -375,7 +375,7 @@ pub fn get_next_business_day_delta(epoch: i64) -> i64 {
 }
 
 fn get_weekday(epoch: i64) -> Weekday {
-    NaiveDateTime::from_timestamp_opt(epoch, 0)
+    DateTime::from_timestamp(epoch, 0)
         .unwrap_or_default()
         .weekday()
 }

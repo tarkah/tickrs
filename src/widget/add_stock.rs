@@ -7,7 +7,6 @@ use ratatui::widgets::{Paragraph, StatefulWidget, Widget, Wrap};
 use super::block;
 use crate::common::ChartType;
 use crate::theme::style;
-use crate::widget::StockState;
 use crate::THEME;
 
 pub struct AddStockState {
@@ -41,8 +40,7 @@ impl AddStockState {
     }
 
     pub fn enter(&mut self, chart_type: ChartType, stocks: usize) -> super::StockState {
-        let search_string = self.search_string.clone();
-        StockState::new(search_string, chart_type, stocks)
+        super::StockState::new(self.search_string.clone(), chart_type, stocks)
     }
 }
 
@@ -53,7 +51,7 @@ impl StatefulWidget for AddStockWidget {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let spans =
-            if let (false, Some(error_msg)) = (state.has_user_input, state.error_msg.as_ref()) {
+            if let (false, Some(error_msg)) = (state.has_user_input, state.error_msg.clone()) {
                 Line::from(vec![
                     Span::styled("> ", style().fg(THEME.text_normal())),
                     Span::styled(
