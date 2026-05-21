@@ -25,7 +25,7 @@ impl AddStockState {
     }
 
     pub fn add_char(&mut self, c: char) {
-        self.search_string.push(c);
+        self.search_string.push(c.to_ascii_uppercase());
         self.has_user_input = true;
     }
 
@@ -39,8 +39,8 @@ impl AddStockState {
         self.error_msg = None;
     }
 
-    pub fn enter(&mut self, chart_type: ChartType) -> super::StockState {
-        super::StockState::new(self.search_string.clone().to_ascii_uppercase(), chart_type)
+    pub fn enter(&mut self, chart_type: ChartType, stocks: usize) -> super::StockState {
+        super::StockState::new(self.search_string.clone(), chart_type, stocks)
     }
 }
 

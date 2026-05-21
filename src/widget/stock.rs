@@ -25,6 +25,7 @@ const NUM_LOADING_TICKS: usize = 8;
 const ICON_LOADING_TICKS: [char; 8] = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
 
 pub struct StockState {
+    pub selected: bool,
     pub symbol: String,
     pub chart_type: ChartType,
     pub stock_service: service::stock::StockService,
@@ -48,6 +49,7 @@ pub struct StockState {
 
 impl Hash for StockState {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        self.selected.hash(state);
         self.symbol.hash(state);
         self.chart_type.hash(state);
         self.current_regular_price.to_bits().hash(state);
@@ -81,13 +83,14 @@ impl Hash for StockState {
 }
 
 impl StockState {
-    pub fn new(symbol: String, chart_type: ChartType) -> StockState {
+    pub fn new(symbol: String, chart_type: ChartType, idx: usize) -> StockState {
         let time_frame = *TIME_FRAME;
 
         let stock_service = service::stock::StockService::new(symbol.clone(), time_frame);
         let kagi_options = OPTS.kagi_options.get(&symbol).cloned().unwrap_or_default();
 
         StockState {
+            selected: idx == 0,
             symbol,
             chart_type,
             stock_service,
@@ -243,7 +246,8 @@ impl StockState {
     }
 
     fn options_enabled(&self) -> bool {
-        !self.is_crypto() && !self.is_index()
+        // Options are broken so we're just disabling them
+        false
     }
 
     fn configure_enabled(&self) -> bool {
@@ -255,13 +259,6 @@ impl StockState {
             .as_ref()
             .and_then(|m| m.instrument_type.as_deref())
             == Some("CRYPTOCURRENCY")
-    }
-
-    fn is_index(&self) -> bool {
-        self.chart_meta
-            .as_ref()
-            .and_then(|m| m.instrument_type.as_deref())
-            == Some("INDEX")
     }
 
     pub fn toggle_options(&mut self) -> bool {
@@ -849,16 +846,20 @@ impl CachableWidget<StockState> for StockWidget {
                                 THEME.gray()
                             }),
                     )));
-                }
 
-                if state.options_enabled() && loaded {
                     right_info.push(Line::from(Span::styled(
                         "Options  'o'",
-                        style().bg(if state.show_options {
-                            THEME.highlight_unfocused()
-                        } else {
-                            THEME.background()
-                        }),
+                        style()
+                            .bg(if state.show_options {
+                                THEME.highlight_unfocused()
+                            } else {
+                                THEME.background()
+                            })
+                            .fg(if state.options_enabled() {
+                                THEME.text_normal()
+                            } else {
+                                THEME.gray()
+                            }),
                     )));
                 }
 
@@ -952,7 +953,7 @@ impl CachableWidget<StockState> for StockWidget {
                 .split(chunks[2])
                 .to_vec();
 
-            let tab_names = TimeFrame::tab_names()
+            let tab_names: Vec<_> = TimeFrame::tab_names()
                 .iter()
                 .map(|s| Line::from(*s))
                 .collect();

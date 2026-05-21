@@ -5,7 +5,7 @@ use crossterm::terminal;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Paragraph, StatefulWidget, Widget};
+use ratatui::widgets::{Paragraph, StatefulWidget, Widget};
 use serde::Deserialize;
 
 use super::chart::prices_kagi::{self, ReversalOption};
@@ -275,72 +275,23 @@ impl CachableWidget<ChartConfigurationState> for ChartConfigurationWidget {
         &mut state.cache_state
     }
 
-    fn render(self, mut area: Rect, buf: &mut Buffer, state: &mut ChartConfigurationState) {
-        block::new(" Configuration ").render(area, buf);
-        area = add_padding(area, 1, PaddingDirection::All);
-        area = add_padding(area, 1, PaddingDirection::Left);
-        area = add_padding(area, 1, PaddingDirection::Right);
-
-        // layout[0] - Info / Error message
-        // layout[1] - Kagi options
-        let mut layout = Layout::default()
-            .constraints([Constraint::Length(6), Constraint::Min(0)])
-            .split(area)
-            .to_vec();
-
-        let mut padded = layout[0];
-        padded = add_padding(padded, 1, PaddingDirection::Top);
-        padded = add_padding(padded, 1, PaddingDirection::Bottom);
-        layout[0] = padded;
-
-        let info_error = if let Some(msg) = state.error_message.as_ref() {
-            vec![Line::from(Span::styled(msg, style().fg(THEME.loss())))]
-        } else {
-            vec![
-                Line::from(Span::styled(
-                    "  <Up / Down>: move up / down",
-                    style().fg(THEME.text_normal()),
-                )),
-                Line::from(Span::styled(
-                    "  <Tab / Shift+Tab>: move up / down",
-                    style().fg(THEME.text_normal()),
-                )),
-                Line::from(Span::styled(
-                    "  <Left / Right>: toggle option",
-                    style().fg(THEME.text_normal()),
-                )),
-                Line::from(Span::styled(
-                    "  <Enter>: submit changes",
-                    style().fg(THEME.text_normal()),
-                )),
-            ]
-        };
-
-        Paragraph::new(info_error)
-            .style(style().fg(THEME.text_normal()))
-            .render(layout[0], buf);
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut ChartConfigurationState) {
+        let title = format!(" {} Configuration ", self.chart_type.as_str());
+        let block = block::new(&title);
+        let mut block_area = block.inner(area);
+        block_area = add_padding(block_area, 1, PaddingDirection::All);
 
         match self.chart_type {
             ChartType::Line => {}
             ChartType::Candlestick => {}
-            ChartType::Kagi => render_kagi_options(layout[1], buf, state),
+            ChartType::Kagi => render_kagi_options(block_area, buf, state),
         }
+
+        block.render(area, buf);
     }
 }
 
-fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurationState) {
-    Block::default()
-        .style(style())
-        .title(vec![Span::styled(
-            "Kagi Options ",
-            style().fg(THEME.text_normal()),
-        )])
-        .borders(Borders::TOP)
-        .border_style(style().fg(THEME.border_secondary()))
-        .render(area, buf);
-
-    area = add_padding(area, 1, PaddingDirection::Top);
-
+fn render_kagi_options(area: Rect, buf: &mut Buffer, state: &ChartConfigurationState) {
     // layout[0] - Left column
     // layout[1] - Divider
     // layout[2] - Right Column
@@ -355,7 +306,6 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
         .to_vec();
 
     let left_column = vec![
-        Line::default(),
         Line::from(vec![
             Span::styled(
                 if state.selection == Some(KagiSelection::PriceType) {
@@ -394,7 +344,6 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
     ];
 
     let right_column = vec![
-        Line::default(),
         Line::from(vec![
             Span::styled(
                 "Close",
@@ -444,7 +393,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
         ]),
         Line::default(),
         Line::from(vec![Span::styled(
-            format!("{: <22}", &state.input.kagi_reversal_value),
+            format!("{: <22}", state.input.kagi_reversal_value),
             style()
                 .fg(if state.selection == Some(KagiSelection::ReversalValue) {
                     THEME.text_secondary()
@@ -472,7 +421,7 @@ fn render_kagi_options(mut area: Rect, buf: &mut Buffer, state: &ChartConfigurat
         let size = terminal::size().unwrap_or((0, 0));
 
         let x = layout[2].left() as usize + state.input.kagi_reversal_value.len().min(20);
-        let y = layout[2].top() as usize + 5;
+        let y = layout[2].top() as usize + 4;
         let idx = y * size.0 as usize + x;
 
         if let Some(cell) = buf.content.get_mut(idx) {

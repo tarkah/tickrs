@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::Modifier;
@@ -330,7 +330,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 .exp_dates
                 .iter()
                 .map(|d| {
-                    let date = NaiveDateTime::from_timestamp_opt(*d, 0).unwrap().date();
+                    let date = DateTime::from_timestamp(*d, 0).unwrap().date_naive();
                     ListItem::new(Span::styled(date.format("%b-%d-%y").to_string(), style()))
                 })
                 .collect::<Vec<_>>();
@@ -400,7 +400,7 @@ impl CachableWidget<OptionsState> for OptionsWidget {
                 )
                 .header(header)
                 .style(style().fg(THEME.text_normal()))
-                .highlight_style(
+                .row_highlight_style(
                     style()
                         .bg(if state.selection_mode == SelectionMode::Options {
                             THEME.highlight_focused()
