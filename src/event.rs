@@ -1,4 +1,5 @@
-use crossterm::event::{KeyCode::Char, KeyEvent, KeyModifiers, MouseEventKind};
+use crossterm::event::KeyCode::Char;
+use crossterm::event::{KeyEvent, KeyModifiers, MouseEventKind};
 
 use crate::app::{App, Mode};
 

@@ -1,3 +1,5 @@
+use std::process;
+
 use crossterm::event::Event;
 
 use crate::common::{ChartType, TimeFrame};
@@ -5,9 +7,9 @@ use crate::service::default_timestamps::DefaultTimestampService;
 use crate::service::Service;
 use crate::widget::chart_configuration::ChartConfigurationState;
 use crate::widget::options::SelectionMode;
-use crate::{cleanup_terminal, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS};
-use crate::{widget, DEFAULT_TIMESTAMPS};
-use std::process;
+use crate::{
+    cleanup_terminal, widget, DEFAULT_TIMESTAMPS, ENABLE_PRE_POST, SHOW_VOLUMES, SHOW_X_LABELS,
+};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Mode {

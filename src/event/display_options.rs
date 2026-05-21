@@ -1,7 +1,5 @@
-use crossterm::event::{
-    KeyCode::{self, BackTab, Char, Down, Esc, Left, Right, Tab, Up},
-    KeyModifiers,
-};
+use crossterm::event::KeyCode::{self, BackTab, Char, Down, Esc, Left, Right, Tab, Up};
+use crossterm::event::KeyModifiers;
 
 use crate::app::App;
 use crate::event::{NONE, SHIFT};

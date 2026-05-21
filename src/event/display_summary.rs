@@ -1,7 +1,5 @@
-use crossterm::event::{
-    KeyCode, KeyModifiers,
-    MouseEventKind::{self, ScrollDown, ScrollUp},
-};
+use crossterm::event::MouseEventKind::{self, ScrollDown, ScrollUp};
+use crossterm::event::{KeyCode, KeyModifiers};
 
 use crate::app::App;
 use crate::event::display_common;
