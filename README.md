@@ -36,18 +36,6 @@ brew tap tarkah/tickrs
 brew install tickrs
 ```
 
-## Saving tickers
-
-Press **Ctrl+S** to save the open tickers in their current tab order. A status
-message confirms the save or displays the error. The saved list loads on the next
-launch, including additions, removals, and tab reordering.
-
-The list is stored in `symbols.yml` beside `config.yml`, leaving your config and
-its comments untouched. Explicit `--symbols` arguments take priority over the
-saved list; the saved list takes priority over `symbols` in `config.yml`. Delete
-`symbols.yml` to return to the configured defaults. Saving an empty list clears
-the startup tickers.
-
 ## Config File
 
 See [wiki entry](https://github.com/tarkah/tickrs/wiki/Config-file)
