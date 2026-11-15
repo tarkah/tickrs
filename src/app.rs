@@ -16,6 +16,7 @@ pub enum Mode {
 }
 
 pub struct App {
+    pub save_status: Option<(String, std::time::Instant)>,
     pub mode: Mode,
     pub stocks: Vec<widget::StockState>,
     pub add_stock: widget::AddStockState,

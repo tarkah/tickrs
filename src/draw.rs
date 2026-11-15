@@ -90,6 +90,15 @@ pub fn draw(terminal: &mut Terminal<impl Backend>, app: &mut App) {
                     _ => draw_main(frame, app, layout),
                 }
             };
+
+            if let Some((message, saved_at)) = &app.save_status {
+                if saved_at.elapsed() < std::time::Duration::from_secs(4) {
+                    let area = frame.size();
+                    let status = Rect::new(area.x, area.y + area.height - 1, area.width, 1);
+                    frame.render_widget(Clear, status);
+                    frame.render_widget(Paragraph::new(message.as_str()).style(style()), status);
+                }
+            }
         })
         .unwrap();
 }
