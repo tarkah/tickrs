@@ -83,6 +83,7 @@ fn main() {
     let default_timestamp_service = DefaultTimestampService::new();
 
     let app = Arc::new(Mutex::new(app::App {
+        save_status: None,
         mode: starting_mode,
         stocks: starting_stocks,
         add_stock: widget::AddStockState::new(),

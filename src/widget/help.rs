@@ -10,6 +10,7 @@ use crate::THEME;
 
 const LEFT_TEXT: &str = r#"
 Quit: q or <Ctrl+c>
+Save Tickers: <Ctrl+s>
 Add Stock:
   - /: open prompt
   - (while adding):
@@ -53,7 +54,7 @@ Toggle Chart Configurations Pane:
 const LEFT_WIDTH: usize = 34;
 const RIGHT_WIDTH: usize = 35;
 pub const HELP_WIDTH: usize = 2 + LEFT_WIDTH + 2 + RIGHT_WIDTH + 2;
-pub const HELP_HEIGHT: usize = 2 + 18 + 1;
+pub const HELP_HEIGHT: usize = 2 + 19 + 1;
 
 #[derive(Copy, Clone)]
 pub struct HelpWidget {}

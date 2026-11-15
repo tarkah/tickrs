@@ -260,6 +260,18 @@ pub fn handle_key_bindings(
     request_redraw: &Sender<()>,
 ) {
     match (mode, key_event.modifiers, key_event.code) {
+        (_, KeyModifiers::CONTROL, KeyCode::Char('s')) => {
+            let symbols: Vec<_> = app
+                .stocks
+                .iter()
+                .map(|stock| stock.symbol.clone())
+                .collect();
+            let message = match crate::opts::save_symbols(&symbols) {
+                Ok(()) => format!("Saved {} tickers", symbols.len()),
+                Err(error) => format!("Could not save tickers: {error}"),
+            };
+            app.save_status = Some((message, std::time::Instant::now()));
+        }
         (_, KeyModifiers::CONTROL, KeyCode::Char('c')) => {
             cleanup_terminal();
             std::process::exit(0);

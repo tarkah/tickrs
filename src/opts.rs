@@ -13,6 +13,12 @@ use crate::widget::KagiOptions;
 pub fn resolve_opts() -> Opts {
     let mut opts = get_cli_opts();
 
+    if let Err(error) =
+        config_dir().and_then(|dir| apply_saved_symbols(&mut opts, &dir.join("symbols.yml")))
+    {
+        eprintln!("Could not load saved symbols: {error}");
+    }
+
     if let Ok(config_opts) = get_config_opts() {
         // Options
         opts.chart_type = opts.chart_type.or(config_opts.chart_type);
@@ -47,10 +53,60 @@ fn get_cli_opts() -> Opts {
     Opts::from_args()
 }
 
-fn get_config_opts() -> Result<Opts, Error> {
-    let config_dir = dirs_next::config_dir()
+fn config_dir() -> Result<std::path::PathBuf, Error> {
+    Ok(dirs_next::config_dir()
         .ok_or_else(|| format_err!("Could not get config directory"))?
-        .join("tickrs");
+        .join("tickrs"))
+}
+
+fn apply_saved_symbols(opts: &mut Opts, path: &std::path::Path) -> Result<(), Error> {
+    if opts.symbols.is_none() {
+        opts.symbols = load_saved_symbols(path)?;
+    }
+    Ok(())
+}
+
+fn load_saved_symbols(path: &std::path::Path) -> Result<Option<Vec<String>>, Error> {
+    match fs::read_to_string(path) {
+        Ok(contents) => Ok(Some(serde_yaml::from_str(&contents)?)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(error.into()),
+    }
+}
+
+pub fn save_symbols(symbols: &[String]) -> Result<(), Error> {
+    save_symbols_to(&config_dir()?.join("symbols.yml"), symbols)
+}
+
+fn save_symbols_to(path: &std::path::Path, symbols: &[String]) -> Result<(), Error> {
+    let contents = serde_yaml::to_string(symbols)?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| format_err!("Missing config directory"))?;
+    fs::create_dir_all(parent)?;
+    // Write beside the destination and rename so an interrupted write cannot
+    // truncate the previous saved list.
+    let temporary = path.with_extension(format!("{}.tmp", std::process::id()));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)?;
+    let result = (|| -> Result<(), Error> {
+        use std::io::Write;
+        file.write_all(contents.as_bytes())?;
+        file.sync_all()?;
+        drop(file);
+        fs::rename(&temporary, path)?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
+}
+
+fn get_config_opts() -> Result<Opts, Error> {
+    let config_dir = config_dir()?;
 
     if !config_dir.exists() {
         let _ = fs::create_dir_all(&config_dir);
@@ -247,3 +303,55 @@ const DEFAULT_CONFIG: &str = "---
 #    quantity: 100
 #    average_price: 450.25
 ";
+
+#[cfg(test)]
+mod saved_symbols_tests {
+    use super::*;
+
+    #[test]
+    fn round_trip_preserves_order_empty_list_and_config() {
+        let dir = std::env::temp_dir().join(format!("tickrs-symbols-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let config = dir.join("config.yml");
+        let original = "# Keep my comments\nchart_type: candle\n";
+        fs::write(&config, original).unwrap();
+        let path = dir.join("symbols.yml");
+        assert_eq!(load_saved_symbols(&path).unwrap(), None);
+        let symbols = vec!["MAXX.CN".into(), "QIMC.CN".into()];
+        save_symbols_to(&path, &symbols).unwrap();
+        assert_eq!(load_saved_symbols(&path).unwrap(), Some(symbols.clone()));
+        let mut opts = Opts::default();
+        apply_saved_symbols(&mut opts, &path).unwrap();
+        assert_eq!(opts.symbols, Some(symbols));
+        let cli_symbols = vec!["SPY".into()];
+        opts.symbols = Some(cli_symbols.clone());
+        apply_saved_symbols(&mut opts, &path).unwrap();
+        assert_eq!(opts.symbols, Some(cli_symbols));
+        save_symbols_to(&path, &[]).unwrap();
+        assert_eq!(load_saved_symbols(&path).unwrap(), Some(vec![]));
+        let mut opts = Opts::default();
+        apply_saved_symbols(&mut opts, &path).unwrap();
+        let configured_symbols = Some(vec!["SPY".into()]);
+        assert_eq!(opts.symbols.or(configured_symbols), Some(vec![]));
+        assert_eq!(fs::read_to_string(config).unwrap(), original);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn invalid_saved_symbols_are_reported() {
+        let path =
+            std::env::temp_dir().join(format!("tickrs-invalid-symbols-{}", std::process::id()));
+        fs::write(&path, "symbols: [broken").unwrap();
+        assert!(load_saved_symbols(&path).is_err());
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn write_failure_is_reported() {
+        let path =
+            std::env::temp_dir().join(format!("tickrs-blocked-symbols-{}", std::process::id()));
+        fs::write(&path, "not a directory").unwrap();
+        assert!(save_symbols_to(&path.join("symbols.yml"), &[]).is_err());
+        fs::remove_file(path).unwrap();
+    }
+}
